@@ -28,7 +28,7 @@
         },
 		"vmSize": {
 			"type": "string",
-			"defaultValue": "Standard_B2",
+			"defaultValue": "Standard_A2",
 				"allowedValues": [
 				"Standard_A0",
 				"Standard_A1",
@@ -38,7 +38,6 @@
 				"Standard_A5",
 				"Standard_A6",
 				"Standard_A7",
-				"Standard_B2",
 				"Standard_D1",
 				"Standard_D2",
 				"Standard_D3",
@@ -173,10 +172,6 @@
                     "osDisk": {
 						"osType": "Linux",
                         "name": "[concat(variables('vmOsDiskName'),copyIndex(parameters('vmIndex')))]",
-                        "managedDisk": {
-                            "storageAccountType": "Premium_LRS",
-                             "id": "[resourceId('Microsoft.Compute/disks/',concat(variables('vmOsDiskName'),copyIndex(parameters('vmIndex'))))]"
-                        },
                         "caching": "ReadWrite",
                         "createOption": "FromImage",
 						"diskSizeGB": 30
@@ -219,7 +214,7 @@
 					"fileUris": [
 						"https://raw.githubusercontent.com/zyxyoshine/IOStromplus/master/deploy/deploy.linux.sh"
 					],
-					"commandToExecute": "[concat('sh ','deploy.linux.sh')]"
+					"commandToExecute": "[concat('. ./','deploy.linux.sh')]"
 				}
             },
             "dependsOn": [
