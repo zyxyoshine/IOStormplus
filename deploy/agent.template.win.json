@@ -17,18 +17,18 @@
             }
         },
 		"vmOsSku": {
-            "defaultValue": "16.04-LTS",
+            "defaultValue": "2016-Datacenter",
             "allowedValues": [
-                "16.04-LTS"
+                "2016-Datacenter"
             ],
             "type": "String",
             "metadata": {
-                "description": "The Ubuntu version for the VM."
+                "description": "The Windows Server version for the VM."
             }
         },
 		"vmSize": {
 			"type": "string",
-			"defaultValue": "Standard_A2",
+			"defaultValue": "Standard_A3",
 				"allowedValues": [
 				"Standard_A0",
 				"Standard_A1",
@@ -93,8 +93,8 @@
 		}
 	},
 	"variables": {
-        "imagePublisher": "Canonical",
-        "imageOffer": "UbuntuServer",
+        "imagePublisher": "MicrosoftWindowsServer",
+        "imageOffer": "WindowsServer",
         "addressPrefix": "10.0.0.0/16",
         "location": "[resourceGroup().location]",
         "subnetName": "[tolower(concat('sn', resourceGroup().name))]",
@@ -157,8 +157,9 @@
                     "computerName": "[variables('vmName')]",
                     "adminUsername": "[variables('vmAdminUsername')]",
                     "adminPassword": "[variables('vmAdminPassword')]",
-					"linuxConfiguration": {
-                        "disablePasswordAuthentication": false
+					"windowsConfiguration": {
+                        "provisionVMAgent": true,
+                        "enableAutomaticUpdates": true
                     },
                     "secrets": []
                 },
@@ -170,11 +171,11 @@
                         "version": "latest"
                     },
                     "osDisk": {
-						"osType": "Linux",
+						"osType": "Windows",
                         "name": "[concat(variables('vmOsDiskName'),copyIndex(parameters('vmIndex')))]",
                         "caching": "ReadWrite",
                         "createOption": "FromImage",
-						"diskSizeGB": 30
+						"diskSizeGB": 128
                     },
                     "dataDisks": []
                 },
@@ -198,7 +199,7 @@
         },
         {
             "type": "Microsoft.Compute/virtualMachines/extensions",
-            "name": "[concat(variables('vmName'),copyIndex(parameters('vmIndex')),'/dscExtension')]",
+            "name": "[concat(variables('vmName'),copyIndex(parameters('vmIndex')),'/IOStromExtension')]",
             "apiVersion": "2015-06-15",
             "location": "[variables('location')]",
             "copy": {
@@ -206,15 +207,15 @@
                 "count": "[parameters('vmCount')]"
             },
             "properties": {
-                "publisher": "Microsoft.Azure.Extensions",
-				"type": "CustomScript",
-				"typeHandlerVersion": "2.0",
+                "publisher": "Microsoft.Compute",
+				"type": "CustomScriptExtension",
+				"typeHandlerVersion": "1.9",
 				"autoUpgradeMinorVersion": true,
 				"settings": {
 					"fileUris": [
-						"https://raw.githubusercontent.com/zyxyoshine/IOStromplus/master/deploy/deploy.linux.sh"
+						"https://raw.githubusercontent.com/zyxyoshine/IOStromplus/master/deploy/deploy.win.ps1"
 					],
-					"commandToExecute": "[concat('. ./','deploy.linux.sh')]"
+					"commandToExecute": "[concat('powershell -ExecutionPolicy Unrestricted -File ','deploy.win.ps1')]"
 				}
             },
             "dependsOn": [
