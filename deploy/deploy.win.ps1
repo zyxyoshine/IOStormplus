@@ -7,27 +7,26 @@ $TempShare = $Root + "temp"
 if ( -Not (Test-Path -Path $Root))
 {
     New-Item -ItemType directory -Path $Root
-    if ( -Not (Test-Path -Path $WorkloadShare))
-    {
-        New-Item -ItemType directory -Path $WorkloadShare
-    }
-    if ( -Not (Test-Path -Path $OutputShare))
-    {
-        New-Item -ItemType directory -Path $OutputShare
-    }
-    if ( -Not (Test-Path -Path $TempShare))
-    {
-        New-Item -ItemType directory -Path $TempShare
-    }
 }
-
-if(!(Get-SMBShare -Name "workload" -ea 0)){
+if ( -Not (Test-Path -Path $WorkloadShare))
+{
+    New-Item -ItemType directory -Path $WorkloadShare
+}
+if ( -Not (Test-Path -Path $OutputShare))
+{
+    New-Item -ItemType directory -Path $OutputShare
+}
+if ( -Not (Test-Path -Path $TempShare))
+{
+    New-Item -ItemType directory -Path $TempShare
+    }
+if( -Not (Get-SMBShare -Name "workload" -ea 0)){
     New-SmbShare -Name "workload" -Path $WorkloadShare -FullAccess Everyone
 }
-if(!(Get-SMBShare -Name "output" -ea 0)){
+if( -Not (Get-SMBShare -Name "output" -ea 0)){
     New-SmbShare -Name "output" -Path $OutputShare -FullAccess Everyone
 }
-if(!(Get-SMBShare -Name "temp" -ea 0)){
+if( -Not (Get-SMBShare -Name "temp" -ea 0)){
     New-SmbShare -Name "temp" -Path $TempShare -FullAccess Everyone
 }
 
