@@ -88,7 +88,7 @@
 		"storageAccountType": "Standard_LRS",
         "uniqueStorageAccountName": "[tolower(concat('sa', resourceGroup().name))]",
         "uniqueStorageAccountContainerName": "[tolower(concat('sc', resourceGroup().name))]",
-        "vmName": "[concat(resourceGroup().name,'-controller')]",
+        "vmName": "['vm']",
         "vmOsDiskName": "[concat('od', resourceGroup().name)]",
         "vmNicName": "[tolower(concat('nc', resourceGroup().name))]",
         "virtualNetworkName": "[tolower(concat('vn', resourceGroup().name))]",
@@ -221,7 +221,7 @@
                     "imageReference": {
                         "publisher": "[variables('imagePublisher')]",
                         "offer": "[variables('imageOffer')]",
-                        "sku": "[parameters('vmOsSku')]",
+                        "sku": "[parameters('controllerVmOsSku')]",
                         "version": "latest"
                     },
                     "osDisk": {

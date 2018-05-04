@@ -26,6 +26,20 @@
                 "description": "The Ubuntu version for the VM."
             }
         },
+		"vmAdminUsername": {
+            "defaultValue": "vmroot",
+            "type": "String",
+            "metadata": {
+                "description": "The Ubuntu root account name."
+            }
+        },
+		"vmAdminPassword": {
+            "defaultValue": "!!!!1234abcd",
+            "type": "String",
+            "metadata": {
+                "description": "The password for the root account."
+            }
+        },
 		"vmSize": {
 			"type": "string",
 			"defaultValue": "Standard_A3",
@@ -102,9 +116,7 @@
 		"storageAccountType": "Standard_LRS",
         "uniqueStorageAccountName": "[tolower(concat('sa', resourceGroup().name))]",
         "uniqueStorageAccountContainerName": "[tolower(concat('sc', resourceGroup().name))]",
-        "vmAdminUsername": "vmroot",
-        "vmAdminPassword": "!!!!1234abcd",
-        "vmName": "[concat(resourceGroup().name,'-vm')]",
+        "vmName": "['testvm']",
         "vmOsDiskName": "[concat('od', resourceGroup().name)]",
         "vmDataDiskName": "[concat('dd', resourceGroup().name)]",
         "vmNicName": "[tolower(concat('nc', resourceGroup().name))]",
@@ -155,8 +167,8 @@
                 },
                 "osProfile": {
                     "computerName": "[variables('vmName')]",
-                    "adminUsername": "[variables('vmAdminUsername')]",
-                    "adminPassword": "[variables('vmAdminPassword')]",
+                    "adminUsername": "[parameters('vmAdminUsername')]",
+                    "adminPassword": "[parameters('vmAdminPassword')]",
 					"linuxConfiguration": {
                         "disablePasswordAuthentication": false
                     },

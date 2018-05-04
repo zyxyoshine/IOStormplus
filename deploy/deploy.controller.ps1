@@ -16,3 +16,4 @@ function Unzip
 }
 
 Unzip ($Root + $PackageName) $Root
+Remove-Item ($Root + $PackageName)
