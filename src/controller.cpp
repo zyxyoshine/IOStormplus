@@ -44,7 +44,11 @@ inline void controller::print_test_vm_info() {
 
 inline void controller::print_test_result_summary(string workload_path) {
     vector<string> linux_jobs = list_files_in_directory(workload_path + "linux\\");
-    vector<string> windows_jobs = list_files_in_directory(workload_path + "windows\\");
+    vector<string> jobs = list_files_in_directory(workload_path + "windows\\");
+    jobs.insert(jobs.end(), linux_jobs.begin(), linux_jobs.end());
+    sort(jobs.begin(), jobs.end());
+    vector<string>::iterator iter = unique(jobs.begin(),jobs.end());
+    jobs.erase(iter,jobs.end());
     stringstream temp_stream;
     string summary_output_file;
     time_t t = std::time(0);
@@ -59,15 +63,20 @@ inline void controller::print_test_result_summary(string workload_path) {
     sprintf(title, "VM Count: %d", test_vm.size());
     write_log(title);
     fout << title << endl;
-    write_log("ID\tName\t\tIP Address\tOS\tSize\tR(MIN)\tR(MAX)\tR(AVG)\tW(MIN)\tW(MAX)\tW(AVG)");
-    fout << "ID\tName\t\tIP Address\tOS\tSize\tR(MIN)\tR(MAX)\tR(AVG)\tW(MIN)\tW(MAX)\tW(AVG)" << endl;
-    string vm_id;
-    for (int i = 0;i < test_vm.size();i++) {
-        temp_stream.clear();
-        temp_stream << i + 1;
-        temp_stream >> vm_id;
-        write_log(vm_id + "\t" + test_vm[i].get_vm_result());
-        fout << vm_id + "\t" + test_vm[i].get_vm_result() << endl;
+    for (auto job : jobs) {
+        write_log("Job: " + job);
+        fout << "Job: " + job << endl;
+        write_log("ID\tName\t\tIP Address\tOS\tSize\tR(MIN)\tR(MAX)\tR(AVG)\tW(MIN)\tW(MAX)\tW(AVG)");
+        fout << "ID\tName\t\tIP Address\tOS\tSize\tR(MIN)\tR(MAX)\tR(AVG)\tW(MIN)\tW(MAX)\tW(AVG)" << endl;
+        string vm_id;
+        for (int i = 0;i < test_vm.size();i++) {
+            if (test_vm[i].rest)
+            temp_stream.clear();
+            temp_stream << i + 1;
+            temp_stream >> vm_id;
+            write_log(vm_id + "\t" + test_vm[i].get_vm_result());
+            fout << vm_id + "\t" + test_vm[i].get_vm_result() << endl;
+        }
     }
     cout << endl;
     fout.close();
