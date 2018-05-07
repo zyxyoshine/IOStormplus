@@ -1,0 +1,252 @@
+# depslib dependency file v1.0
+1522376477 source:c:\users\t-yuxzho\desktop\iostormplus\main.cpp
+	<bits/stdc++.h>
+	"rapidjson/document.h"
+	"logger.h"
+
+1522272984 c:\users\t-yuxzho\desktop\iostormplus\rapidjson\document.h
+	"reader.h"
+	"internal/meta.h"
+	"internal/strfunc.h"
+	"memorystream.h"
+	"encodedstream.h"
+	<new>
+	<limits>
+	<iterator>
+	<utility>
+
+1522272986 c:\users\t-yuxzho\desktop\iostormplus\rapidjson\reader.h
+	"allocators.h"
+	"stream.h"
+	"encodedstream.h"
+	"internal/meta.h"
+	"internal/stack.h"
+	"internal/strtod.h"
+	<limits>
+	<intrin.h>
+	<nmmintrin.h>
+	<emmintrin.h>
+	<arm_neon.h>
+	<stdexcept>
+	"rapidjson/error/error.h"
+	"rapidjson/reader.h"
+	"error/error.h"
+
+1522272984 c:\users\t-yuxzho\desktop\iostormplus\rapidjson\allocators.h
+	"rapidjson.h"
+
+1522272986 c:\users\t-yuxzho\desktop\iostormplus\rapidjson\rapidjson.h
+	<cstdlib>
+	<cstring>
+	"rapidjson/..."
+	<string>
+	"msinttypes/stdint.h"
+	"msinttypes/inttypes.h"
+	<stdint.h>
+	<inttypes.h>
+	<endian.h>
+	"rapidjson/..."
+	<cassert>
+
+1522272986 c:\users\t-yuxzho\desktop\iostormplus\rapidjson\msinttypes\stdint.h
+	<stdint.h>
+	<limits.h>
+	<wchar.h>
+
+1522272986 c:\users\t-yuxzho\desktop\iostormplus\rapidjson\msinttypes\inttypes.h
+	"stdint.h"
+	<inttypes.h>
+
+1522272986 c:\users\t-yuxzho\desktop\iostormplus\rapidjson\stream.h
+	"rapidjson.h"
+	"encodings.h"
+
+1522272984 c:\users\t-yuxzho\desktop\iostormplus\rapidjson\encodings.h
+	"rapidjson.h"
+
+1522272984 c:\users\t-yuxzho\desktop\iostormplus\rapidjson\encodedstream.h
+	"stream.h"
+	"memorystream.h"
+
+1522272984 c:\users\t-yuxzho\desktop\iostormplus\rapidjson\memorystream.h
+	"stream.h"
+
+1522272986 c:\users\t-yuxzho\desktop\iostormplus\rapidjson\internal\meta.h
+	"../rapidjson.h"
+	<type_traits>
+
+1522272986 c:\users\t-yuxzho\desktop\iostormplus\rapidjson\internal\stack.h
+	"../allocators.h"
+	"swap.h"
+
+1522272986 c:\users\t-yuxzho\desktop\iostormplus\rapidjson\internal\swap.h
+	"../rapidjson.h"
+
+1522272986 c:\users\t-yuxzho\desktop\iostormplus\rapidjson\internal\strtod.h
+	"ieee754.h"
+	"biginteger.h"
+	"diyfp.h"
+	"pow10.h"
+
+1522272986 c:\users\t-yuxzho\desktop\iostormplus\rapidjson\internal\ieee754.h
+	"../rapidjson.h"
+
+1522272986 c:\users\t-yuxzho\desktop\iostormplus\rapidjson\internal\biginteger.h
+	"../rapidjson.h"
+	<intrin.h>
+
+1522272986 c:\users\t-yuxzho\desktop\iostormplus\rapidjson\internal\diyfp.h
+	"../rapidjson.h"
+	<intrin.h>
+
+1522272986 c:\users\t-yuxzho\desktop\iostormplus\rapidjson\internal\pow10.h
+	"../rapidjson.h"
+
+1522272986 c:\users\t-yuxzho\desktop\iostormplus\rapidjson\error\error.h
+	"../rapidjson.h"
+
+1522272986 c:\users\t-yuxzho\desktop\iostormplus\rapidjson\internal\strfunc.h
+	"../stream.h"
+	<cwchar>
+
+1523255915 c:\users\t-yuxzho\desktop\iostormplus\logger.h
+	<iostream>
+	<ctime>
+	<fstream>
+	"controller.h"
+
+1525682008 source:c:\users\t-yuxzho\desktop\iostormplus\controller.cpp
+	<bits/stdc++.h>
+	<windows.h>
+	"rapidjson/document.h"
+	"logger.h"
+	"controller.h"
+	"helper.h"
+
+1525681040 c:\users\t-yuxzho\desktop\iostormplus\controller.h
+	<bits/stdc++.h>
+
+1522348056 source:c:\users\zhouyuxing\desktop\code\iostormplus\main.cpp
+	<bits/stdc++.h>
+	"rapidjson/document.h"
+	"logger.h"
+
+1522272984 c:\users\zhouyuxing\desktop\code\iostormplus\rapidjson\document.h
+	"reader.h"
+	"internal/meta.h"
+	"internal/strfunc.h"
+	"memorystream.h"
+	"encodedstream.h"
+	<new>
+	<limits>
+	<iterator>
+	<utility>
+
+1522272986 c:\users\zhouyuxing\desktop\code\iostormplus\rapidjson\reader.h
+	"allocators.h"
+	"stream.h"
+	"encodedstream.h"
+	"internal/meta.h"
+	"internal/stack.h"
+	"internal/strtod.h"
+	<limits>
+	<intrin.h>
+	<nmmintrin.h>
+	<emmintrin.h>
+	<arm_neon.h>
+	<stdexcept>
+	"rapidjson/error/error.h"
+	"rapidjson/reader.h"
+	"error/error.h"
+
+1522272984 c:\users\zhouyuxing\desktop\code\iostormplus\rapidjson\allocators.h
+	"rapidjson.h"
+
+1522272986 c:\users\zhouyuxing\desktop\code\iostormplus\rapidjson\rapidjson.h
+	<cstdlib>
+	<cstring>
+	"rapidjson/..."
+	<string>
+	"msinttypes/stdint.h"
+	"msinttypes/inttypes.h"
+	<stdint.h>
+	<inttypes.h>
+	<endian.h>
+	"rapidjson/..."
+	<cassert>
+
+1522272986 c:\users\zhouyuxing\desktop\code\iostormplus\rapidjson\msinttypes\stdint.h
+	<stdint.h>
+	<limits.h>
+	<wchar.h>
+
+1522272986 c:\users\zhouyuxing\desktop\code\iostormplus\rapidjson\msinttypes\inttypes.h
+	"stdint.h"
+	<inttypes.h>
+
+1522272986 c:\users\zhouyuxing\desktop\code\iostormplus\rapidjson\stream.h
+	"rapidjson.h"
+	"encodings.h"
+
+1522272984 c:\users\zhouyuxing\desktop\code\iostormplus\rapidjson\encodings.h
+	"rapidjson.h"
+
+1522272984 c:\users\zhouyuxing\desktop\code\iostormplus\rapidjson\encodedstream.h
+	"stream.h"
+	"memorystream.h"
+
+1522272984 c:\users\zhouyuxing\desktop\code\iostormplus\rapidjson\memorystream.h
+	"stream.h"
+
+1522272986 c:\users\zhouyuxing\desktop\code\iostormplus\rapidjson\internal\meta.h
+	"../rapidjson.h"
+	<type_traits>
+
+1522272986 c:\users\zhouyuxing\desktop\code\iostormplus\rapidjson\internal\stack.h
+	"../allocators.h"
+	"swap.h"
+
+1522272986 c:\users\zhouyuxing\desktop\code\iostormplus\rapidjson\internal\swap.h
+	"../rapidjson.h"
+
+1522272986 c:\users\zhouyuxing\desktop\code\iostormplus\rapidjson\internal\strtod.h
+	"ieee754.h"
+	"biginteger.h"
+	"diyfp.h"
+	"pow10.h"
+
+1522272986 c:\users\zhouyuxing\desktop\code\iostormplus\rapidjson\internal\ieee754.h
+	"../rapidjson.h"
+
+1522272986 c:\users\zhouyuxing\desktop\code\iostormplus\rapidjson\internal\biginteger.h
+	"../rapidjson.h"
+	<intrin.h>
+
+1522272986 c:\users\zhouyuxing\desktop\code\iostormplus\rapidjson\internal\diyfp.h
+	"../rapidjson.h"
+	<intrin.h>
+
+1522272986 c:\users\zhouyuxing\desktop\code\iostormplus\rapidjson\internal\pow10.h
+	"../rapidjson.h"
+
+1522272986 c:\users\zhouyuxing\desktop\code\iostormplus\rapidjson\error\error.h
+	"../rapidjson.h"
+
+1522272986 c:\users\zhouyuxing\desktop\code\iostormplus\rapidjson\internal\strfunc.h
+	"../stream.h"
+	<cwchar>
+
+1522371832 c:\users\zhouyuxing\desktop\code\iostormplus\logger.h
+	<iostream>
+	<ctime>
+	<fstream>
+	"controller.h"
+
+1522371848 c:\users\zhouyuxing\desktop\code\iostormplus\controller.h
+	<bits/stdc++.h>
+
+1525682098 c:\users\t-yuxzho\desktop\iostormplus\helper.h
+	<bits/stdc++.h>
+	<stdexcept>
+	<windows.h>
+
