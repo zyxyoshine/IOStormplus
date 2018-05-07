@@ -166,7 +166,7 @@
                     "vmSize": "[parameters('vmSize')]"
                 },
                 "osProfile": {
-                    "computerName": "[variables('vmName')]",
+                    "computerName": "[concat(variables('vmName'),copyIndex(parameters('vmIndex')))]",
                     "adminUsername": "[parameters('vmAdminUsername')]",
                     "adminPassword": "[parameters('vmAdminPassword')]",
 					"windowsConfiguration": {
@@ -189,7 +189,22 @@
                         "createOption": "FromImage",
 						"diskSizeGB": 128
                     },
-                    "dataDisks": []
+                    "copy": [
+						{
+							"name": "dataDisks",
+							"count": "[parameters('vmDataDiskCount')]",
+							"input": {
+								"vhd": {
+									"uri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('uniqueStorageAccountName')),providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).primaryEndpoints.blob,variables('uniqueStorageAccountContainerName'),copyIndex(parameters('vmIndex')),'/',variables('vmDataDiskName'),copyIndex(parameters('vmIndex')),'-',copyIndex('dataDisks'),'.vhd')]"
+								},
+								"name": "[concat(variables('vmDataDiskName'),copyIndex(parameters('vmIndex')),'-',copyIndex('dataDisks'))]",
+								"diskSizeGB": "[parameters('vmDataDiskSizeInGB')]",
+								"lun": "[copyIndex('dataDisks')]",
+								"createOption": "Empty",
+								"caching": "None"
+							}
+						}
+					]
                 },
                 "networkProfile": {
                     "networkInterfaces": [

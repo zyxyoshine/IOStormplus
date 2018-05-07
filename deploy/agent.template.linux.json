@@ -90,20 +90,6 @@
 			"metadata": {
 				"description": "VM size supported by Azure Stack."
 			}
-		},
-		"vmDataDiskSizeInGB": {
-			"type": "int",
-			"defaultValue": 4,
-			"metadata": {
-				"description": "VM IO workload target data disk size in GB."
-			}
-		},
-		"vmDataDiskCount": {
-			"type": "int",
-			"defaultValue": 1,
-			"metadata": {
-				"description": "Number of data disks per VM to perform IO on."
-			}
 		}
 	},
 	"variables": {
@@ -166,7 +152,7 @@
                     "vmSize": "[parameters('vmSize')]"
                 },
                 "osProfile": {
-                    "computerName": "[variables('vmName')]",
+                    "computerName": "[concat(variables('vmName'),copyIndex(parameters('vmIndex')))]",
                     "adminUsername": "[parameters('vmAdminUsername')]",
                     "adminPassword": "[parameters('vmAdminPassword')]",
 					"linuxConfiguration": {
