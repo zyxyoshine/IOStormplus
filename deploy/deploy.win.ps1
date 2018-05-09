@@ -54,5 +54,29 @@ $FioMSIArguments = @(
 )
 Start-Process "msiexec.exe" -ArgumentList $FioMSIArguments -Wait -NoNewWindow
 
+#Initialize data disks
+$disks = Get-Disk | Where partitionstyle -eq 'raw' | sort number
+
+$letters = 70..89 | ForEach-Object { [char]$_ }
+$count = 0
+$label = "data"
+
+foreach ($disk in $disks) {
+    $driveLetter = $letters[$count].ToString()
+    $disk | 
+    Initialize-Disk -PartitionStyle MBR -PassThru |
+    New-Partition -UseMaximumSize -DriveLetter $driveLetter |
+    Format-Volume -FileSystem NTFS -NewFileSystemLabel ($label + $count) -Confirm:$false -Force
+    $count++
+}
+
+#Send VM info to controller
+$ControllerIP = $args[0]
+$VMname = $args[1]
+$VMSize = $args[2]
+$VMIp = foreach($ip in (ipconfig) -like '*IPv4*') { ($ip -split ' : ')[-1]}
+$buffer = $VMIp + " windows " + $VMSize
+("\\\\" + $ControllerIP + "\\agents\\" + $VMname + ".info")
+$buffer | Out-File ("\\" + $ControllerIP + "\agents\" + $VMname)
 
 
