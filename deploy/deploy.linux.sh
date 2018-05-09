@@ -3,6 +3,7 @@ apt-get upgrade -y
 apt-get install make
 apt-get install gcc -y
 apt-get install g++ -y
+apt-get install smbclient
 cd /home/vmroot && wget http://brick.kernel.dk/snaps/fio-3.5.tar.bz2
 cd /home/vmroot && tar -xjvf fio-3.5.tar.bz2
 ./fio-3.5/configure
@@ -14,6 +15,8 @@ cd /etc/samba && wget https://raw.githubusercontent.com/zyxyoshine/IOStromplus/m
 mkdir -p /samba/workload
 mkdir -p /samba/temp
 mkdir -p /samba/output
+mkdir -p /samba/info
+mount -t cifs -o username=vmadmin,password='!!!!1234abcd' //10.0.0.5/agents /samba/info
 chmod -R 0777 /samba/workload
 chmod -R 0777 /samba/temp
 chmod -R 0777 /samba/output

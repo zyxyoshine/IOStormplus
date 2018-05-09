@@ -30,6 +30,8 @@ if( -Not (Get-SMBShare -Name "temp" -ea 0)){
     New-SmbShare -Name "temp" -Path $TempShare -FullAccess Everyone
 }
 
+Out-File ($TempShare + "\controller.tmp")
+
 #Download agent
 $AgentBinaryName = "agent.exe"
 $AgentUrl = "https://github.com/zyxyoshine/IOStromplus/raw/master/deploy/binary/agent.exe"
@@ -70,12 +72,18 @@ foreach ($disk in $disks) {
     $count++
 }
 
-#Send VM info to controller
+#Start Agent
 $ControllerIP = $args[0]
 $VMname = hostname
 $VMSize = $args[1]
 $VMIp = foreach($ip in (ipconfig) -like '*IPv4*') { ($ip -split ' : ')[-1]}
-$buffer = $VMIp + " windows " + $VMSize
-$buffer | Out-File ("\\" + $ControllerIP + "\agents\" + $VMname)
-$buffer | Out-File ("C:\" + $VMname)
-("\\" + $ControllerIP + "\agents\" + $VMname) | Out-File ("C:\" + $VMname + ".txt")
+$username = "vmadmin"
+$password = "!!!!1234abcd"
+$credentials = New-Object System.Management.Automation.PSCredential -ArgumentList @($username,(ConvertTo-SecureString -String $password -AsPlainText -Force))
+$AgentArguments = @(
+    $ControllerIP
+    $VMname
+    $VMIp
+    $VMSize
+)
+Start-Process "C:\IOStormplus\agent.win.exe" -ArgumentList $AgentArguments -WorkingDirectory "C:\IOStormplus" -Credential ($credentials)

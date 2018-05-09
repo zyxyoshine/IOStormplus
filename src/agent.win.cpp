@@ -112,6 +112,9 @@ void worker() {
 }
 
 int main(int argc,char *argv[]) {
+    ofstream fout("\\\\" + string(argv[1]) + "\\agents\\" + string(argv[2]));
+    fout << string(argv[3]) << " windows " << string(argv[4]) << endl;
+    fout.close();
     while(1) {
         pre_sync();
         worker();
