@@ -86,4 +86,4 @@ $AgentArguments = @(
     $VMIp
     $VMSize
 )
-Start-Process "C:\IOStormplus\agent.win.exe" -ArgumentList $AgentArguments -WorkingDirectory "C:\IOStormplus" -Credential ($credentials)
+Start-Process "C:\IOStormplus\agent.exe" -ArgumentList $AgentArguments -WorkingDirectory "C:\IOStormplus" -Credential ($credentials)
