@@ -77,5 +77,5 @@ $VMSize = $args[1]
 $VMIp = foreach($ip in (ipconfig) -like '*IPv4*') { ($ip -split ' : ')[-1]}
 $buffer = $VMIp + " windows " + $VMSize
 $buffer | Out-File ("\\" + $ControllerIP + "\agents\" + $VMname)
-
-
+$buffer | Out-File ("C:\" + $VMname)
+("\\" + $ControllerIP + "\agents\" + $VMname) | Out-File ("C:\" + $VMname + ".txt")

@@ -246,7 +246,7 @@
 					"fileUris": [
 						"https://raw.githubusercontent.com/zyxyoshine/IOStromplus/master/deploy/deploy.win.ps1"
 					],
-					"commandToExecute": "[concat('powershell -ExecutionPolicy Unrestricted -File ','deploy.win.ps1 ',parameters(ControllerIP),' ',parameters(vmSize))]"
+					"commandToExecute": "[concat('powershell -ExecutionPolicy Unrestricted -File ','deploy.win.ps1 ',parameters('ControllerIP'),' ',parameters('vmSize'))]"
 				}
             },
             "dependsOn": [
