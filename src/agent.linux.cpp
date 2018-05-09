@@ -31,6 +31,20 @@ string exec(const char* cmd) {
 	return result;
 }
 
+vector<string> list_files_in_directory(string dirna) {
+    vector<string> res;
+    string cmd_ls = "ls " + dirna;
+    string ls_res = exec(cmd_ls.c_str());
+    int pre = 0;
+    for (int i = 0;i < ls_res.length();i++) {
+        if (ls_res[i] == '\n') {
+            res.push_back(ls_res.substr(pre,i - pre));
+            pre = i + 1;
+        }
+    }
+    return res;
+}
+
 void pre_sync() {
 	string control_file_path = share_path + infotemp;
 	ifstream fin;
@@ -61,24 +75,17 @@ void pre_sync() {
 
 void worker() {
     string hostname = exec("hostname");
+    if (hostname.find('\n') != string::npos)
+        hostname = hostname.replace(hostname.find('\n'),1,"");
+    cout << hostname << endl;
 	string control_file_path = share_path + infotemp;
 	ifstream fin(control_file_path + controller_temp_file, ios_base::in);
 	string reader;
 	while(1) {
 		fin.seekg(0, ios::beg);
 		fin >> reader;
-		//cout << reader;
 		if (reader == "START") {
-            string cmd_ls_workload = "ls " + share_path + workload;
-            string ls_res = exec(cmd_ls_workload.c_str());
-            int pre = 0;
-            vector<string> jobs;
-            for (int i = 0;i < ls_res.length();i++) {
-                if (ls_res[i] == '\n') {
-                    jobs.push_back(ls_res.substr(pre,i - pre));
-                    pre = i + 1;
-                }
-            }
+            vector<string> jobs = list_files_in_directory(share_path + workload);
             cout << "Running fio workload." << endl;
             for (int i = 0 ;i < jobs.size();i++){
                 string jobname = jobs[i];
@@ -86,16 +93,18 @@ void worker() {
                     jobname = jobname.replace(jobname.find(".job"),4,"");
                 string cmd_run_fio = "fio --output=" + jobname + ".out " + " " + share_path + workload + jobs[i];
                 exec(cmd_run_fio.c_str());
-                string cmd_rm_temp_file = "rm -f " + jobname;
-                exec(cmd_rm_temp_file.c_str());
-                string cmd_copy_output = "cp -pf " + workspace + jobname + ".out " + " " + share_path + output + hostname + "_" + jobname + ".out";
+                string cmd_copy_output = "cp -pf " + jobname + ".out " + " " + share_path + output + hostname + "_" + jobname + ".out";
                 exec(cmd_copy_output.c_str());
+                string cmd_rm_temp_file = "rm -f " + jobname + "*";
+                exec(cmd_rm_temp_file.c_str());
             }
 			break;
 		}
 		sleep(10);
 	}
 	fin.close();
+	string cmd_rm_job_files = "rm -f " + share_path + workload + "*";
+    exec(cmd_rm_job_files.c_str());
 	ofstream fout(control_file_path + client_temp_file, ios_base::out | ios_base::trunc);
 	fout << "DONE" << endl;
 	cout << "Done !" << endl;
