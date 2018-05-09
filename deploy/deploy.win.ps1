@@ -72,11 +72,10 @@ foreach ($disk in $disks) {
 
 #Send VM info to controller
 $ControllerIP = $args[0]
-$VMname = $args[1]
-$VMSize = $args[2]
+$VMname = hostname
+$VMSize = $args[1]
 $VMIp = foreach($ip in (ipconfig) -like '*IPv4*') { ($ip -split ' : ')[-1]}
 $buffer = $VMIp + " windows " + $VMSize
-("\\\\" + $ControllerIP + "\\agents\\" + $VMname + ".info")
 $buffer | Out-File ("\\" + $ControllerIP + "\agents\" + $VMname)
 
 
