@@ -94,6 +94,7 @@ public:
     void pre_sync();
     void standard_worker();
     void custom_worker();
+    void initialize();
 
     void analyze_data(string workload_path);
     report_summary analyze_standard_output(string output_file);

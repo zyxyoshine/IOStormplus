@@ -2,6 +2,13 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
 	"contentVersion": "1.0.0",
 	"parameters": {
+        "ControllerIP": {
+            "defaultValue": "10.0.0.1",
+            "type": "String",
+            "metadata": {
+                "description": "The internal IP for controller VM."
+            }
+        },
 		"vmIndex": {
 			"defaultValue": 0,
             "type": "Int",
@@ -212,7 +219,7 @@
 					"fileUris": [
 						"https://raw.githubusercontent.com/zyxyoshine/IOStromplus/master/deploy/deploy.linux.sh"
 					],
-					"commandToExecute": "[concat('. ./','deploy.linux.sh')]"
+					"commandToExecute": "[concat('. ./','deploy.linux.sh \'',parameters('vmAdminPassword'),'\' ',parameters('ControllerIP'),' ',parameters('vmSize'))]"
 				}
             },
             "dependsOn": [

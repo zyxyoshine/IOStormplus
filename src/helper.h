@@ -45,3 +45,4 @@ const string agents_config_file = "agents.json";
 const string workload = "workload\\";
 const string tempfolder = "temp\\";
 const string output = "output\\";
+const string agent_info = "agents\\";

@@ -30,7 +30,7 @@ inline void controller::print_test_vm_info() {
     char title[64];
     sprintf(title, "VM Count: %d", test_vm.size());
     write_log(title);
-    write_log("ID\tName\t\tIP Address\tOS\tSize");
+    write_log("ID\tName\tIP Address\tOS\tSize");
     stringstream temp_stream;
     string vm_id;
     for (int i = 0;i < test_vm.size();i++) {
@@ -66,16 +66,17 @@ inline void controller::print_test_result_summary(string workload_path) {
     for (auto job : jobs) {
         write_log("Job: " + job);
         fout << "Job: " + job << endl;
-        write_log("ID\tName\t\tIP Address\tOS\tSize\tR(MIN)\tR(MAX)\tR(AVG)\tW(MIN)\tW(MAX)\tW(AVG)");
-        fout << "ID\tName\t\tIP Address\tOS\tSize\tR(MIN)\tR(MAX)\tR(AVG)\tW(MIN)\tW(MAX)\tW(AVG)" << endl;
+        write_log("ID\tName\tIP Address\tOS\tSize\tR(MIN)\tR(MAX)\tR(AVG)\tW(MIN)\tW(MAX)\tW(AVG)");
+        fout << "ID\tName\tIP Address\tOS\tSize\tR(MIN)\tR(MAX)\tR(AVG)\tW(MIN)\tW(MAX)\tW(AVG)" << endl;
         string vm_id;
         for (int i = 0;i < test_vm.size();i++) {
-            if (test_vm[i].rest)
-            temp_stream.clear();
-            temp_stream << i + 1;
-            temp_stream >> vm_id;
-            write_log(vm_id + "\t" + test_vm[i].get_vm_result());
-            fout << vm_id + "\t" + test_vm[i].get_vm_result() << endl;
+            if (test_vm[i].test_result.count(job)) {
+                temp_stream.clear();
+                temp_stream << i + 1;
+                temp_stream >> vm_id;
+                write_log(vm_id + "\t" + test_vm[i].get_vm_result(job));
+                fout << vm_id + "\t" + test_vm[i].get_vm_result(job) << endl;
+            }
         }
     }
     cout << endl;
@@ -105,6 +106,22 @@ controller::controller(string test_vm_config) {
     auto vm_info = vm_config["value"].GetArray();
     for (int i = 0; i < vm_count; i++)
         test_vm.push_back(vm(vm_info[i]["name"].GetString(), vm_info[i]["ip"].GetString(), vm_info[i]["info"]["type"].GetString(), vm_info[i]["info"]["size"].GetString()));
+}
+
+void controller::initialize() {
+    test_vm.clear();
+    vector<string> agents = list_files_in_directory(agent_info);
+    ifstream fin;
+    string _ip,_os,_size;
+    for (auto na : agents) {
+        fin.open(agent_info + na);
+        fin >> _ip >> _os >> _size;
+        test_vm.push_back(vm(na, _ip, _os, _size));
+        write_log("Register test VM " + na + " succeeded.");
+        fin.close();
+    }
+    write_config();
+    print_test_vm_info();
 }
 
 bool controller::has_error() {
@@ -196,7 +213,7 @@ void controller::standard_worker() {
     }
     write_log("All jobs done!");
     analyze_data("workload\\std\\");
-    print_test_result_summary();
+    print_test_result_summary("workload\\std\\");
     cout << endl;
 }
 
@@ -244,7 +261,7 @@ void controller::custom_worker() {
     }
     write_log("All jobs done!");
     analyze_data("workload\\");
-    print_test_result_summary();
+    print_test_result_summary("workload\\");
     cout << endl;
 }
 
@@ -490,6 +507,8 @@ int main(int argc,char *argv[]) {
         controller_instance.agent_worker(argc - 2, argv + 2);
     }else if (strcmp(argv[1], "start") == 0) {
         controller_instance.start_worker(argc - 2, argv + 2);
+    }else if (strcmp(argv[1], "init") == 0) {
+        controller_instance.initialize();
     }else
         controller_instance.print_usage();
     return 0;

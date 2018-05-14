@@ -16,7 +16,7 @@ mkdir -p /samba/workload
 mkdir -p /samba/temp
 mkdir -p /samba/output
 mkdir -p /samba/info
-mount -t cifs -o username=vmadmin,password='!!!!1234abcd' //10.0.0.5/agents /samba/info
+mount -t cifs -o username=vmadmin,password=$1 //$2/agents /samba/info
 chmod -R 0777 /samba/workload
 chmod -R 0777 /samba/temp
 chmod -R 0777 /samba/output
@@ -31,3 +31,4 @@ mkdir /home/vmroot/fiojob
 cd /home/vmroot/fiojob && wget https://raw.githubusercontent.com/zyxyoshine/IOStromplus/master/src/agent.linux.cpp
 cd /home/vmroot/fiojob && g++ -std=c++11 agent.linux.cpp -o agent
 chmod 0777 /home/vmroot/fiojob/agent
+nohup ./agent $(hostname --ip-address) $3 >agent.log 2>agent.err &

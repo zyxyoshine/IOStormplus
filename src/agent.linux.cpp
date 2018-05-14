@@ -112,6 +112,12 @@ void worker() {
 }
 
 int main(int argc,char *argv[]) {
+    string hostname = exec("hostname");
+    if (hostname.find('\n') != string::npos)
+        hostname = hostname.replace(hostname.find('\n'),1,"");
+    ofstream fout("/samba/info/" + hostname,ios_base::out | ios_base::trunc);
+    fout << argv[1] << " linux " << argv[2] << endl;
+    fout.close();
 	while(1) {
         pre_sync();
         worker();
