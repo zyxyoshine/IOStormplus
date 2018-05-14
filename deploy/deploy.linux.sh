@@ -1,3 +1,7 @@
+cat /dev/null > /home/ar
+cat /dev/null > /home/ars
+echo $1 > /home/ar
+echo $2 > /home/ars
 apt-get update
 apt-get upgrade -y
 apt-get install make
