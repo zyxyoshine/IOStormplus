@@ -219,7 +219,7 @@
 					"fileUris": [
 						"https://raw.githubusercontent.com/zyxyoshine/IOStromplus/master/deploy/deploy.linux.sh"
 					],
-					"commandToExecute": "[concat('. ./','deploy.linux.sh ',parameters('ControllerIP'),' ',parameters('vmSize'))]"
+					"commandToExecute": "[concat('sudo sh ','deploy.linux.sh ',parameters('ControllerIP'),' ',parameters('vmSize'))]"
 				}
             },
             "dependsOn": [

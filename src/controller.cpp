@@ -175,9 +175,9 @@ void controller::standard_worker() {
     string reader;
     for (auto vm_itr : test_vm) {
         if (vm_itr.vm_os == vm::os_type::linux)
-            exec_command(string("xcopy workload\\std\\linux\\ " + vm_itr.get_share_path() + workload + " /s /h /d /y").c_str());
+            exec_command(string("xcopy workload\\std\\linux " + vm_itr.get_share_path() + workload + " /s /h /d /y").c_str());
         else
-            exec_command(string("xcopy workload\\std\\windows\\ " + vm_itr.get_share_path() + workload + " /s /h /d /y").c_str());
+            exec_command(string("xcopy workload\\std\\windows " + vm_itr.get_share_path() + workload + " /s /h /d /y").c_str());
         write_log("Sending work request to test VM " + vm_itr.vm_name + "(" + vm_itr.internal_ip + ")");
         exec_command(string("del /f " + vm_itr.get_share_path() + tempfolder + "client.tmp").c_str());
         fout.open(vm_itr.get_share_path() + tempfolder + "controller.tmp", ios_base::out | ios_base::trunc);
@@ -223,9 +223,9 @@ void controller::custom_worker() {
     string reader;
     for (auto vm_itr : test_vm) {
         if (vm_itr.vm_os == vm::os_type::linux)
-            exec_command(string("xcopy workload\\linux\\ " + vm_itr.get_share_path() + workload + " /s /h /d /y").c_str());
+            exec_command(string("xcopy workload\\linux " + vm_itr.get_share_path() + workload + " /s /h /d /y").c_str());
         else
-            exec_command(string("xcopy workload\\windows\\ " + vm_itr.get_share_path() + workload + " /s /h /d /y").c_str());
+            exec_command(string("xcopy workload\\windows " + vm_itr.get_share_path() + workload + " /s /h /d /y").c_str());
         write_log("Sending work request to test VM " + vm_itr.vm_name + "(" + vm_itr.internal_ip + ")");
         exec_command(string("del /f " + vm_itr.get_share_path() + tempfolder + "client.tmp").c_str());
         fout.open(vm_itr.get_share_path() + tempfolder + "controller.tmp", ios_base::out | ios_base::trunc);
