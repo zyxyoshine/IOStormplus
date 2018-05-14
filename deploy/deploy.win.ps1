@@ -86,4 +86,36 @@ $AgentArguments = @(
     $VMIp
     $VMSize
 )
-Start-Process "C:\IOStormplus\agent.exe" -ArgumentList $AgentArguments -WorkingDirectory "C:\IOStormplus" -Credential ($credentials) -RedirectStandardOutput "Agent.txt" -RedirectStandardError "AgentError.txt" -Wait -NoNewWindow
+#Start-Process "C:\IOStormplus\agent.exe" -ArgumentList $AgentArguments -WorkingDirectory "C:\IOStormplus" -Credential ($credentials) -RedirectStandardOutput "Agent.txt" -RedirectStandardError "AgentError.txt" -Wait -NoNewWindow
+function Invoke-PrepareScheduledTask
+{
+    $taskName = "STARTAGENT"
+    $task = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
+    if ($task -ne $null)
+    {
+        Unregister-ScheduledTask -TaskName $taskName -Confirm:$false 
+    }
+
+    $action = New-ScheduledTaskAction -Execute 'C:\IOStormplus\agent.exe' -Argument ($ControllerIP + ' ' + $VMname + ' ' + $VMIp + ' ' + $VMSize)
+    $trigger = New-ScheduledTaskTrigger -AtStartup -RandomDelay 00:00:30
+    $settings = New-ScheduledTaskSettingsSet -Compatibility Win8
+
+    $principal = New-ScheduledTaskPrincipal -UserId vmadmin -LogonType ServiceAccount -RunLevel Highest
+
+    #$definition = New-ScheduledTask -Action $action -Principal $principal -Trigger $trigger -Settings $settings -Description "Run $($taskName) at startup"
+    $definition = New-ScheduledTask -Action $action -Principal $principal -Trigger $trigger -Description "Run $($taskName) at startup"
+    Register-ScheduledTask -TaskName $taskName -InputObject $definition
+
+    $task = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
+
+    # TODO: LOG AS NEEDED...
+    if ($task -ne $null)
+    {
+        Write-Output "Created scheduled task: '$($task.ToString())'."
+    }
+    else
+    {
+        Write-Output "Created scheduled task: FAILED."
+    }
+}
+Invoke-PrepareScheduledTask
