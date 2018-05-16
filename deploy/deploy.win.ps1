@@ -89,12 +89,12 @@ $AgentArguments = @(
     $VMIp
     $VMSize
 )
-$username = "vmadmin" | Out-File -Append C:\tt.txt
+$username = "vmadmin" 
 $password = "!!!!1234abcd"
-$credentials = New-Object System.Management.Automation.PSCredential -ArgumentList @($username,(ConvertTo-SecureString -String $password -AsPlainText -Force)) | Out-File -Append C:\tt.txt
-Register-ScheduledJob -Name IOPSTROM -FilePath ($Root + $TempScriptName) -ArgumentList $AgentArguments | Out-File -Append C:\t3t.txt
-$job=Get-ScheduledJob -Name IOPSTROM | Out-File -Append C:\tt.txt
-$jobt=New-JobTrigger -Once -At (Get-Date).AddMinutes(1) | Out-File -Append C:\tt.txt
-$job | Add-JobTrigger -Trigger $jobt | Out-File -Append C:\tt.txt
-$job | Enable-ScheduledJob | Out-File -Append C:\tt4.txt
-$job | Out-File -Append C:\tt2.txt
+#$credentials = New-Object System.Management.Automation.PSCredential -ArgumentList @($username,(ConvertTo-SecureString -String $password -AsPlainText -Force))
+Register-ScheduledJob -Name IOPSTROM -FilePath ($Root + $TempScriptName) -ArgumentList $AgentArguments
+$job=Get-ScheduledJob -Name IOPSTROM
+$jobt=New-JobTrigger -Once -At (Get-Date).AddMinutes(1) 
+$job | Add-JobTrigger -Trigger $jobt
+$job | Enable-ScheduledJob 
+$job | Out-File -Append C:\tt6.txt
