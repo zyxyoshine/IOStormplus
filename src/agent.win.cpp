@@ -4,13 +4,15 @@
 
 using namespace std;
 
-const string share_path = "share\\";
+const string share_path = "c:\\IOStormplus\\";
 const string workspace = "fiojob\\";
 const string workload = "workload\\";
 const string infotemp = "temp\\";
 const string output = "output\\";
 const string controller_temp_file = "controller.tmp";
 const string client_temp_file = "client.tmp";
+
+ofstream flog(share_path + "log.txt");
 
 string exec_command(const char* cmd) {
 	char buffer[128];
@@ -56,14 +58,14 @@ void pre_sync() {
 		fin.open(control_file_path + controller_temp_file , ios_base::in);
 	}
 	string reader;
-    cout << "waiting for controller requests" << endl;
+    flog << "waiting for controller requests" << endl;
 	while(1) {
 		fin.close();
 		Sleep(10000);
 		fin.open(control_file_path + controller_temp_file , ios_base::in);
 		fin >> reader;
 		if (reader == "PRESYNC") {
-			cout << "pre-sync succeeded" << endl;
+			flog << "pre-sync succeeded" << endl;
 			break;
 		}
 	}
@@ -86,7 +88,7 @@ void worker() {
 		fin >> reader;
 		if (reader == "START") {
             vector<string> jobs = list_files_in_directory(share_path + workload);
-			cout << "Running fio workload." << endl;
+			flog << "Running fio workload." << endl;
 			for (int i = 0 ;i < jobs.size();i++){
                 string jobname = jobs[i];
                 if (jobname.find(".job") != string::npos)
@@ -95,7 +97,7 @@ void worker() {
                 exec_command(cmd_run_fio.c_str());
                 string cmd_copy_output = "copy " + jobname + ".out " + " " + share_path + output + hostname + "_" + jobname + ".out";
                 exec_command(cmd_copy_output.c_str());
-                string cmd_rm_temp_file = "DEL /F " + jobname + "*";
+                string cmd_rm_temp_file = "DEL /F /Q " + jobname + "*";
                 exec_command(cmd_rm_temp_file.c_str());
             }
 			break;
@@ -103,11 +105,14 @@ void worker() {
 		Sleep(10000);
 	}
 	fin.close();
-	string cmd_rm_job_files = "DEL /F " + share_path + workload + "*";
+	string cmd_rm_job_files = "DEL /F /Q " + share_path + workload + "*";
     exec_command(cmd_rm_job_files.c_str());
 	ofstream fout(control_file_path + client_temp_file, ios_base::out | ios_base::trunc);
+	if (fout.fail()) {
+        flog << strerror(errno) << endl;
+	}
 	fout << "DONE" << endl;
-	cout << "Done !" << endl;
+	flog << "Done !" << endl;
 	fout.close();
 }
 

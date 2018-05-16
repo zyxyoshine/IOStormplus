@@ -31,6 +31,7 @@ if( -Not (Get-SMBShare -Name "temp" -ea 0)){
 }
 
 Out-File ($TempShare + "\controller.tmp")
+Out-File ($TempShare + "\client.tmp")
 
 #Download agent
 $AgentBinaryName = "agent.exe"
@@ -38,6 +39,10 @@ $AgentUrl = "https://github.com/zyxyoshine/IOStromplus/raw/master/deploy/binary/
 [Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
 Invoke-WebRequest -Uri $AgentUrl -OutFile ($Root + $AgentBinaryName)
 
+#Download temp script
+$TempScriptName = "temp.ps1"
+$TempScriptUrl = "https://github.com/zyxyoshine/IOStromplus/raw/master/deploy/temp.ps1"
+Invoke-WebRequest -Uri $TempScriptUrl -OutFile ($Root + $TempScriptName)
 
 #Download and install fio
 $FioBinaryName = "fio-3.5-x64.msi"
@@ -77,45 +82,17 @@ $ControllerIP = $args[0]
 $VMname = hostname
 $VMSize = $args[1]
 $VMIp = foreach($ip in (ipconfig) -like '*IPv4*') { ($ip -split ' : ')[-1]}
-$username = "vmadmin"
-$password = "!!!!1234abcd"
-$credentials = New-Object System.Management.Automation.PSCredential -ArgumentList @($username,(ConvertTo-SecureString -String $password -AsPlainText -Force))
 $AgentArguments = @(
     $ControllerIP
     $VMname
     $VMIp
     $VMSize
 )
-#Start-Process "C:\IOStormplus\agent.exe" -ArgumentList $AgentArguments -WorkingDirectory "C:\IOStormplus" -Credential ($credentials) -RedirectStandardOutput "Agent.txt" -RedirectStandardError "AgentError.txt" -Wait -NoNewWindow
-function Invoke-PrepareScheduledTask
-{
-    $taskName = "STARTAGENT"
-    $task = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
-    if ($task -ne $null)
-    {
-        Unregister-ScheduledTask -TaskName $taskName -Confirm:$false 
-    }
-
-    $action = New-ScheduledTaskAction -Execute 'C:\IOStormplus\agent.exe' -Argument ($ControllerIP + ' ' + $VMname + ' ' + $VMIp + ' ' + $VMSize)
-    $trigger = New-ScheduledTaskTrigger -AtStartup -RandomDelay 00:00:30
-    $settings = New-ScheduledTaskSettingsSet -Compatibility Win8
-
-    $principal = New-ScheduledTaskPrincipal -UserId vmadmin -LogonType ServiceAccount -RunLevel Highest
-
-    #$definition = New-ScheduledTask -Action $action -Principal $principal -Trigger $trigger -Settings $settings -Description "Run $($taskName) at startup"
-    $definition = New-ScheduledTask -Action $action -Principal $principal -Trigger $trigger -Description "Run $($taskName) at startup"
-    Register-ScheduledTask -TaskName $taskName -InputObject $definition
-
-    $task = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
-
-    # TODO: LOG AS NEEDED...
-    if ($task -ne $null)
-    {
-        Write-Output "Created scheduled task: '$($task.ToString())'."
-    }
-    else
-    {
-        Write-Output "Created scheduled task: FAILED."
-    }
-}
-Invoke-PrepareScheduledTask
+$username = "vmadmin"
+$password = "!!!!1234abcd"
+$credentials = New-Object System.Management.Automation.PSCredential -ArgumentList @($username,(ConvertTo-SecureString -String $password -AsPlainText -Force))
+Register-ScheduledJob -Name IOPSTROM -FilePath ($Root + $TempScriptName) -ArgumentList $AgentArguments -Credential $credentials
+$job=Get-ScheduledJob -Name IOPSTROM
+$jobt=New-JobTrigger -Once -At (Get-Date).AddMinutes(1)
+$job | Add-JobTrigger -Trigger $jobt
+$job | Enable-ScheduledJob
