@@ -81,16 +81,20 @@ foreach ($disk in $disks) {
 $ControllerIP = $args[0]
 $VMname = hostname
 $VMSize = $args[1]
-$VMIp = foreach($ip in (ipconfig) -like '*IPv4*') { ($ip -split ' : ')[-1]}
+$VMIp = foreach($ip in (ipconfig) -like '*IPv4*') { ($ip -split ' : ')[-1]} 
+$VMIp | Out-File -Append C:\tt.txt
 $AgentArguments = @(
     $ControllerIP
     $VMname
     $VMIp
     $VMSize
 )
-Register-ScheduledJob -Name IOPSTROM -FilePath ($Root + $TempScriptName) -ArgumentList $AgentArguments
-$job=Get-ScheduledJob -Name IOPSTROM
-$jobt=New-JobTrigger -Once -At (Get-Date).AddMinutes(1)
-$job | Add-JobTrigger -Trigger $jobt
-$job | Enable-ScheduledJob
-$job | Out-File C:\tt.txt
+$username = "vmadmin" | Out-File -Append C:\tt.txt
+$password = "!!!!1234abcd"
+$credentials = New-Object System.Management.Automation.PSCredential -ArgumentList @($username,(ConvertTo-SecureString -String $password -AsPlainText -Force)) | Out-File -Append C:\tt.txt
+Register-ScheduledJob -Name IOPSTROM -FilePath ($Root + $TempScriptName) -ArgumentList $AgentArguments -Credential $credentials | Out-File -Append C:\tt.txt
+$job=Get-ScheduledJob -Name IOPSTROM | Out-File -Append C:\tt.txt
+$jobt=New-JobTrigger -Once -At (Get-Date).AddMinutes(1) | Out-File -Append C:\tt.txt
+$job | Add-JobTrigger -Trigger $jobt | Out-File -Append C:\tt.txt
+$job | Enable-ScheduledJob | Out-File -Append C:\tt.txt
+$job | Out-File -Append C:\tt.txt
