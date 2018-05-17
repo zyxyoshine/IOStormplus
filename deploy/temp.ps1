@@ -7,4 +7,5 @@ $AgentArguments = @(
     $args[2]
     $args[3]
 )
+whoami | Out-File c:\test.txt
 Start-Process "C:\IOStormplus\agent.exe" -ArgumentList $AgentArguments -WorkingDirectory "C:\IOStormplus" -Credential ($credentials) -RedirectStandardOutput "Agent.txt" -RedirectStandardError "AgentError.txt" -Wait
