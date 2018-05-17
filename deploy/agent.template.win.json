@@ -132,7 +132,6 @@
         "subnetRef": "[concat(variables('vnetID'),'/subnets/',variables('subnetName'))]",
         "nsgName": "[tolower(concat('ng', resourceGroup().name))]",
         "nsgID": "[resourceId('Microsoft.Network/networkSecurityGroups',variables('nsgName'))]"
-		"configurationFunction": "deploy.win.ps1\\ConfigureVM",
     },
 	"resources": [
         {
@@ -229,32 +228,30 @@
                 "[concat('Microsoft.Network/networkInterfaces/',variables('vmNicName'),copyIndex(parameters('vmIndex')))]"
             ]
         },
-		{
-			"apiVersion": "2015-06-15",
-			"type": "Microsoft.Compute/virtualMachines/extensions",
-			"name": "[concat(variables('vmName'),copyIndex(parameters('vmIndex')),'/IOStromExtension')]",
-			"location": "[variables('location')]",
-			"copy": {
-				"name": "vmLoop",
-				"count": "[parameters('vmCount')]"
-			},
-			"dependsOn": [
-				"[concat('Microsoft.Compute/virtualMachines/',variables('vmName'),copyIndex(parameters('vmIndex')))]"
-			],
-			"properties": {
-				"publisher": "Microsoft.Powershell",
-				"type": "DSC",
-				"typeHandlerVersion": "2.15",
+        {
+            "type": "Microsoft.Compute/virtualMachines/extensions",
+            "name": "[concat(variables('vmName'),copyIndex(parameters('vmIndex')),'/IOStromExtension')]",
+            "apiVersion": "2015-06-15",
+            "location": "[variables('location')]",
+            "copy": {
+                "name": "vmLoop",
+                "count": "[parameters('vmCount')]"
+            },
+            "properties": {
+                "publisher": "Microsoft.Compute",
+				"type": "CustomScriptExtension",
+				"typeHandlerVersion": "1.9",
 				"autoUpgradeMinorVersion": true,
 				"settings": {
-					"modulesUrl": "https://github.com/zyxyoshine/IOStromplus/raw/master/deploy/binary/windowsagent.zip",
-					"configurationFunction": "[variables('configurationFunction')]",
-					"properties": {
-						"ControllerIP": "[parameters('ControllerIP')]",
-						"VMSize": "[parameters('vmSize')]"
-					}
+					"fileUris": [
+						"https://raw.githubusercontent.com/zyxyoshine/IOStromplus/master/deploy/deploy.win.ps1"
+					],
+					"commandToExecute": "[concat('powershell -ExecutionPolicy Unrestricted -File ','deploy.win.ps1 ',parameters('ControllerIP'),' ',parameters('vmSize'))]"
 				}
-			}
-		}
+            },
+            "dependsOn": [
+                "[concat('Microsoft.Compute/virtualMachines/',variables('vmName'),copyIndex(parameters('vmIndex')))]"
+            ]
+        }
     ]
 }
