@@ -1,5 +1,5 @@
-﻿$logFile = 'C:\deploylog.txt'
-Start-Transcript $logFile -Append -Force
+﻿#$logFile = 'C:\deploylog.txt'
+#Start-Transcript $logFile -Append -Force
 
 $Root = "C:\IOStormplus\"
 $WorkloadShare = $Root + "workload"
@@ -22,7 +22,7 @@ if ( -Not (Test-Path -Path $OutputShare))
 if ( -Not (Test-Path -Path $TempShare))
 {
     New-Item -ItemType directory -Path $TempShare
-    }
+}
 if( -Not (Get-SMBShare -Name "workload" -ea 0)){
     New-SmbShare -Name "workload" -Path $WorkloadShare -FullAccess Everyone
 }
@@ -102,4 +102,4 @@ $job | Add-JobTrigger -Trigger $jobt
 $job | Enable-ScheduledJob 
 $job | Out-File -Append C:\job.txt
 
-Stop-Transcript
+#Stop-Transcript
