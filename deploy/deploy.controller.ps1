@@ -1,4 +1,7 @@
 ﻿$Root = "C:\"
+$Workspace = $Root + "IOStormplus\"
+$ShareName = "agents"
+$SharePath = $Workspace + $ShareName
 
 #Download and unzip controller package
 
@@ -17,3 +20,7 @@ function Unzip
 
 Unzip ($Root + $PackageName) $Root
 Remove-Item ($Root + $PackageName)
+
+if( -Not (Get-SMBShare -Name $ShareName -ea 0)){
+    New-SmbShare -Name $ShareName -Path $SharePath -FullAccess Everyone
+}
