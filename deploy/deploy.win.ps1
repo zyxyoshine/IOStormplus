@@ -77,6 +77,9 @@ foreach ($disk in $disks) {
     $count++
 }
 
+netsh advfirewall set privateprofile state off
+netsh advfirewall set publicprofile state off
+
 #Start Agent
 $ControllerIP = $args[0]
 $VMname = hostname
@@ -98,3 +101,8 @@ $jobt=New-JobTrigger -Once -At (Get-Date).AddMinutes(1)
 $job | Add-JobTrigger -Trigger $jobt
 $job | Enable-ScheduledJob 
 $job | Out-File -Append C:\tt6.txt
+
+whoami | Out-File C:\WHOAMI.txt
+$smbshare = "\\$ControllerIP\agents"
+net use $smbshare /user:$username $password
+Out-File ($smbshare + "test")
