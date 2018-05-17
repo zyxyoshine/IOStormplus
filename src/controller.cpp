@@ -78,8 +78,8 @@ inline void controller::print_test_result_summary(string workload_path) {
                 fout << vm_id + "\t" + test_vm[i].get_vm_result(job) << endl;
             }
         }
+        cout << endl;
     }
-    cout << endl;
     fout.close();
 }
 
@@ -482,12 +482,18 @@ void controller::analyze_data(string workload_path) {
     for (auto &vm_itr : test_vm) {
         if (vm_itr.vm_os == vm::os_type::linux) {
             for (auto job : linux_jobs) {
-                output_file = output + vm_itr.vm_name + "_" + job;
+                string jobname = job;
+                if (jobname.find(".job") != string::npos)
+                    jobname = jobname.replace(jobname.find(".job"),4,"");
+                output_file = output + vm_itr.vm_name + "_" + jobname + ".out";
                 vm_itr.test_result[job] = analyze_standard_output(output_file);
             }
         }else{
             for (auto job : windows_jobs) {
-                output_file = output + vm_itr.vm_name + "_" + job;
+                string jobname = job;
+                if (jobname.find(".job") != string::npos)
+                    jobname = jobname.replace(jobname.find(".job"),4,"");
+                output_file = output + vm_itr.vm_name + "_" + jobname + ".out";
                 vm_itr.test_result[job] = analyze_standard_output(output_file);
             }
         }
