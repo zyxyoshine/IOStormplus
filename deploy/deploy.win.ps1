@@ -84,13 +84,7 @@ $ControllerIP = $args[0]
 $VMname = hostname
 $VMSize = $args[1]
 $VMIp = foreach($ip in (ipconfig) -like '*IPv4*') { ($ip -split ' : ')[-1]} 
-$AgentArguments = @(
-    $ControllerIP
-    $VMname
-    $VMIp
-    $VMSize
-)
-$username = $VMname + 'vmadmin'
+$username = 'vmadmin'
 $password = '!!!!1234abcd'
 $agentName = "agent.exe"
 $agentPath = $Root + $agentName
@@ -104,3 +98,6 @@ Unregister-Sched.uledTask -TaskName "VMIOSTROM" -Confirm:0 -ErrorAction Ignore
 Register-ScheduledTask -Action $action -Trigger $trigger -TaskName "VMIOSTROM" -Description "VM iostorm" -User $username -Password $password -RunLevel Highest -Settings $settings -ErrorAction Stop
 
 #Stop-Transcript
+
+#Enable PS remote
+winrm quickconfig -q
