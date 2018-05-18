@@ -92,14 +92,18 @@ $AgentArguments = @(
     $VMIp
     $VMSize
 )
-$username = "vmadmin" 
-$password = "!!!!1234abcd"
-#$credentials = New-Object System.Management.Automation.PSCredential -ArgumentList @($username,(ConvertTo-SecureString -String $password -AsPlainText -Force))
-Register-ScheduledJob -Name IOPSTROM -FilePath ($Root + $TempScriptName) -ArgumentList $AgentArguments
-$job=Get-ScheduledJob -Name IOPSTROM
-$jobt=New-JobTrigger -Once -At (Get-Date).AddMinutes(1) 
-$job | Add-JobTrigger -Trigger $jobt
-$job | Enable-ScheduledJob 
-$job | Out-File -Append C:\job.txt
+$username = $VMname + '\vmadmin'
+            $password = '!!!!1234abcd'
+            #$credentials = New-Object System.Management.Automation.PSCredential -ArgumentList @($username,(ConvertTo-SecureString -String $password -AsPlainText -Force))
+            $psScriptName = "temp.ps1"
+            $psScriptPath = $Root + $psScriptName
+            $args = ' -NoProfile -WindowStyle Hidden -Command "& ' + "'" + $psScriptPath + "' '" + $ControllerIP + "' '" + $VMname + "' '" + $VMIp + "' '" + $VMSize  + "'" + '"'
+            $action = New-ScheduledTaskAction -Execute "Powershell.exe" -Argument $args
+            $trigger = @()
+            $trigger += New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1)
+            $trigger += New-ScheduledTaskTrigger -AtStartup
+            $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -RunOnlyIfNetworkAvailable -DontStopOnIdleEnd -RestartCount 3 -RestartInterval 240 -Priority 4 -ErrorAction Ignore 
+            Unregister-ScheduledTask -TaskName "VMIOSTROM" -Confirm:0 -ErrorAction Ignore
+            Register-ScheduledTask -Action $action -Trigger $trigger -TaskName "VMIOSTROM" -Description "VM iostorm" -User $username -Password $password -RunLevel Highest #-Settings $settings
 
 #Stop-Transcript
