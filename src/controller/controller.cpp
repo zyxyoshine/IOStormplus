@@ -208,8 +208,10 @@ void controller::standard_worker() {
         }
         fin.close();
     }
+    Sleep(10000);
     for (auto vm_itr : test_vm) {
         exec_command(string("xcopy " + vm_itr.get_share_path() + output + " output /s /h /d /y").c_str());
+        Sleep(1000);
     }
     write_log("All jobs done!");
     analyze_data("workload\\std\\");
@@ -256,8 +258,10 @@ void controller::custom_worker() {
         }
         fin.close();
     }
+    Sleep(10000);
     for (auto vm_itr : test_vm) {
         exec_command(string("xcopy " + vm_itr.get_share_path() + output + " output /s /h /d /y").c_str());
+        Sleep(1000);
     }
     write_log("All jobs done!");
     analyze_data("workload\\");
