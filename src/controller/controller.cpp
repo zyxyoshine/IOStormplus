@@ -208,14 +208,6 @@ void controller::standard_worker() {
         }
         fin.close();
     }
-    for (auto vm_itr : test_vm) {
-        exec_command(string("xcopy " + vm_itr.get_share_path() + output + " output /s /h /d /y").c_str());
-    }
-    Sleep(10000);
-    //Copy twice to fix SAMBA bug
-    for (auto vm_itr : test_vm) {
-        exec_command(string("xcopy " + vm_itr.get_share_path() + output + " output /s /h /d /y").c_str());
-    }
     write_log("All jobs done!");
     analyze_data("workload\\std\\");
     print_test_result_summary("workload\\std\\");
@@ -260,14 +252,6 @@ void controller::custom_worker() {
                 all_done = false;
         }
         fin.close();
-    }
-    for (auto vm_itr : test_vm) {
-        exec_command(string("xcopy " + vm_itr.get_share_path() + output + " output /s /h /d /y").c_str());
-    }
-    Sleep(10000);
-    //Copy twice to fix SAMBA bug
-    for (auto vm_itr : test_vm) {
-        exec_command(string("xcopy " + vm_itr.get_share_path() + output + " output /s /h /d /y").c_str());
     }
     write_log("All jobs done!");
     analyze_data("workload\\");
@@ -496,6 +480,11 @@ void controller::analyze_data(string workload_path) {
                 if (jobname.find(".job") != string::npos)
                     jobname = jobname.replace(jobname.find(".job"),4,"");
                 output_file = output + vm_itr.vm_name + "_" + jobname + ".out";
+                string cmd_copy_output = "copy " + vm_itr.get_share_path() + output_file + " " + output_file + " /y";
+                string res = exec_command(cmd_copy_output.c_str());
+                while (res.find("cannot") != string::npos) {   //retry
+                    res = exec_command(cmd_copy_output.c_str());
+                }
                 vm_itr.test_result[job] = analyze_standard_output(output_file);
             }
         }else{
@@ -504,6 +493,11 @@ void controller::analyze_data(string workload_path) {
                 if (jobname.find(".job") != string::npos)
                     jobname = jobname.replace(jobname.find(".job"),4,"");
                 output_file = output + vm_itr.vm_name + "_" + jobname + ".out";
+                string cmd_copy_output = "copy " + vm_itr.get_share_path() + output_file + " " + output_file + " /y";
+                string res = exec_command(cmd_copy_output.c_str());
+                while (res.find("cannot") != string::npos) {
+                    res = exec_command(cmd_copy_output.c_str());
+                }
                 vm_itr.test_result[job] = analyze_standard_output(output_file);
             }
         }
