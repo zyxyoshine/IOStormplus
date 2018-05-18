@@ -1,7 +1,6 @@
 # IOStormplus
 
 ## Deploy IOStormplus
-------
 ### 1.Deploy controller VM and some resources.
 Open Azure portal, and deploy template `deploy/controller.template.json`.<br>
 Note: You need to create a new resource group for IOStormplus.
@@ -14,7 +13,6 @@ Note:<br>
 2. If you want to deploy several times (e.g deploy both linux and windows test VM), you need to configure `VM Index` to avoid index conflict.<br>
 For example, at the first time you deploy 2 linux VM with the template (VM Index set to 0 by default), it will create testvm0 and testvm1. If you want to deploy 2 windows VM also, you need to set `VM Index` to 2 to make the VM as testvm2 and testvm3.
 ## Configure and run workload
------
 ### 1.Initialize controller and import test VM infomation into controller.
 Remote to controller VM (username:vmadmin,password:!!!!1234abcd) and open a console then navigate to `C:\IOStormplus`. <br>
 If you have deployed windows test VM, you need to configure and start agent manually. (Will improve soon).
@@ -40,7 +38,6 @@ or
 IOStormplus start -std
 ```
 ## Get result
-------------------------------------------------------------------------------------------------------
 When all jobs have been done (the standard job will cost about 6 minutes)
 , all detail reports will be named as `testvm{id}_{job name}.out` and put into `output` folder. <br>
 IOStormplus will create a summary report `{date}_summary.out` by analyse IOPS data, it can be direct import into Excel.
