@@ -94,10 +94,10 @@ $trigger = @()
 $trigger += New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1)
 $trigger += New-ScheduledTaskTrigger -AtStartup
 $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -RunOnlyIfNetworkAvailable -DontStopOnIdleEnd -Priority 4
-Unregister-Sched.uledTask -TaskName "VMIOSTROM" -Confirm:0 -ErrorAction Ignore
+Unregister-ScheduledTask -TaskName "VMIOSTROM" -Confirm:0 -ErrorAction Ignore
 Register-ScheduledTask -Action $action -Trigger $trigger -TaskName "VMIOSTROM" -Description "VM iostorm" -User $username -Password $password -RunLevel Highest -Settings $settings -ErrorAction Stop
 
 #Stop-Transcript
 
-#Enable PS remote
+#Enable PSRemoting
 winrm quickconfig -q
