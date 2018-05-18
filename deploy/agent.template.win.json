@@ -33,20 +33,6 @@
                 "description": "The Windows Server version for the VM."
             }
         },
-		"vmAdminUsername": {
-            "defaultValue": "vmadmin",
-            "type": "String",
-            "metadata": {
-                "description": "The Windows Server admin username."
-            }
-        },
-		"vmAdminPassword": {
-            "defaultValue": "!!!!1234abcd",
-            "type": "String",
-            "metadata": {
-                "description": "The password for the admin user."
-            }
-        },
 		"vmSize": {
 			"type": "string",
 			"defaultValue": "Standard_A3",
@@ -124,6 +110,8 @@
         "uniqueStorageAccountName": "[tolower(concat('sa', resourceGroup().name))]",
         "uniqueStorageAccountContainerName": "[tolower(concat('sc', resourceGroup().name))]",
         "vmName": "['testvm']",
+		"vmAdminUsername": "vmadmin",
+		"vmAdminPassword": "!!!!1234abcd",
         "vmOsDiskName": "[concat('od', resourceGroup().name)]",
         "vmDataDiskName": "[concat('dd', resourceGroup().name)]",
         "vmNicName": "[tolower(concat('nc', resourceGroup().name))]",
@@ -174,8 +162,8 @@
                 },
                 "osProfile": {
                     "computerName": "[concat(variables('vmName'),copyIndex(parameters('vmIndex')))]",
-                    "adminUsername": "[parameters('vmAdminUsername')]",
-                    "adminPassword": "[parameters('vmAdminPassword')]",
+                    "adminUsername": "[variables('vmAdminUsername')]",
+                    "adminPassword": "[variables('vmAdminPassword')]",
 					"windowsConfiguration": {
                         "provisionVMAgent": true,
                         "enableAutomaticUpdates": true

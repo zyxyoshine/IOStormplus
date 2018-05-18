@@ -1,7 +1,3 @@
-cat /dev/null > /home/ar
-cat /dev/null > /home/ars
-echo $1 > /home/ar
-echo $2 > /home/ars
 apt-get update
 apt-get upgrade -y
 apt-get install make
@@ -28,7 +24,9 @@ chown -R nobody:nogroup /samba/workload
 chown -R nobody:nogroup /samba/temp
 chown -R nobody:nogroup /samba/output
 cat /dev/null  > /samba/temp/controller.tmp
+cat /dev/null  > /samba/temp/client.tmp
 chmod -R 0777 /samba/temp/controller.tmp
+chmod -R 0777 /samba/temp/client.tmp
 chown -R nobody:nogroup /samba/temp/controller.tmp
 service smbd restart
 mkdir /home/vmroot/fiojob

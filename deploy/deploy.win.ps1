@@ -42,11 +42,6 @@ $AgentUrl = "https://github.com/zyxyoshine/IOStromplus/raw/master/deploy/binary/
 [Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
 Invoke-WebRequest -Uri $AgentUrl -OutFile ($Root + $AgentBinaryName)
 
-#Download temp script
-$TempScriptName = "temp.ps1"
-$TempScriptUrl = "https://github.com/zyxyoshine/IOStromplus/raw/master/deploy/temp.ps1"
-Invoke-WebRequest -Uri $TempScriptUrl -OutFile ($Root + $TempScriptName)
-
 #Download and install fio
 $FioBinaryName = "fio-3.5-x64.msi"
 $FioUrl = "https://github.com/zyxyoshine/IOStromplus/raw/master/deploy/binary/fio-3.5-x64.msi"
@@ -63,6 +58,7 @@ $FioMSIArguments = @(
     $logFile
 )
 Start-Process "msiexec.exe" -ArgumentList $FioMSIArguments -Wait -NoNewWindow
+Remove-Item ($Root + $FioBinaryName)
 
 #Initialize data disks
 $disks = Get-Disk | Where partitionstyle -eq 'raw' | sort number
@@ -85,25 +81,23 @@ $ControllerIP = $args[0]
 $VMname = hostname
 $VMSize = $args[1]
 $VMIp = foreach($ip in (ipconfig) -like '*IPv4*') { ($ip -split ' : ')[-1]} 
-$VMIp | Out-File -Append C:\vmip.txt
 $AgentArguments = @(
     $ControllerIP
     $VMname
     $VMIp
     $VMSize
 )
-$username = $VMname + '\vmadmin'
-            $password = '!!!!1234abcd'
-            #$credentials = New-Object System.Management.Automation.PSCredential -ArgumentList @($username,(ConvertTo-SecureString -String $password -AsPlainText -Force))
-            $psScriptName = "temp.ps1"
-            $psScriptPath = $Root + $psScriptName
-            $args = ' -NoProfile -WindowStyle Hidden -Command "& ' + "'" + $psScriptPath + "' '" + $ControllerIP + "' '" + $VMname + "' '" + $VMIp + "' '" + $VMSize  + "'" + '"'
-            $action = New-ScheduledTaskAction -Execute "Powershell.exe" -Argument $args
-            $trigger = @()
-            $trigger += New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1)
-            $trigger += New-ScheduledTaskTrigger -AtStartup
-            $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -RunOnlyIfNetworkAvailable -DontStopOnIdleEnd -RestartCount 3 -RestartInterval 240 -Priority 4 -ErrorAction Ignore 
-            Unregister-ScheduledTask -TaskName "VMIOSTROM" -Confirm:0 -ErrorAction Ignore
-            Register-ScheduledTask -Action $action -Trigger $trigger -TaskName "VMIOSTROM" -Description "VM iostorm" -User $username -Password $password -RunLevel Highest #-Settings $settings
+$username = $VMname + 'vmadmin'
+$password = '!!!!1234abcd'
+$agentName = "agent.exe"
+$agentPath = $Root + $agentName
+$args = ' ' + $ControllerIP + ' ' + $VMname + ' ' + $VMIp + ' ' + $VMSize
+$action = New-ScheduledTaskAction -Execute $agentPath -Argument $args -WorkingDirectory $Root
+$trigger = @()
+$trigger += New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1)
+$trigger += New-ScheduledTaskTrigger -AtStartup
+$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -RunOnlyIfNetworkAvailable -DontStopOnIdleEnd -Priority 4
+Unregister-ScheduledTask -TaskName "VMIOSTROM" -Confirm:0 -ErrorAction Ignore
+Register-ScheduledTask -Action $action -Trigger $trigger -TaskName "VMIOSTROM" -Description "VM iostorm" -User $username -Password $password -RunLevel Highest -Settings $settings
 
 #Stop-Transcript
