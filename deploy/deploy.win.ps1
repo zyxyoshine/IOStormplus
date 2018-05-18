@@ -38,13 +38,13 @@ Out-File ($TempShare + "\client.tmp")
 
 #Download agent
 $AgentBinaryName = "agent.exe"
-$AgentUrl = "https://github.com/zyxyoshine/IOStromplus/raw/master/deploy/binary/agent.exe"
+$AgentUrl = "https://github.com/zyxyoshine/IOStormplus/raw/master/deploy/binary/agent.exe"
 [Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
 Invoke-WebRequest -Uri $AgentUrl -OutFile ($Root + $AgentBinaryName)
 
 #Download and install fio
 $FioBinaryName = "fio-3.5-x64.msi"
-$FioUrl = "https://github.com/zyxyoshine/IOStromplus/raw/master/deploy/binary/fio-3.5-x64.msi"
+$FioUrl = "https://github.com/zyxyoshine/IOStormplus/raw/master/deploy/binary/fio-3.5-x64.msi"
 Invoke-WebRequest -Uri $FioUrl -OutFile ($Root + $FioBinaryName)
 
 $DataStamp = get-date -Format yyyyMMdd
@@ -69,7 +69,7 @@ $label = "data"
 
 foreach ($disk in $disks) {
     $driveLetter = $letters[$count].ToString()
-    $disk | 
+    $disk |
     Initialize-Disk -PartitionStyle MBR -PassThru |
     New-Partition -UseMaximumSize -DriveLetter $driveLetter |
     Format-Volume -FileSystem NTFS -NewFileSystemLabel ($label + $count) -Confirm:$false -Force
@@ -84,7 +84,7 @@ $ControllerIP = $args[0]
 $VMname = hostname
 $VMSize = $args[1]
 $VMSize | Out-File ($Root + 'vmsize.txt')
-$VMIp = foreach($ip in (ipconfig) -like '*IPv4*') { ($ip -split ' : ')[-1]} 
+$VMIp = foreach($ip in (ipconfig) -like '*IPv4*') { ($ip -split ' : ')[-1]}
 $username = 'vmadmin'
 $password = '!!!!1234abcd'
 $agentName = "agent.exe"
