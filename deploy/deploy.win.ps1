@@ -83,6 +83,7 @@ netsh advfirewall set publicprofile state off
 $ControllerIP = $args[0]
 $VMname = hostname
 $VMSize = $args[1]
+$VMSize | Out-File ($Root + 'vmsize.txt')
 $VMIp = foreach($ip in (ipconfig) -like '*IPv4*') { ($ip -split ' : ')[-1]} 
 $username = 'vmadmin'
 $password = '!!!!1234abcd'
