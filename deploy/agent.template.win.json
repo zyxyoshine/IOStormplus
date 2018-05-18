@@ -3,7 +3,7 @@
 	"contentVersion": "1.0.0",
 	"parameters": {
 		"ControllerIP": {
-            "defaultValue": "10.0.0.1",
+            "defaultValue": "10.0.0.4",
             "type": "String",
             "metadata": {
                 "description": "The internal IP for controller VM."

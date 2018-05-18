@@ -77,6 +77,9 @@ foreach ($disk in $disks) {
 }
 
 #Start Agent
+netsh advfirewall set privateprofile state off
+netsh advfirewall set publicprofile state off
+
 $ControllerIP = $args[0]
 $VMname = hostname
 $VMSize = $args[1]
@@ -97,7 +100,7 @@ $trigger = @()
 $trigger += New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1)
 $trigger += New-ScheduledTaskTrigger -AtStartup
 $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -RunOnlyIfNetworkAvailable -DontStopOnIdleEnd -Priority 4
-Unregister-ScheduledTask -TaskName "VMIOSTROM" -Confirm:0 -ErrorAction Ignore
-Register-ScheduledTask -Action $action -Trigger $trigger -TaskName "VMIOSTROM" -Description "VM iostorm" -User $username -Password $password -RunLevel Highest -Settings $settings
+Unregister-Sched.uledTask -TaskName "VMIOSTROM" -Confirm:0 -ErrorAction Ignore
+Register-ScheduledTask -Action $action -Trigger $trigger -TaskName "VMIOSTROM" -Description "VM iostorm" -User $username -Password $password -RunLevel Highest -Settings $settings -ErrorAction Stop
 
 #Stop-Transcript
