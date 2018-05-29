@@ -1,79 +1,45 @@
 #pragma once
-#include <iostream>
-#include <ctime>
+
 #include <fstream>
-#include "controller.h"
+#include <string>
 using namespace std;
 
-enum typelog {
-    LOG_DEBUG,
-    LOG_INFO,
-    LOG_WARN,
-    LOG_ERROR
-};
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
-struct structlog {
-    bool headers = false;
-    bool timestamp = true;
-    typelog level = LOG_WARN;
-    ofstream fout;
-    void init(string _file_name) {
-        fout.close();
-        fout.open(_file_name, ios_base::out | ios_base::trunc);
-        if (fout.fail())
-            cerr << "Open " + _file_name + " for log failed!" << endl;
-    }
-};
+namespace IOStormPlus{
 
-extern structlog LOGCFG;
+    enum LogLevel {
+        Verbose = 0,
+        Info = 1,
+        Warning = 2,
+        Error = 3
+    };
 
-class LOG {
-public:
-    LOG() {}
-    LOG(typelog type) {
-        msglevel = type;
-        if(LOGCFG.timestamp) {
-            time_t t = std::time(0);   // get time now
-            tm* now = std::localtime(&t);
-            operator << ('[')
-                     << (now->tm_year + 1900) << '-'
-                     << (now->tm_mon + 1) << '-'
-                     << now->tm_mday
-                     << ' '
-                     << now->tm_hour << ':'
-                     << now->tm_min << ':'
-                     << now->tm_sec << ']';
-        }
-        if(LOGCFG.headers) {
-            operator << ('[' + getLabel(type) + ']');
-        }
-    }
-    ~LOG() {
-        if(opened) {
-            LOGCFG.fout << endl;
-        }
-        opened = false;
-    }
-    template<class T>
-    LOG &operator <<(const T &msg) {
-        if(msglevel >= LOGCFG.level) {
-            LOGCFG.fout << msg;
-            opened = true;
-        }
-        return *this;
-    }
-private:
-    bool opened = false;
-    typelog msglevel = LOG_DEBUG;
-    inline string getLabel(typelog type) {
-        string label;
-        switch(type) {
-            case LOG_DEBUG: label = "DEBUG"; break;
-            case LOG_INFO:  label = "INFO "; break;
-            case LOG_WARN:  label = "WARN "; break;
-            case LOG_ERROR: label = "ERROR"; break;
-        }
-        return label;
-    }
-};
+    static class Logger {
+    
+    public:
+        static void Init(string filename, LogLevel level = LogLevel::Verbose, bool needConsoleOutput = true);
+        static void Cleanup();
+        static void SetLogLevel(LogLevel level);
+        static LogLevel GetLogLevel();
+        static void LogError(string message);
+        static void LogWarning(string message);
+        static void LogInfo(string message);
+        static void LogVerbose(string message);
+        static void Log(LogLevel level, string message);
 
+    private:
+        static LogLevel s_level;
+        static ofstream s_logfileStream;
+        static bool s_consoleOutput;
+        static string GetLabel(LogLevel level);
+    };
+
+}
+
+#ifdef __cplusplus
+}
+#endif

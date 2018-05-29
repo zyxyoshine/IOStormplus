@@ -1,10 +1,8 @@
 #pragma once
-#include <bits/stdc++.h>
 #include <stdexcept>
 #include <windows.h>
 
 using namespace std;
-
 
 string exec_command(const char* cmd) {
 	char buffer[128];
