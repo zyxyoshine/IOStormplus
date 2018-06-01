@@ -10,4 +10,4 @@ $dn="iostorm"+$vmPool
 #check if the state of the pool machiknes in the pool is not "stopping".  
 $vms = get-azurermvm | where {$_.Tags.pool -eq $vmPool} | where ResourceGroupName -eq $rg
 
-$vms | Start-AzureRmVM 
+$vms | Start-AzureRmVM -Verbose

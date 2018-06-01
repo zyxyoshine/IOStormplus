@@ -14,7 +14,14 @@
             "metadata": {
                 "description": "The starting index number of VMs."
             }
-		},
+        },
+		"vmIndex": {
+            "defaultValue": 0,
+            "type": "Int",
+            "metadata": {
+                "description": "Start index for new VMs."
+            }
+        },        
 		"vmCount": {
             "defaultValue": 1,
             "type": "Int",
@@ -107,12 +114,12 @@
         "subnetPrefix": "10.0.0.0/24",
 		"storageAccountType": "Standard_LRS",
         "uniqueStorageAccountName": "[tolower(concat('sa', resourceGroup().name))]",
-        "vmName": "[concat(parameters('vmPool'),'vm')]",
+        "vmName": "[concat(parameters('vmPool'),'-vm')]",
 		"vmAdminUsername": "vmroot",
 		"vmAdminPassword": "!!!!1234abcd",
-        "vmOsDiskName": "[concat(parameters('vmPool'), 'od')]",
-        "vmDataDiskName": "[concat(parameters('vmPool'),'dd')]",
-        "vmNicName": "[tolower(concat(parameters('vmPool'), 'nc'))]",
+        "vmOsDiskName": "[variables('vmName')]",
+        "vmDataDiskName": "[variables('vmName')]",
+        "vmNicName": "[tolower(variables('vmName'))]",
         "virtualNetworkName": "[tolower(concat('vn', resourceGroup().name))]",
         "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',variables('virtualNetworkName'))]",
         "subnetRef": "[concat(variables('vnetID'),'/subnets/',variables('subnetName'))]",
@@ -122,15 +129,15 @@
 	"resources": [
         {
             "type": "Microsoft.Network/networkInterfaces",
-            "name": "[concat(variables('vmNicName'),copyIndex('nicLoop'))]",
+            "name": "[concat(variables('vmNicName'),copyIndex(parameters('vmIndex')),'-nic')]",
             "apiVersion": "2015-06-15",
             "location": "[variables('location')]",
+            "tags":{ 
+                "pool": "[parameters('vmPool')]"
+            },
             "copy": {
                 "name": "nicLoop",
                 "count": "[parameters('vmCount')]"
-            },
-            "tags":{ 
-                "pool": "[parameters('vmPool')]"
             },
             "properties": {
                 "ipConfigurations": [
@@ -150,7 +157,7 @@
         },
         {
             "type": "Microsoft.Compute/virtualMachines",
-            "name": "[concat(variables('vmName'),copyIndex('vmLoop'))]",
+            "name": "[concat(variables('vmName'),copyIndex(parameters('vmIndex')))]",
             "apiVersion": "2016-03-30",
             "location": "[variables('location')]",
             "tags":{ 
@@ -165,7 +172,7 @@
                     "vmSize": "[parameters('vmSize')]"
                 },
                 "osProfile": {
-                    "computerName": "[concat(variables('vmName'),copyIndex('vmLoop'))]",
+                    "computerName": "[concat(variables('vmName'),copyIndex(parameters('vmIndex')))]",
                     "adminUsername": "[variables('vmAdminUsername')]",
                     "adminPassword": "[variables('vmAdminPassword')]",
 					"linuxConfiguration": {
@@ -182,11 +189,11 @@
                     },
                     "osDisk": {
 						"osType": "Linux",
-                        "name": "[concat(variables('vmOsDiskName'),copyIndex('vmLoop'))]",
+                        "name": "[concat(variables('vmOsDiskName'),copyIndex(parameters('vmIndex')),'-osd')]",
                         "caching": "ReadWrite",
                         "createOption": "FromImage",
                         "vhd": {
-                          "uri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('uniqueStorageAccountName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).primaryEndpoints.blob, concat(variables('vmDataDiskName'), copyIndex('vmLoop')),'/',concat(variables('vmOSDiskName'),copyIndex('vmLoop')), '.vhd')]"
+                          "uri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('uniqueStorageAccountName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).primaryEndpoints.blob, concat(variables('vmOSDiskName'), copyIndex(parameters('vmIndex')),'-osd'),'/',concat(variables('vmOSDiskName'),copyIndex(parameters('vmIndex')),'-osd'), '.vhd')]"
                         },                        
 						"diskSizeGB": 30
                     },
@@ -195,13 +202,13 @@
 							"name": "dataDisks",
 							"count": "[parameters('vmDataDiskCount')]",
 							"input": {
-								"name": "[concat(variables('vmDataDiskName'),copyIndex('vmLoop'),'d',copyIndex('dataDisks'))]",
+								"name": "[concat(variables('vmDataDiskName'),copyIndex(parameters('vmIndex')),'-dd',copyIndex('dataDisks'))]",
 								"diskSizeGB": "[parameters('vmDataDiskSizeInGB')]",
 								"lun": "[copyIndex('dataDisks')]",
 								"createOption": "Empty",
                                 "caching": "None",
                                 "vhd": {
-                                    "uri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('uniqueStorageAccountName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).primaryEndpoints.blob, concat(variables('vmDataDiskName'), copyIndex('vmLoop'), 'd', copyIndex('dataDisks')),'/',concat(variables('vmDataDiskName'),copyIndex('vmLoop'),'d',copyIndex('dataDisks')), '.vhd')]"
+                                    "uri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('uniqueStorageAccountName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).primaryEndpoints.blob, concat(variables('vmDataDiskName'), copyIndex(parameters('vmIndex')), '-dd', copyIndex('dataDisks')),'/',concat(variables('vmDataDiskName'),copyIndex(parameters('vmIndex')),'-dd',copyIndex('dataDisks')), '.vhd')]"
                                 }       
 							}
 						}
@@ -210,7 +217,7 @@
                 "networkProfile": {
                     "networkInterfaces": [
                         {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces',concat(variables('vmNicName'),copyIndex('vmLoop')))]"
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces',concat(variables('vmNicName'),copyIndex(parameters('vmIndex')),'-nic'))]"
                         }
                     ]
                 },
@@ -222,12 +229,12 @@
                 }
             },
             "dependsOn": [
-                "[concat('Microsoft.Network/networkInterfaces/',variables('vmNicName'),copyIndex('vmLoop'))]"
+                "[concat('Microsoft.Network/networkInterfaces/',variables('vmNicName'),copyIndex(parameters('vmIndex'),'-nic'))]"
             ]
         },
         {
             "type": "Microsoft.Compute/virtualMachines/extensions",
-            "name": "[concat(variables('vmName'),copyIndex('vmLoop'),'/IOStormExtension')]",
+            "name": "[concat(variables('vmName'),copyIndex(parameters('vmIndex')),'/IOStormExtension')]",
             "apiVersion": "2015-06-15",
             "location": "[variables('location')]",
             "tags":{ 
@@ -250,7 +257,7 @@
 				}
             },
             "dependsOn": [
-                "[concat('Microsoft.Compute/virtualMachines/',variables('vmName'),copyIndex('vmLoop'))]"
+                "[concat('Microsoft.Compute/virtualMachines/',variables('vmName'),copyIndex(parameters('vmIndex')))]"
             ]
         }
     ]

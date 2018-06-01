@@ -3,7 +3,6 @@ Param(
 )
 
 $rg = "iostorm"
-$acct = 
 
 $vms = get-azurermvm | where {$_.Tags.pool -eq $vmPool} | where ResourceGroupName -eq $rg
 
