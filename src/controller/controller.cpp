@@ -37,17 +37,24 @@ namespace IOStormPlus{
 
         Document VMConfig;
         if (VMConfig.Parse(content.c_str()).HasParseError()) {
-            stringstream tempStream;
-            tempStream << "parse test VM configuration failed! " << content.c_str() << endl;
-            Logger::LogError(tempStream.str());
+            stringstream logStream;
+            logStream << "parse test VM configuration failed! " << content.c_str() << endl;
+            Logger::LogError(logStream.str());
             return;
         }
-        
+        Logger::LogVerbose("Configure File has been parsed successfully!");
+
         int vmCount = VMConfig["count"].GetInt();
         auto vmInfo = VMConfig["value"].GetArray();
+        
+        stringstream logStream;
+        logStream << "Test VM Count " << vmCount << endl;      
+        Logger::LogInfo(logStream.str());
+        
         for (int i = 0; i < vmCount; ++i) {
             TestVMs.push_back(TestVM(vmInfo[i]["name"].GetString(), vmInfo[i]["ip"].GetString(), vmInfo[i]["info"]["type"].GetString(), vmInfo[i]["info"]["size"].GetString()));
         }
+        Logger::LogVerbose("Configure File has been parsed successfully!");
 
         m_isReady = true;
     }
@@ -57,14 +64,15 @@ namespace IOStormPlus{
         TestVMs.clear();
         vector<string> agents = ListFilesInDirectory(AgentInfoFolder);
         ifstream fin;
-        string internalIP,osType,size;
+        string internalIP = "", osType = "", size = "";
         for (auto agentName : agents) {
             fin.open(AgentInfoFolder + agentName);
             fin >> internalIP >> osType >> size;
             TestVMs.push_back(TestVM(agentName, internalIP, osType, size));
-            Logger::LogVerbose("Register test VM " + agentName + " succeeded.");
+            Logger::LogInfo("Register test VM " + agentName + " succeeded.");
             fin.close();
         }
+        
         WriteConfig();
         PrintTestVMInfo();
     }
@@ -76,8 +84,9 @@ namespace IOStormPlus{
 
     /// Run Configure Agent command
     void Controller::ConfigureAgent(int argc, char *argv[]) {
-        if (argc == 0)
+        if (argc == 0) {
             PrintUsage(ControllerCommand::AgentGeneral);
+        }
         else if (strcmp(argv[0], "add") == 0) {
             RegisterAgent(argc - 1, argv + 1);
         }
@@ -103,10 +112,7 @@ namespace IOStormPlus{
             RunCustomTest();
             Logger::LogVerbose("End custom test.");
         }
-        else if (argc > 1) {
-            PrintUsage(ControllerCommand::WorkerGeneral);
-        }
-        else if (strcmp(argv[0], "-std") == 0) {
+        else if ( argc == 1 && (strcmp(argv[0], "-std") == 0)) {
             Logger::LogVerbose("Start standard test.");
             CheckTestVMHealth();
             RunStandardTest();
@@ -161,161 +167,82 @@ namespace IOStormPlus{
     void Controller::InitLogger() {
         time_t t = std::time(0);   
         tm* now = std::localtime(&t);
-        stringstream tempStream;
-        tempStream << "%d%02d%02d.log" << now->tm_year + 1900 << now->tm_mon + 1 << now->tm_mday << endl;
-        Logger::Init(tempStream.str());
+        stringstream logFilename;
+        logFilename << "%d%02d%02d.log" << now->tm_year + 1900 << now->tm_mon + 1 << now->tm_mday << endl;
+        Logger::Init(logFilename.str());
     }
 
     // Health Check
     void Controller::CheckTestVMHealth() {
-        ofstream fout;
-        string reader;
-        ifstream fin;
-        for (auto iter : TestVMs) {
-            Logger::LogVerbose("Sending pre-sync request to test VM " + iter.GetName() + "(" + iter.GetInternalIP() + ")");
-            ExecCommand(string("del /f " + iter.GetSharePath() + TempFolder + "client.tmp").c_str());
-            fout.open(iter.GetSharePath() + TempFolder + "Controller.tmp", ios_base::out | ios_base::trunc);
-            fout << "PRESYNC";
-            fout.close();
+
+        // Ask VM to sync    
+        for (auto &vm : TestVMs) {
+            vm.SendCommand("PRESYNC");
         }
 
-        Logger::LogVerbose("Waiting for agents response.");
+        // Check all VMs to response sync
+        WaitForAllVMs("SYNCDONE");
+        Logger::LogInfo("All test VM pre-sync succeeded!");
+    }
+
+    void Controller::WaitForAllVMs(string command){
+        // Check all VMs to response sync
+        Logger::LogInfo("Waiting for agents response.");
         bool allDone = false;
         map<string, bool> doneJobs;
-        doneJobs.clear();
+
         while (!allDone) {
             allDone = true;
-            for (auto iter : TestVMs) {
+            for (auto vm : TestVMs) {
                 
-                if (doneJobs[iter.GetInternalIP()]) {
+                if (doneJobs[vm.GetInternalIP()]) {
                     continue;
                 }
 
-                ifstream fin;
-                fin.open(iter.GetSharePath() + TempFolder + "client.tmp", ios_base::in);
-                if (!fin.fail()) {
-                    fin >> reader;
-                    if(reader == "SYNCDONE") {
-                        doneJobs[iter.GetInternalIP()] = true;
-                        Logger::LogVerbose("Test VM " + iter.GetName() + "(" + iter.GetInternalIP() + ")" + " pre-sync succeeded.");
-                    }
-                    else {
-                        allDone = false;
-                    }
+                Sleep(1000);
+                if (vm.GetResponse(command)) {
+                    doneJobs[vm.GetInternalIP()] = true;
+                    Logger::LogInfo("Test VM " + vm.GetName() + "(" + vm.GetInternalIP() + ")" + " pre-sync succeeded.");                    
                 }
                 else {
                     allDone = false;
                 }
-                fin.close();
             }
         }
-        Logger::LogVerbose("All test VM pre-sync succeeded!");
     }
 
     // Test Execution
     void Controller::RunStandardTest() {
-        ifstream fin;
-        ofstream fout;
-        string reader;
-        for (auto iter : TestVMs) {
-            if (iter.GetOSType() == OSType::Linux) {
-                ExecCommand(string("xcopy workload\\std\\linux " + iter.GetSharePath() + WorkloadFolder + " /s /h /d /y").c_str());
-            }
-            else if (iter.GetOSType() == OSType::Windows){           
-                ExecCommand(string("xcopy workload\\std\\windows " + iter.GetSharePath() + WorkloadFolder + " /s /h /d /y").c_str());
-            }
-            else {
-                assert(false);
-            }
-
-            Logger::LogVerbose("Sending work request to test VM " + iter.GetName() + "(" + iter.GetInternalIP() + ")");
-            ExecCommand(string("del /f " + iter.GetSharePath() + TempFolder + "client.tmp").c_str());
-            fout.open(iter.GetSharePath() + TempFolder + "Controller.tmp", ios_base::out | ios_base::trunc);
-            fout << "START";
-            fout.close();
-        }
-
-        Logger::LogVerbose("Waiting for agents response.");
-        map<string, bool> doneJobs;
-        doneJobs.clear();
-
-        bool allDone = false;
-        while (!allDone) {
-            allDone = true;
-            for (auto iter : TestVMs) {
-                if (doneJobs[iter.GetInternalIP()] == 1) {
-                    continue;
-                }
-                fin.close();
-                fin.clear();
-                Sleep(1000);
-                fin.open(iter.GetSharePath() + TempFolder + "client.tmp", ios_base::in);
-                fin >> reader;
-                if (reader == "DONE") {
-                    doneJobs[iter.GetInternalIP()] = 1;
-                    Logger::LogVerbose("Test VM " + iter.GetName() + "(" + iter.GetInternalIP() + ")" + " successfully completed work.");
-                }
-                else {
-                    allDone = false;
-                }
-            }
-            fin.close();
-        }
-        
-        Logger::LogVerbose("All jobs done!");
-        AnalyzeData("workload\\std\\");
-        PrintTestResultSummary("workload\\std\\");
+        RunTest(StandardWorkloadFolder);
     }
 
     void Controller::RunCustomTest() {
-        ifstream fin;
-        ofstream fout;
-        string reader;
-        for (auto iter : TestVMs) {
-            if (iter.GetOSType() == OSType::Linux) {
-                ExecCommand(string("xcopy workload\\linux " + iter.GetSharePath() + WorkloadFolder + " /s /h /d /y").c_str());
+        RunTest(WorkloadFolder);
+    }
+
+    void Controller::RunTest(string rootPath){
+        for (auto &vm : TestVMs) {
+            if (vm.GetOSType() == OSType::Linux) {
+                ExecCommand(string("xcopy " + rootPath + "linux " + vm.GetSharePath() + WorkloadFolder + " /s /h /d /y"));
             }
-            else if(iter.GetOSType() == OSType::Windows) {
-                ExecCommand(string("xcopy workload\\windows " + iter.GetSharePath() + WorkloadFolder + " /s /h /d /y").c_str());
+            else if(vm.GetOSType() == OSType::Windows) {
+                ExecCommand(string("xcopy " + rootPath + "windows " + vm.GetSharePath() + WorkloadFolder + " /s /h /d /y"));
             }
             else {
                 assert(false);
             }
-            Logger::LogVerbose("Sending work request to test VM " + iter.GetName() + "(" + iter.GetInternalIP() + ")");
-            ExecCommand(string("del /f " + iter.GetSharePath() + TempFolder + "client.tmp").c_str());
-            fout.open(iter.GetSharePath() + TempFolder + "Controller.tmp", ios_base::out | ios_base::trunc);
-            fout << "START";
-            fout.close();
-        }
-        Logger::LogVerbose("Waiting for agents response.");
-        map<string, bool> doneJobs;
-        doneJobs.clear();
 
-        bool allDone = false;
-        while (!allDone) {
-            allDone = true;
-            for (auto vm_itr : TestVMs) {
-                if (doneJobs[vm_itr.GetInternalIP()] == 1) {
-                    continue;
-                }
-                fin.close();
-                fin.clear();
-                Sleep(1000);
-                fin.open(vm_itr.GetSharePath() + TempFolder + "client.tmp", ios_base::in);
-                fin >> reader;
-                if (reader == "DONE") {
-                    doneJobs[vm_itr.GetInternalIP()] = 1;
-                    Logger::LogVerbose("Test VM " + vm_itr.GetName() + "(" + vm_itr.GetInternalIP() + ")" + " successfully completed work.");
-                }
-                else {
-                    allDone = false;
-                }
-            }
-            fin.close();
+            Logger::LogInfo("Sending work request to test VM " + vm.GetName() + "(" + vm.GetInternalIP() + ")");
+            vm.SendCommand("START");
         }
+
+        WaitForAllVMs("DONE");
+
         Logger::LogVerbose("All jobs done!");
-        AnalyzeData("workload\\");
-        PrintTestResultSummary("workload\\");
+
+        AnalyzeData(rootPath);
+
+        PrintTestResultSummary(rootPath);
     }
 
     // Agent management
@@ -325,36 +252,37 @@ namespace IOStormPlus{
             PrintUsage(ControllerCommand::AgentRegister);
             return;
         }
-        else if (1) { //TODO: Add error check
+        //TODO: Add error check
+        else if (1) {
             name = argv[0];
             internalIP = argv[1];
             osType = argv[2];
-            osType = argv[3];
+            size = argv[3];
             if (osType == "linux" || osType == "windows") {
                 bool vmExists = false;
-                for (auto iter : TestVMs) {
+                for (auto &iter : TestVMs) {
                     if (iter.GetName() == name) {
                         vmExists = true;
                         break;
                     }
                 }
                 if (vmExists) {
-                    cout << "VM " + name + " has already been registered.";
+                    Logger::LogWarning("VM " + name + " has already been registered.");
                 }
-                else{
+                else {
                     TestVMs.push_back(TestVM(name, internalIP, osType, size));
+                    Logger::LogInfo("Register test VM " + name + " succeeded.");
                     WriteConfig();
-                    Logger::LogVerbose("Register test VM " + name + " succeeded.");
                     PrintTestVMInfo();
                 }
             }
             else {
-                cout << "ERROR: Illegal VM OS type";
+                Logger::LogError("ERROR: Illegal VM OS type");
                 PrintUsage(ControllerCommand::AgentRegister);
             }
         }
         else{
-            cout << "ERROR: Illegal VM IP address" << endl;
+            Logger::LogError("ERROR: Illegal VM IP address");
             PrintUsage(ControllerCommand::AgentRegister);
         }
     }
@@ -379,14 +307,15 @@ namespace IOStormPlus{
         WriteConfig();
         
         if (found){
-            Logger::LogVerbose("Remove test VM " + vmName + " succeeded.");
+            Logger::LogInfo("Remove test VM " + vmName + " succeeded.");
             PrintTestVMInfo();
         }
         else {
-            Logger::LogVerbose("Can not find registered test VM " + vmName + ".");
+            Logger::LogWarning("Can not find registered test VM " + vmName + ".");
         }
     }
 
+    // TODO: Change name
     void Controller::ShowAgent() {
         PrintTestVMInfo();
     }
@@ -424,16 +353,16 @@ namespace IOStormPlus{
 
     // Reporting
     void Controller::PrintTestVMInfo() {
-        stringstream tempStream;
-        tempStream << "VM Count: " << TestVMs.size() << endl;
-        Logger::LogVerbose(tempStream.str());
+        stringstream logStream;
+        logStream << "VM Count: " << TestVMs.size() << endl;
+        Logger::LogVerbose(logStream.str());
         Logger::LogVerbose("ID\tName\tIP Address\tOS\tSize");
         
-        tempStream.clear();
+        logStream.clear();
         for (int i = 0;i < TestVMs.size(); ++i) {
-            tempStream.clear();
-            tempStream << i + 1 << "\t" << TestVMs[i].GetVMInfo() << endl;
-            Logger::LogVerbose(tempStream.str());
+            logStream.clear();
+            logStream << i + 1 << "\t" << TestVMs[i].GetInfo() << endl;
+            Logger::LogVerbose(logStream.str());
         }
     }
 
@@ -441,9 +370,11 @@ namespace IOStormPlus{
         vector<string> linuxJobs = ListFilesInDirectory(workloadRootPath + "linux\\");
         vector<string> jobs = ListFilesInDirectory(workloadRootPath + "windows\\");
         jobs.insert(jobs.end(), linuxJobs.begin(), linuxJobs.end());
+        
         sort(jobs.begin(), jobs.end());
-        vector<string>::iterator iter = unique(jobs.begin(),jobs.end());
+        vector<string>::iterator iter = unique(jobs.begin(),jobs.end());       
         jobs.erase(iter,jobs.end());
+
         stringstream tempStream;
         string summaryOutputFile;
         time_t t = std::time(0);
@@ -458,13 +389,13 @@ namespace IOStormPlus{
         // Title
         tempStream.clear();
         tempStream << "VM Count: " << TestVMs.size() << endl;
-        Logger::LogVerbose(tempStream.str());
+        Logger::LogInfo(tempStream.str());
         fout << tempStream.str() << endl;
 
         for (auto job : jobs) {
-            Logger::LogVerbose("Job: " + job);
+            Logger::LogInfo("Job: " + job);
             fout << "Job: " + job << endl;
-            Logger::LogVerbose("ID\tName\tIP Address\tOS\tSize\tR(MIN)\tR(MAX)\tR(AVG)\tW(MIN)\tW(MAX)\tW(AVG)");
+            Logger::LogInfo("ID\tName\tIP Address\tOS\tSize\tR(MIN)\tR(MAX)\tR(AVG)\tW(MIN)\tW(MAX)\tW(AVG)");
             fout << "ID\tName\tIP Address\tOS\tSize\tR(MIN)\tR(MAX)\tR(AVG)\tW(MIN)\tW(MAX)\tW(AVG)" << endl;
             string vm_id;
             for (int i = 0;i < TestVMs.size();i++) {
@@ -472,12 +403,12 @@ namespace IOStormPlus{
                     tempStream.clear();
                     tempStream << i + 1;
                     tempStream >> vm_id;
-                    Logger::LogVerbose(vm_id + "\t" + TestVMs[i].GetVMResult(job));
-                    fout << vm_id + "\t" + TestVMs[i].GetVMResult(job) << endl;
+                    Logger::LogInfo(vm_id + "\t" + TestVMs[i].GetTestResult(job));
+                    fout << vm_id + "\t" + TestVMs[i].GetTestResult(job) << endl;
                 }
             }
         }
-        
+
         fout.close();
     }
 
@@ -515,7 +446,7 @@ namespace IOStormPlus{
         const string copyOutputCmd = "copy " + vm.GetSharePath() + outputFile + " " + outputFile + " /y";
         
         do {
-            res = ExecCommand(copyOutputCmd.c_str());   
+            res = ExecCommand(copyOutputCmd);   
         } while (res.find("cannot") != string::npos);
 
         vm.TestResults[jobName] = AnalyzeStandardOutput(outputFile);
@@ -523,21 +454,21 @@ namespace IOStormPlus{
 
     ReportSummary Controller::AnalyzeStandardOutput(string outputFile) {
         ifstream fin(outputFile, ios_base::in);
-        string buffer;
+        string buf;
         ReportSummary res;
         
         while (!fin.eof()) {
-            getline(fin, buffer);
-            int pos = buffer.find("read: IOPS=");
+            getline(fin, buf);
+            int pos = buf.find("read: IOPS=");
             if (pos != string::npos) {
                 pos += 11;
-                res.ReadIOPS.push_back(GetIOPSNumber(buffer, pos));
+                res.ReadIOPS.push_back(GetIOPSNumber(buf, pos));
             }
 
-            pos = buffer.find("write: IOPS=");
+            pos = buf.find("write: IOPS=");
             if (pos != string::npos) {
                 pos += 12;
-                res.WriteIOPS.push_back(GetIOPSNumber(buffer, pos));
+                res.WriteIOPS.push_back(GetIOPSNumber(buf, pos));
             }
         }
         return res;

@@ -7,7 +7,7 @@
 using namespace std;
 
 namespace IOStormPlus{
-	string ExecCommand(const char* cmd);
+	string ExecCommand(const string cmd);
 	vector<string> ListFilesInDirectory(string dirna);
 }
 

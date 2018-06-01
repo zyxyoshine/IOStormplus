@@ -1,21 +1,22 @@
 #include "helper.h"
 
-
 using namespace std;
 
 namespace IOStormPlus{
 
-	string ExecCommand(const char* cmd) {
-		char buffer[128];
+	// TODO: Not using pipeline for communication
+    string ExecCommand(const string cmd) {
+		char buffer[512];
 		string result = "";
-		FILE* pipe = _popen(cmd, "r");
+		FILE* pipe = _popen(cmd.c_str(), "r");
 		if (!pipe){
 			throw runtime_error("popen() failed!");
         }
 		try {
 			while (!feof(pipe)) {
-				if (fgets(buffer, 128, pipe) != NULL)
+				if (fgets(buffer, 128, pipe) != NULL) {
 					result += buffer;
+                }
 			}
 		} 
         catch (...) {
@@ -26,6 +27,7 @@ namespace IOStormPlus{
 		return result;
 	}
 
+    // TODO: Remove windows dependency
 	vector<string> ListFilesInDirectory(string root) {
 		WIN32_FIND_DATA data;
 		HANDLE hFind = FindFirstFile((root + "*").c_str(), &data);   

@@ -5,24 +5,20 @@
 
 namespace IOStormPlus{
     
-    LogLevel Logger::s_level;
-    ofstream Logger::s_logfileStream;
-    bool Logger::s_consoleOutput;
+    ////////////////////////////////////////////////////////////////////////////////////////////
+    // Public function
+    ///////////////////////////////////////////////////////////////////////////////////////////
 
     void Logger::Init(string filename, LogLevel level, bool needConsoleOutput) {
-        Cleanup();
+        if (s_logfileStream.is_open()){
+            s_logfileStream.close();
+        }
         s_level = level;
         s_consoleOutput = needConsoleOutput;
         s_logfileStream.open(filename, ios_base::out | ios_base::trunc);
         if (s_logfileStream.fail()){
             cerr << "Open " + filename + " for Logger failed!" << endl;
-        }     
-    }
-
-    void Logger::Cleanup(){
-        if (s_logfileStream.is_open()){
-            s_logfileStream.close();
-        }
+        }   
     }
 
     void Logger::SetLogLevel(LogLevel level){
@@ -49,11 +45,12 @@ namespace IOStormPlus{
         Logger::Log(LogLevel::Verbose, message);
     }
 
-    void Logger::Log(LogLevel level, string message){
+    void Logger::Log(LogLevel level, string message){      
         // skip log lower level message
         if (level < s_level) return;
 
-        time_t t = std::time(0);   // get time now
+        // get time now
+        time_t t = std::time(0);  
         tm* now = std::localtime(&t);
 
         if (s_consoleOutput){
@@ -68,7 +65,10 @@ namespace IOStormPlus{
             cout << ('[' + GetLabel(level) + ']');
         }
         
+        // Skip log to file if file is not ready
         assert(s_logfileStream.is_open());
+        if(!s_logfileStream.is_open()) return;
+
         s_logfileStream << ('[')
                         << (now->tm_year + 1900) << '-'
                         << (now->tm_mon + 1) << '-'
@@ -80,6 +80,13 @@ namespace IOStormPlus{
         s_logfileStream << ('[' + GetLabel(level) + ']');
         s_logfileStream.flush();        
     }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////
+    // Private function
+    ///////////////////////////////////////////////////////////////////////////////////////////
+    LogLevel Logger::s_level;
+    ofstream Logger::s_logfileStream;
+    bool Logger::s_consoleOutput;
 
     string Logger::GetLabel(LogLevel level) {
         switch(level) {

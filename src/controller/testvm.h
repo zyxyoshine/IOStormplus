@@ -10,11 +10,13 @@ extern "C"
 
 namespace IOStormPlus{
     
+    // Test OS only support Windows and Linux
     enum OSType{
         Linux = 0,
         Windows = 1
     };
 
+    // TODO: Move to report class
     struct ReportSummary {
         vector<int> ReadIOPS;
         vector<int> WriteIOPS;
@@ -33,23 +35,27 @@ namespace IOStormPlus{
         TestVM(string name, string internalIP, string osType, string size):
             m_name(name), m_internalIP(internalIP), m_osType(osType == "linux" ? Linux : Windows), m_size(size){}
 
+        // TODO: not expose collection
         map<string, ReportSummary> TestResults;
 
-        string GetVMInfo();
-        string GetVMResult(string jobNum);
+        string GetInfo();
+        string GetTestResult(string jobName);
         string GetSharePath();
         string GetName();
         string GetInternalIP();
         string GetSize();
         OSType GetOSType();
 
-    private:
-        string GetOSTypeName();
+        void SendCommand(string command);
+        bool GetResponse(string command);
 
+    private:
         string m_name;
         string m_internalIP;
         string m_size;
         OSType m_osType;
+
+        string GetOSTypeName();
 
     };
 }

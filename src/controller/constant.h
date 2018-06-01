@@ -7,6 +7,7 @@ extern "C"
 
 const string AgentsConfigFilename = "agents.json";
 const string WorkloadFolder = "workload\\";
+const string StandardWorkloadFolder = "workload\\std\\";
 const string TempFolder = "temp\\";
 const string OutputFolder = "output\\";
 const string AgentInfoFolder = "agents\\";

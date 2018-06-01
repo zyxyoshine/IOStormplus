@@ -48,10 +48,12 @@ namespace IOStormPlus{
         
         // Health Check
         void CheckTestVMHealth();
-        
+        void WaitForAllVMs(string command);
+
         // Test Execution
         void RunStandardTest();
         void RunCustomTest();
+        void RunTest(string rootPath);
     
         // Agent Management
         void RegisterAgent(int argc, char *argv[]);
