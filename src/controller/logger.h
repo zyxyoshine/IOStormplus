@@ -18,7 +18,7 @@ namespace IOStormPlus{
         Error = 3
     };
 
-    static class Logger {
+    class Logger {
     
     public:
         static void Init(string filename, LogLevel level = LogLevel::Verbose, bool needConsoleOutput = true);

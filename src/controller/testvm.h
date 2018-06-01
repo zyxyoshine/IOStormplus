@@ -31,7 +31,7 @@ namespace IOStormPlus{
             m_name(name), m_internalIP(internalIP), m_osType(osType), m_size(size){}
 
         TestVM(string name, string internalIP, string osType, string size):
-            m_name(name), m_internalIP(internalIP), m_osType(osType == "Linux" ? Linux : Windows), m_size(size){}
+            m_name(name), m_internalIP(internalIP), m_osType(osType == "linux" ? Linux : Windows), m_size(size){}
 
         map<string, ReportSummary> TestResults;
 

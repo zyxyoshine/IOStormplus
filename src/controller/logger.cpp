@@ -3,11 +3,6 @@
 #include <iostream>
 #include <ctime>
 
-// #ifdef __cplusplus
-// extern "C"
-// {
-// #endif
-
 namespace IOStormPlus{
     
     LogLevel Logger::s_level;
@@ -94,10 +89,7 @@ namespace IOStormPlus{
             case Error: return "Error:";
         }
         assert(true);
+        return "Unknwon";
     }
 
 }
-
-// #ifdef __cplusplus
-// }
-// #endif

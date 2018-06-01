@@ -14,6 +14,19 @@ extern "C"
 
 namespace IOStormPlus{
 
+    enum ControllerCommand {
+        General = 0,
+        AgentGeneral = 10,
+        AgentRegister = 11,
+        AgentRemove = 12,
+        WorkerGeneral = 50
+    };
+
+    enum TestType {
+        StandardTest = 0,
+        CustomTest = 1
+    };
+
     class Controller{
     public:
         vector<TestVM> TestVMs;
@@ -22,38 +35,38 @@ namespace IOStormPlus{
         Controller(string TestVMs_config);
         ~Controller(){};
 
-        inline bool IsReady();
-        void PrintUsage();
-        void start_worker(int argc, char *argv[]);
-        void agent_worker(int argc, char *argv[]);
-        void initialize();
+        void InitAgents();
         bool IsReady();
+        void ConfigureAgent(int argc, char *argv[]);
+        void RunTest(int argc, char *argv[]);
+        void PrintUsage(ControllerCommand command);
 
     private:
         bool m_isReady;
+        
         void InitLogger();
+        
+        // Health Check
+        void CheckTestVMHealth();
+        
+        // Test Execution
+        void RunStandardTest();
+        void RunCustomTest();
+    
+        // Agent Management
+        void RegisterAgent(int argc, char *argv[]);
+        void RemoveAgent(int argc, char *argv[]);
+        void ShowAgent();
+        void TestAgent();
+        void WriteConfig();
+
+        // Reporting
         void PrintTestVMInfo();
         void PrintTestResultSummary(string workloadRootPath);
-        void pre_sync();
-        void standard_worker();
-        void custom_worker();
-    
-        void analyze_data(string workloadRootPath);
-        ReportSummary analyze_standard_output(string output_file);
-
-        inline void write_log(string msg, bool flag_stdout);
-        inline void write_config();
-        //////////////////////// USAGE ////////////////////////
-
-        void start_worker_PrintUsage();
-
-        void agent_worker_PrintUsage();
-        void agent_worker_register(int argc, char *argv[]);
-        void agent_worker_register_PrintUsage();
-        void agent_worker_remove(int argc, char *argv[]);
-        void agent_worker_remove_PrintUsage();
-        void agent_worker_show();
-        void agent_worker_test();
+        void AnalyzeData(string workloadRootPath);
+        void AnalyzeJob(const string& job, TestVM& vm);
+        ReportSummary AnalyzeStandardOutput(string output_file);
+        int GetIOPSNumber(string buf, int pos);
 
     };
 
