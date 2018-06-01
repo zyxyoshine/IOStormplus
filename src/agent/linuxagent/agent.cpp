@@ -45,12 +45,12 @@ namespace IOStormPlus{
 
 		vector<string> LinuxAgent::ListFilesInDirectory(string rootPath) {
 			vector<string> res;
-			string cmd_ls = "ls " + rootPath;
-			string ls_res = ExecuteCommand(cmd_ls.c_str());
+			string lsCmd = "ls " + rootPath;
+			string lsResut = ExecuteCommand(lsCmd.c_str());
 			int pre = 0;
-			for (int i = 0;i < ls_res.length();i++) {
-				if (ls_res[i] == '\n') {
-					res.push_back(ls_res.substr(pre,i - pre));
+			for (int i = 0;i < lsResut.length();i++) {
+				if (lsResut[i] == '\n') {
+					res.push_back(lsResut.substr(pre,i - pre));
 					pre = i + 1;
 				}
 			}
@@ -61,7 +61,7 @@ namespace IOStormPlus{
 			ifstream fin;
 			fin.open(ControllerTempFilePath, ios_base::in);
 			while (fin.fail()) {
-				sleep(10);
+				sleep(SyncWaitTime);
 				cerr << strerror(errno) << endl;
 				fin.open(ControllerTempFilePath , ios_base::in);
 			}
@@ -69,7 +69,7 @@ namespace IOStormPlus{
 			cout << "waiting for controller requests" << endl;
 			while(1) {
 				fin.close();
-				sleep(10);
+				sleep(SyncWaitTime);
 				fin.open(ControllerTempFilePath , ios_base::in);
 				fin >> reader;
 				if (reader == "PRESYNC") {
@@ -91,7 +91,7 @@ namespace IOStormPlus{
 			cout << hostname << endl;
 			ifstream fin(ControllerTempFilePath, ios_base::in);
 			string reader;
-			while(1) {
+			while(true) {
 				fin.seekg(0, ios::beg);
 				fin >> reader;
 				if (reader == "START") {

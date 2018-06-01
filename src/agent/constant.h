@@ -15,7 +15,6 @@ namespace IOStormPlus{
     const string ControllerTempFilename = "controller.tmp";
     const string ClientTempFilename = "client.tmp";
     const string LogFilename = "log.txt";
-    const int SyncWaitTime = 10000;    
 }
 
 #ifdef __cplusplus

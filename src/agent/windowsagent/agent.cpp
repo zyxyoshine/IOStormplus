@@ -1,5 +1,5 @@
 #include "constant.h"
-#include "..\agent.h"
+#include "..\defaultagent.h"
 #include "..\..\common\logger.h"
 #include <stdexcept>
 #include <windows.h>
@@ -13,12 +13,8 @@ using namespace std;
 
 namespace IOStormPlus{
 
-	class WindowsAgent:public IAgent{
+	class WindowsAgent:DefaultAgent{
 	public:        
-
-		void WindowsAgent::InitLogger(){
-			Logger::Init(LogFilePath);
-		}
 
 		string WindowsAgent::ExecuteCommand(string command) {
 			char buffer[128];

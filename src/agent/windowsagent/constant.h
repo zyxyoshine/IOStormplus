@@ -19,6 +19,7 @@ namespace IOStormPlus{
     const string ControllerTempFilePath = BinFolderPath + InfoTempFolderName + DirSpliter + ControllerTempFilename;
     const string ClientTempFilePath = BinFolderPath + InfoTempFolderName + DirSpliter + ClientTempFilename;
     const string LogFilePath = BinFolderPath + LogFilename;
+    const int SyncWaitTime = 10000;    
 }
 
 #ifdef __cplusplus
