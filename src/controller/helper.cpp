@@ -6,7 +6,7 @@ namespace IOStormPlus{
 
 	// TODO: Not using pipeline for communication
     string ExecCommand(const string cmd) {
-		char buffer[512];
+		char buffer[128];
 		string result = "";
 		FILE* pipe = _popen(cmd.c_str(), "r");
 		if (!pipe){

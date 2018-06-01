@@ -1,5 +1,5 @@
 #include "testvm.h"
-#include "logger.h"
+#include "..\common\logger.h"
 #include "constant.h"
 #include "helper.h"
 #include <sstream>
