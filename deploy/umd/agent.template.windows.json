@@ -1,0 +1,265 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0",
+	"parameters": {
+		"ControllerIP": {
+            "defaultValue": "10.0.0.4",
+            "type": "String",
+            "metadata": {
+                "description": "The internal IP for controller VM."
+            }
+        },
+		"vmPool": {
+            "type": "String",
+            "metadata": {
+                "description": "The starting index number of VMs."
+            }
+        },        
+		"vmIndex": {
+            "defaultValue": 0,
+            "type": "Int",
+            "metadata": {
+                "description": "Start index for new VMs."
+            }
+        },        
+		"vmCount": {
+            "defaultValue": 2,
+            "type": "Int",
+            "metadata": {
+                "description": "Number of VMs to create and run IO simulation."
+            }
+        },
+		"vmOsSku": {
+            "defaultValue": "2016-Datacenter",
+            "allowedValues": [
+                "2016-Datacenter"
+            ],
+            "type": "String",
+            "metadata": {
+                "description": "The Windows Server version for the VM."
+            }
+        },
+		"vmSize": {
+			"type": "string",
+			"defaultValue": "Standard_A3",
+				"allowedValues": [
+				"Standard_A0",
+				"Standard_A1",
+				"Standard_A2",
+				"Standard_A3",
+				"Standard_A4",
+				"Standard_A5",
+				"Standard_A6",
+				"Standard_A7",
+				"Standard_D1",
+				"Standard_D2",
+				"Standard_D3",
+				"Standard_D4",
+				"Standard_D11",
+				"Standard_D12",
+				"Standard_D13",
+				"Standard_D14",
+				"Standard_D1_v2",
+				"Standard_D2_v2",
+				"Standard_D3_v2",
+				"Standard_D4_v2",
+				"Standard_D5_v2",
+				"Standard_D11_v2",
+				"Standard_D12_v2",
+				"Standard_D13_v2",
+				"Standard_D14_v2",
+				"Standard_DS1",
+				"Standard_DS2",
+				"Standard_DS3",
+				"Standard_DS4",
+				"Standard_DS11",
+				"Standard_DS12",
+				"Standard_DS13",
+				"Standard_DS14",
+				"Standard_DS1_v2",
+				"Standard_DS2_v2",
+				"Standard_DS3_v2",
+				"Standard_DS4_v2",
+				"Standard_DS5_v2",
+				"Standard_DS11_v2",
+				"Standard_DS12_v2",
+				"Standard_DS13_v2",
+				"Standard_DS14_v2"
+			],
+			"metadata": {
+				"description": "VM size supported by Azure Stack."
+			}
+		},
+		"vmDataDiskSizeInGB": {
+			"type": "int",
+			"defaultValue": 4,
+			"metadata": {
+				"description": "VM IO workload target data disk size in GB."
+			}
+		},
+		"vmDataDiskCount": {
+			"type": "int",
+			"defaultValue": 1,
+			"metadata": {
+				"description": "Number of data disks per VM to perform IO on."
+			}
+		}
+	},
+	"variables": {
+        "imagePublisher": "MicrosoftWindowsServer",
+        "imageOffer": "WindowsServer",
+        "addressPrefix": "10.0.0.0/16",
+        "location": "[resourceGroup().location]",
+        "subnetName": "[tolower(concat('sn', resourceGroup().name))]",
+        "subnetPrefix": "10.0.0.0/24",
+		"storageAccountType": "Standard_LRS",
+        "uniqueStorageAccountName": "[tolower(concat('sa', resourceGroup().name))]",
+        "vmName": "[concat(parameters('vmPool'),'-vm')]",
+		"vmAdminUsername": "vmadmin",
+		"vmAdminPassword": "!!!!1234abcd",
+        "vmOsDiskName": "[variables('vmName'))]",
+        "vmDataDiskName": "[variables('vmName')]",
+        "vmNicName": "[tolower(variables('vmName'))]",
+        "virtualNetworkName": "[tolower(concat('vn', resourceGroup().name))]",
+        "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',variables('virtualNetworkName'))]",
+        "subnetRef": "[concat(variables('vnetID'),'/subnets/',variables('subnetName'))]",
+        "nsgName": "[tolower(concat('ng', resourceGroup().name))]",
+        "nsgID": "[resourceId('Microsoft.Network/networkSecurityGroups',variables('nsgName'))]"
+    },
+	"resources": [
+        {
+            "type": "Microsoft.Network/networkInterfaces",
+            "name": "[concat(variables('vmNicName'),copyIndex(parameters('vmIndex')),'-nic')]",
+            "apiVersion": "2015-06-15",
+            "location": "[variables('location')]",
+            "tags":{ 
+                "pool": "[parameters('vmPool')]"
+            },            
+            "copy": {
+                "name": "nicLoop",
+                "count": "[parameters('vmCount')]"
+            },
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfigprivate",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[variables('subnetRef')]"
+                            }
+                        }
+                    }
+                ]
+            },
+            "dependsOn": [
+            ]
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "[concat(variables('vmName'),copyIndex(parameters('vmIndex')))]",
+            "apiVersion": "2016-03-30",
+            "location": "[variables('location')]",
+            "tags":{ 
+                "pool": "[parameters('vmPool')]"
+            },            
+            "copy": {
+                "name": "vmLoop",
+                "count": "[parameters('vmCount')]"
+            },
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[parameters('vmSize')]"
+                },
+                "osProfile": {
+                    "computerName": "[concat(variables('vmName'),copyIndex(parameters('vmIndex')))]",
+                    "adminUsername": "[variables('vmAdminUsername')]",
+                    "adminPassword": "[variables('vmAdminPassword')]",
+					"windowsConfiguration": {
+                        "provisionVMAgent": true,
+                        "enableAutomaticUpdates": true
+                    },
+                    "secrets": []
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "[variables('imagePublisher')]",
+                        "offer": "[variables('imageOffer')]",
+                        "sku": "[parameters('vmOsSku')]",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+						"osType": "Windows",
+                        "name": "[concat(variables('vmOsDiskName'),copyIndex(parameters('vmIndex')),'-osd')]",
+                        "caching": "ReadWrite",
+                        "createOption": "FromImage",
+                        "vhd": {
+                            "uri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('uniqueStorageAccountName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).primaryEndpoints.blob, variables('vmOsDiskName'),copyIndex(parameters('vmIndex'),'-osd'),'/', variables('vmOsDiskName'),copyIndex(parameters('vmIndex'),'-osd'),'.vhd')]"
+                          },
+						"diskSizeGB": 128
+                    },
+                    "copy": [
+						{
+							"name": "dataDisks",
+							"count": "[parameters('vmDataDiskCount')]",
+							"input": {
+								"name": "[concat(variables('vmDataDiskName'),copyIndex(parameters('vmIndex')),'-dd',copyIndex('dataDisks'))]",
+								"diskSizeGB": "[parameters('vmDataDiskSizeInGB')]",
+								"lun": "[copyIndex('dataDisks')]",
+								"createOption": "Empty",
+                                "caching": "None",
+                                "vhd": {
+                                    "uri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('uniqueStorageAccountName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).primaryEndpoints.blob, concat(variables('vmDataDiskName'), copyIndex(parameters('vmIndex')), '-dd', copyIndex('dataDisks')),'/',concat(variables('vmDataDiskName'),copyIndex(parameters('vmIndex')),'-dd',copyIndex('dataDisks')), '.vhd')]"
+                                }       
+							}
+						}
+					]
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces',concat(variables('vmNicName'),copyIndex(parameters('vmIndex')),'-nic'))]"
+                        }
+                    ]
+                },
+                "diagnosticsProfile": {
+                    "bootDiagnostics": {
+                        "enabled": "true",
+                        "storageUri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('uniqueStorageAccountName')),providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).primaryEndpoints.blob)]"
+                    }
+                }
+            },
+            "dependsOn": [
+                "[concat('Microsoft.Network/networkInterfaces/',variables('vmNicName'),copyIndex(parameters('vmIndex'),'-nic'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines/extensions",
+            "name": "[concat(variables('vmName'),copyIndex(parameters('vmIndex')),'/IOStormExtension')]",
+            "apiVersion": "2015-06-15",
+            "location": "[variables('location')]",
+            "tags":{ 
+                "pool": "[parameters('vmPool')]"
+            },            
+            "copy": {
+                "name": "vmLoop",
+                "count": "[parameters('vmCount')]"
+            },
+            "properties": {
+                "publisher": "Microsoft.Compute",
+				"type": "CustomScriptExtension",
+				"typeHandlerVersion": "1.9",
+				"autoUpgradeMinorVersion": true,
+				"settings": {
+					"fileUris": [
+						"https://raw.githubusercontent.com/zyxyoshine/IOStormplus/master/deploy/deploy.win.ps1"
+					],
+					"commandToExecute": "[concat('powershell -ExecutionPolicy Unrestricted -File ','deploy.win.ps1 ',parameters('ControllerIP'),' ',parameters('vmSize'))]"
+				}
+            },
+            "dependsOn": [
+                "[concat('Microsoft.Compute/virtualMachines/',variables('vmName'),copyIndex(parameters('vmIndex')))]"
+            ]
+        }
+    ]
+}
