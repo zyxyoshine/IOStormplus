@@ -7,6 +7,7 @@
 #include <vector>
 #include <sstream>
 #include <ctime>
+#include <stdarg.h>
 //#include <unistd.h>
 
 extern int pclose(FILE* stream);
@@ -19,8 +20,8 @@ using namespace std;
 
 namespace IOStormPlus{
 
-	class LinuxAgent:public IAgent{
-	public:        
+	class LinuxAgent:public BaseAgent{
+	protected:        
 
 		string LinuxAgent::ExecuteCommand(string cmd) {
 			char buffer[128];
@@ -57,69 +58,56 @@ namespace IOStormPlus{
 			return res;
 		}
 
-		void LinuxAgent::Sync() {
-			ifstream fin;
-			fin.open(ControllerTempFilePath, ios_base::in);
-			while (fin.fail()) {
-				sleep(SyncWaitTime);
-				cerr << strerror(errno) << endl;
-				fin.open(ControllerTempFilePath , ios_base::in);
-			}
-			string reader;
-			cout << "waiting for controller requests" << endl;
-			while(1) {
-				fin.close();
-				sleep(SyncWaitTime);
-				fin.open(ControllerTempFilePath , ios_base::in);
-				fin >> reader;
-				if (reader == "PRESYNC") {
-					cout << "pre-sync succeeded" << endl;
-					break;
+		string LinuxAgent::RunCommand(AgentCommand command, ...){
+			va_list args;
+			int count;
+			va_start(args, count);
+			string cmdString;
+			switch(command){
+				case AgentCommand::CopyOutputCmd: {
+					string jobname = va_arg(args, string);
+					string hostname = va_arg(args, string);
+					string cmdString = "cp -pf " + jobname + ".out " + " " + OutputFolder + hostname + "_" + jobname + ".out";
+					ExecuteCommand(cmdString);	
+					break;				
+				}
+				case AgentCommand::DelTempFileCmd: {
+					string jobname = va_arg(args, string);
+					string cmdString = "rm -f " + jobname + "*";
+					ExecuteCommand(cmdString);	
+					break;		
+				}
+				case AgentCommand::DelJobFilesCmd: {
+					string cmdString = "rm -f " + GetWorkloadFolderPath() + "*";
+					ExecuteCommand(cmdString);
+					break;					
+				}
+				default: {
+					BaseAgent::RunCommand(command, args);
 				}
 			}
-			fin.close();
-			ofstream fout(ClientTempFilePath, ios_base::out | ios_base::trunc);
-			fout << "SYNCDONE";
-			fout.flush();
-			fout.close();
+			return NULL;
 		}
 
-		void LinuxAgent::Run() {
-			string hostname = ExecuteCommand("hostname");
-			if (hostname.find('\n') != string::npos)
-				hostname = hostname.replace(hostname.find('\n'),1,"");
-			cout << hostname << endl;
-			ifstream fin(ControllerTempFilePath, ios_base::in);
-			string reader;
-			while(true) {
-				fin.seekg(0, ios::beg);
-				fin >> reader;
-				if (reader == "START") {
-					vector<string> jobs = ListFilesInDirectory(WorkLoadFolderPath);
-					cout << "Running fio workload." << endl;
-					for (int i = 0 ;i < jobs.size();i++){
-						string jobname = jobs[i];
-						if (jobname.find(".job") != string::npos)
-							jobname = jobname.replace(jobname.find(".job"),4,"");
-						string cmd_run_fio = "fio --output=" + jobname + ".out " + " " + WorkLoadFolderPath + jobs[i];
-						ExecuteCommand(cmd_run_fio.c_str());
-						string cmd_copy_output = "cp -pf " + jobname + ".out " + " " + OutputFolderPath + hostname + "_" + jobname + ".out";
-						ExecuteCommand(cmd_copy_output.c_str());
-						string cmd_rm_temp_file = "rm -f " + jobname + "*";
-						ExecuteCommand(cmd_rm_temp_file.c_str());
-					}
-					break;
-				}
-				sleep(10);
-			}
-			fin.close();
-			string cmd_rm_job_files = "rm -f " + WorkLoadFolderPath + "*";
-			ExecuteCommand(cmd_rm_job_files.c_str());
-			ofstream fout(ClientTempFilePath, ios_base::out | ios_base::trunc);
-			fout << "DONE" << endl;
-			cout << "Done !" << endl;
-			fout.close();
+		void LinuxAgent::Wait(){
+			Sleep(SyncWaitTime);
 		}
+
+        string LinuxAgent::GetControlTempFilePath(){
+			return ControllerTempFilePath;
+		}
+
+        string LinuxAgent::GetClientTempFilePath(){
+			return ClientTempFilePath;
+		}
+
+        string LinuxAgent::GetLogFilePath(){
+			return LogFilePath;
+		}	
+
+		string LinuxAgent::GetWorkloadFolderPath(){
+			return WorkLoadFolderPath;
+		}		
 	};
 }
 

@@ -1,7 +1,7 @@
 #include "controller.h"
 #include "constant.h"
 #include "rapidjson/document.h"     // rapidjson's DOM-style API
-#include "..\\common\logger.h"
+#include "../common/logger.h"
 #include "helper.h"
 #include <windows.h>
 #include <algorithm>
