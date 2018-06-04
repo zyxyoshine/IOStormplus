@@ -63,6 +63,7 @@ namespace IOStormPlus{
                             << now->tm_min << ':'
                             << now->tm_sec << ']';
             cout << ('[' + GetLabel(level) + ']');
+            cout << message << endl;
         }
         
         // Skip log to file if file is not ready
@@ -78,6 +79,7 @@ namespace IOStormPlus{
                         << now->tm_min << ':'
                         << now->tm_sec << ']';
         s_logfileStream << ('[' + GetLabel(level) + ']');
+        s_logfileStream << message << endl;
         s_logfileStream.flush();        
     }
 

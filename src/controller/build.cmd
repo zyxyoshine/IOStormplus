@@ -1,0 +1,1 @@
+cl /EHsc controller.cpp helper.cpp testvm.cpp ../common/logger.cpp

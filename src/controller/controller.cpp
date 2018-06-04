@@ -28,12 +28,15 @@ namespace IOStormPlus{
 
         /* Load JSON file */
         fstream fin(configFilename);
+        Logger::LogInfo("Open Configuration file: " + configFilename);
         string data, content = "";
         while (!fin.eof()) {
             getline(fin, data);
             content += data;
         }
         fin.close();
+
+        // TODO: Handle configFilename not exisi
 
         Document VMConfig;
         if (VMConfig.Parse(content.c_str()).HasParseError()) {
@@ -48,13 +51,12 @@ namespace IOStormPlus{
         auto vmInfo = VMConfig["value"].GetArray();
         
         stringstream logStream;
-        logStream << "Test VM Count " << vmCount << endl;      
+        logStream << "Test VM Count " << vmCount;      
         Logger::LogInfo(logStream.str());
         
         for (int i = 0; i < vmCount; ++i) {
             TestVMs.push_back(TestVM(vmInfo[i]["name"].GetString(), vmInfo[i]["ip"].GetString(), vmInfo[i]["info"]["type"].GetString(), vmInfo[i]["info"]["size"].GetString()));
         }
-        Logger::LogVerbose("Configure File has been parsed successfully!");
 
         m_isReady = true;
     }
@@ -125,6 +127,7 @@ namespace IOStormPlus{
 
     /// Usage
     void Controller::PrintUsage(ControllerCommand command) {
+        cout<<"Usage";
         switch(command) {
             case ControllerCommand::General: {
                 cout << "USAGE: IOStormplus [options] {parameters}        " << endl;
@@ -132,6 +135,7 @@ namespace IOStormPlus{
                 cout << "help                   Display usage.                " << endl;
                 cout << "agent                  Configure the test VM agents. " << endl;
                 cout << "start                  Start test job.               " << endl;
+                break;
             }
             case ControllerCommand::AgentGeneral: {
                 cout << "USAGE: IOStormplus agent [options] {parameters}                         " << endl;
@@ -168,7 +172,7 @@ namespace IOStormPlus{
         time_t t = std::time(0);   
         tm* now = std::localtime(&t);
         stringstream logFilename;
-        logFilename << "%d%02d%02d.log" << now->tm_year + 1900 << now->tm_mon + 1 << now->tm_mday << endl;
+        logFilename << now->tm_year + 1900 << now->tm_mon + 1 << now->tm_mday << ".log" ;
         Logger::Init(logFilename.str());
     }
 
@@ -503,8 +507,9 @@ namespace IOStormPlus{
 
     int main(int argc,char *argv[]) {
         Controller controller(AgentsConfigFilename);
-        if (controller.IsReady())
+        if (!controller.IsReady()){
             return 0;
+        }
 
         if (argc == 1)
             controller.PrintUsage(ControllerCommand::General);
@@ -518,6 +523,7 @@ namespace IOStormPlus{
             controller.InitAgents();
         }
         else {
+            cout << 2;
             controller.PrintUsage(ControllerCommand::General);
         }
         return 0;
