@@ -1,4 +1,5 @@
-#include "helper.h"
+#include "header/helper.h"
+#include "../common/header/logger.h"
 
 using namespace std;
 
@@ -10,6 +11,7 @@ namespace IOStormPlus{
 		string result = "";
 		FILE* pipe = _popen(cmd.c_str(), "r");
 		if (!pipe){
+			Logger::LogError("popen() failed!");
 			throw runtime_error("popen() failed!");
         }
 		try {
@@ -18,9 +20,11 @@ namespace IOStormPlus{
 					result += buffer;
                 }
 			}
+			Logger::LogInfo(result);
 		} 
         catch (...) {
 			_pclose(pipe);
+			Logger::LogError("Pipe Exception");
 			throw;
 		}
 		_pclose(pipe);

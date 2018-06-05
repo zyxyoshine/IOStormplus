@@ -1,0 +1,1 @@
+cl /EHsc agent.cpp ..\baseagent.cpp ..\..\common\logger.cpp

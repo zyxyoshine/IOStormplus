@@ -1,6 +1,6 @@
-#include "constant.h"
-#include "..\baseagent.h"
-#include "..\..\common\logger.h"
+#include "header/constant.h"
+#include "../header/baseagent.h"
+#include "../../common/header/logger.h"
 #include <stdexcept>
 #include <windows.h>
 #include <iostream>
@@ -15,13 +15,18 @@ using namespace std;
 namespace IOStormPlus{
 
 	class WindowsAgent:public BaseAgent{
+	public:
+		WindowsAgent(){
+			InitLogger();
+		}
 	protected:        
-
-		string WindowsAgent::ExecuteCommand(string command) {
+		string WindowsAgent::ExecuteScript(string command) {
+			Logger::LogVerbose("Run Script "+command);
 			char buffer[128];
 			string result = "";
 			FILE* pipe = _popen(command.c_str(), "r");
 			if (!pipe) {
+				Logger::LogError("_popen() failed!");
 				throw runtime_error("popen() failed!");
 			}
 			try {
@@ -33,13 +38,16 @@ namespace IOStormPlus{
 			} 
 			catch (...) {
 				_pclose(pipe);
+				Logger::LogError("Execute script error");
 				throw;
 			}
 			_pclose(pipe);
+			Logger::LogInfo("Execute script succeed");
 			return result;
 		}
 
 		vector<string> WindowsAgent::ListFilesInDirectory(string rootPath) {
+			Logger::LogVerbose("Start List Files under directory");
 			WIN32_FIND_DATA data;
 			HANDLE hFind = FindFirstFile((rootPath + "*").c_str(), &data);      // DIRECTORY
 			vector<string> res;
@@ -52,10 +60,11 @@ namespace IOStormPlus{
 				while (FindNextFile(hFind, &data));
 				FindClose(hFind);
 			}
+			Logger::LogVerbose("Done List Files");
 			return res;
 		}
 
-		string WindowsAgent::RunCommand(AgentCommand command, ...){
+		string WindowsAgent::RunScript(AgentCommand command, ...){
 			va_list args;
 			int count;
 			va_start(args, count);
@@ -64,22 +73,22 @@ namespace IOStormPlus{
 					string jobname = va_arg(args, string);
 					string hostname = va_arg(args, string);
 					string copyOutputCmd = "copy " + jobname + ".out " + " " + OutputFolder + hostname + "_" + jobname + ".out";
-					ExecuteCommand(copyOutputCmd);	
+					ExecuteScript(copyOutputCmd);	
 					break;				
 				}
 				case AgentCommand::DelTempFileCmd: {
 					string jobname = va_arg(args, string);
 					string rmTempFileCmd = "DEL /F /Q " + jobname + "*";
-					ExecuteCommand(rmTempFileCmd);	
+					ExecuteScript(rmTempFileCmd);	
 					break;		
 				}
 				case AgentCommand::DelJobFilesCmd: {
 					string rmJobFilesCmd = "DEL /F /Q " + GetWorkloadFolderPath() + "*";
-					ExecuteCommand(rmJobFilesCmd);
+					ExecuteScript(rmJobFilesCmd);
 					break;					
 				}
 				default: {
-					BaseAgent::RunCommand(command, args);
+					BaseAgent::RunScript(command, args);
 				}
 			}
 			return NULL;
@@ -109,14 +118,15 @@ namespace IOStormPlus{
 }
 
 int main(int argc,char *argv[]) {
-	ofstream fout("\\\\" + string(argv[1]) + "\\agents\\" + string(argv[2]));
-	fout << string(argv[3]) << " windows " << string(argv[4]) << endl;
-	fout.close();
-
+	// cout << "hh222" << argv[1];
+	// ofstream fout("\\\\" + string(argv[1]) + "\\agents\\" + string(argv[2]));
+	// cout << "hh0";
+	// fout << string(argv[3]) << " windows " << string(argv[4]) << endl;
+	// fout.close();
 	IOStormPlus::WindowsAgent agent;
-	while(true) {
-		agent.Sync();
+	while(true){
 		agent.Run();
 	}
 	return 0;
 }
+

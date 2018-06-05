@@ -1,4 +1,5 @@
 #pragma once
+#include "../common/header/command.h"
 #include <map>
 #include <vector>
 using namespace std;
@@ -46,8 +47,8 @@ namespace IOStormPlus{
         string GetSize();
         OSType GetOSType();
 
-        void SendCommand(string command);
-        bool GetResponse(string command);
+        void SendCommand(SCCommand command);
+        bool GetResponse(SCCommand command);
 
     private:
         string m_name;

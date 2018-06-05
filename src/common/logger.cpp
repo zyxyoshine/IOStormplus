@@ -1,4 +1,4 @@
-#include "logger.h"
+#include "header\logger.h"
 #include <cassert>
 #include <iostream>
 #include <ctime>
@@ -10,11 +10,13 @@ namespace IOStormPlus{
     ///////////////////////////////////////////////////////////////////////////////////////////
 
     void Logger::Init(string filename, LogLevel level, bool needConsoleOutput) {
+        cout << "call log init";
         if (s_logfileStream.is_open()){
             s_logfileStream.close();
         }
         s_level = level;
         s_consoleOutput = needConsoleOutput;
+        cout << filename << endl;
         s_logfileStream.open(filename, ios_base::out | ios_base::trunc);
         if (s_logfileStream.fail()){
             cerr << "Open " + filename + " for Logger failed!" << endl;
@@ -67,7 +69,7 @@ namespace IOStormPlus{
         }
         
         // Skip log to file if file is not ready
-        assert(s_logfileStream.is_open());
+        //assert(s_logfileStream.is_open());
         if(!s_logfileStream.is_open()) return;
 
         s_logfileStream << ('[')
@@ -92,13 +94,13 @@ namespace IOStormPlus{
 
     string Logger::GetLabel(LogLevel level) {
         switch(level) {
-            case Verbose: return "Verbose:";
-            case Info:  return "Info:";
-            case Warning:  return "Warning:";
-            case Error: return "Error:";
+            case Verbose: return "VERBOSE";
+            case Info:  return "INFO";
+            case Warning:  return "WARNING";
+            case Error: return "ERROR";
         }
         assert(true);
-        return "Unknwon";
+        return "UNKNOWN";
     }
 
 }

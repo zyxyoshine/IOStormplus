@@ -1,6 +1,6 @@
 #pragma once
 
-#include "..\constant.h"
+#include "../../header/constant.h"
 
 #include <string>
 using namespace std;
@@ -19,7 +19,7 @@ namespace IOStormPlus{
     const string ControllerTempFilePath = BinFolderPath + InfoTempFolderName + DirSpliter + ControllerTempFilename;
     const string ClientTempFilePath = BinFolderPath + InfoTempFolderName + DirSpliter + ClientTempFilename;
     const string LogFilePath = BinFolderPath + LogFilename;
-    const int SyncWaitTime = 10000;    
+    const int SyncWaitTime = 1000;    
 }
 
 #ifdef __cplusplus

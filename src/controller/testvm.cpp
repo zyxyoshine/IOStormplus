@@ -1,7 +1,7 @@
-#include "testvm.h"
-#include "..\common\logger.h"
-#include "constant.h"
-#include "helper.h"
+#include "header/testvm.h"
+#include "../common/header/logger.h"
+#include "header/constant.h"
+#include "header/helper.h"
 #include <sstream>
 #include <algorithm>
 #include <iostream>
@@ -76,24 +76,23 @@ namespace IOStormPlus {
     }
 
     
-    void TestVM::SendCommand(string command){
+    void TestVM::SendCommand(SCCommand command){
         ofstream fout;
-
         Logger::LogInfo("Sending pre-sync request to test VM " + GetName() + "(" + GetInternalIP() + ")");
         ExecCommand(string("del /f " + GetSharePath() + TempFolder + "client.tmp"));
         fout.open(GetSharePath() + TempFolder + "Controller.tmp", ios_base::out | ios_base::trunc);
-        fout << command;
+        fout << GetCommandString(command);
         fout.close();        
     }
 
-    bool TestVM::GetResponse(string command){
+    bool TestVM::GetResponse(SCCommand command){
         ifstream fin;
         string buf;
 
         fin.open(GetSharePath() + TempFolder + "client.tmp", ios_base::in);
         if (!fin.fail()) {
             fin >> buf;
-            if(buf == command) {
+            if(buf.compare(GetCommandString(command)) == 0) {
                 return true;
             }
         }

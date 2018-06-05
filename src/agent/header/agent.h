@@ -20,13 +20,7 @@ namespace IOStormPlus{
 
     class IAgent{
     public:
-        void Sync();
         void Run();
-    protected:
-        void InitLogger();
-        vector<string> ListFilesInDirectory(string rootPath);
-        string RunCommand(AgentCommand command, ...);
-        string ExecuteCommand(string command);
     };
 
 }

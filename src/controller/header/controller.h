@@ -1,5 +1,6 @@
 #pragma once
 #include "TestVM.h"
+#include "../common/header/command.h"
 #include <vector>
 #include <map>
 #include <sstream>
@@ -40,6 +41,7 @@ namespace IOStormPlus{
         void ConfigureAgent(int argc, char *argv[]);
         void RunTest(int argc, char *argv[]);
         void PrintUsage(ControllerCommand command);
+        void CheckTestVMHealth();
 
     private:
         bool m_isReady;
@@ -47,8 +49,7 @@ namespace IOStormPlus{
         void InitLogger();
         
         // Health Check
-        void CheckTestVMHealth();
-        void WaitForAllVMs(string command);
+        void WaitForAllVMs(SCCommand command);
 
         // Test Execution
         void RunStandardTest();

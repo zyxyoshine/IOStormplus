@@ -1,8 +1,8 @@
-#include "controller.h"
-#include "constant.h"
+#include "header/controller.h"
+#include "header/constant.h"
 #include "rapidjson/document.h"     // rapidjson's DOM-style API
-#include "../common/logger.h"
-#include "helper.h"
+#include "../common/header/logger.h"
+#include "header/helper.h"
 #include <windows.h>
 #include <algorithm>
 #include <ctime>
@@ -11,11 +11,6 @@
 
 using namespace rapidjson;
 using namespace std;
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
 
 namespace IOStormPlus{
 
@@ -181,15 +176,15 @@ namespace IOStormPlus{
 
         // Ask VM to sync    
         for (auto &vm : TestVMs) {
-            vm.SendCommand("PRESYNC");
+            vm.SendCommand(SCCommand::SyncCmd);
         }
 
         // Check all VMs to response sync
-        WaitForAllVMs("SYNCDONE");
+        WaitForAllVMs(SCCommand::SyncDoneCmd);
         Logger::LogInfo("All test VM pre-sync succeeded!");
     }
 
-    void Controller::WaitForAllVMs(string command){
+    void Controller::WaitForAllVMs(SCCommand command){
         // Check all VMs to response sync
         Logger::LogInfo("Waiting for agents response.");
         bool allDone = false;
@@ -237,10 +232,10 @@ namespace IOStormPlus{
             }
 
             Logger::LogInfo("Sending work request to test VM " + vm.GetName() + "(" + vm.GetInternalIP() + ")");
-            vm.SendCommand("START");
+            vm.SendCommand(SCCommand::StartJobCmd);
         }
 
-        WaitForAllVMs("DONE");
+        WaitForAllVMs(SCCommand::JobDoneCmd);
 
         Logger::LogVerbose("All jobs done!");
 
@@ -505,34 +500,33 @@ namespace IOStormPlus{
         return (int)num;
     }
 
-    int main(int argc,char *argv[]) {
-        Controller controller(AgentsConfigFilename);
-        if (!controller.IsReady()){
-            return 0;
-        }
+}
 
-        if (argc == 1)
-            controller.PrintUsage(ControllerCommand::General);
-        else if (strcmp(argv[1], "agent") == 0) {
-            controller.ConfigureAgent(argc - 2, argv + 2);
-        }
-        else if (strcmp(argv[1], "start") == 0) {
-            controller.RunTest(argc - 2, argv + 2);
-        }
-        else if (strcmp(argv[1], "init") == 0) {
-            controller.InitAgents();
-        }
-        else {
-            cout << 2;
-            controller.PrintUsage(ControllerCommand::General);
-        }
+int main(int argc,char *argv[]) {
+    IOStormPlus::Controller controller(IOStormPlus::AgentsConfigFilename);
+    if (!controller.IsReady()){
         return 0;
     }
-}
 
-#ifdef __cplusplus
+    if (argc == 1)
+        controller.PrintUsage(IOStormPlus::ControllerCommand::General);
+    else if (strcmp(argv[1], "agent") == 0) {
+        controller.ConfigureAgent(argc - 2, argv + 2);
+    }
+    else if (strcmp(argv[1], "start") == 0) {
+        controller.RunTest(argc - 2, argv + 2);
+    }
+    else if (strcmp(argv[1], "init") == 0) {
+        controller.InitAgents();
+    }
+    else if (strcmp(argv[1], "test") == 0) {
+        controller.CheckTestVMHealth();
+    }
+    else {
+        controller.PrintUsage(IOStormPlus::ControllerCommand::General);
+    }
+    return 0;
 }
-#endif
 
 
 
