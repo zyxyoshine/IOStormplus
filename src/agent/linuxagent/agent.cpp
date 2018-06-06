@@ -1,13 +1,12 @@
-#include "constant.h"
-#include "..\agent.h"
-#include "..\..\common\logger.h"
+#include "header/constant.h"
+#include "../header/agent.h"
+#include "../../common/header/logger.h"
 #include <stdexcept>
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <sstream>
 #include <ctime>
-#include <stdarg.h>
 //#include <unistd.h>
 
 extern int pclose(FILE* stream);
@@ -16,14 +15,12 @@ extern int sleep(double milliseconds);
 
 using namespace std;
 
-
-
 namespace IOStormPlus{
 
 	class LinuxAgent:public BaseAgent{
 	protected:        
 
-		string LinuxAgent::ExecuteCommand(string cmd) {
+		string LinuxAgent::ExecuteScript(string cmd) {
 			char buffer[128];
 			string result = "";
 			FILE* pipe = popen(cmd.c_str(), "r");
@@ -47,7 +44,7 @@ namespace IOStormPlus{
 		vector<string> LinuxAgent::ListFilesInDirectory(string rootPath) {
 			vector<string> res;
 			string lsCmd = "ls " + rootPath;
-			string lsResut = ExecuteCommand(lsCmd.c_str());
+			string lsResut = ExecuteScript(lsCmd.c_str());
 			int pre = 0;
 			for (int i = 0;i < lsResut.length();i++) {
 				if (lsResut[i] == '\n') {
@@ -58,35 +55,34 @@ namespace IOStormPlus{
 			return res;
 		}
 
-		string LinuxAgent::RunCommand(AgentCommand command, ...){
-			va_list args;
-			int count;
-			va_start(args, count);
-			string cmdString;
+		string LinuxAgent::RunScript(AgentCommand command, vector<string> &params){
+			string striptCmdString;
 			switch(command){
 				case AgentCommand::CopyOutputCmd: {
-					string jobname = va_arg(args, string);
-					string hostname = va_arg(args, string);
-					string cmdString = "cp -pf " + jobname + ".out " + " " + OutputFolder + hostname + "_" + jobname + ".out";
-					ExecuteCommand(cmdString);	
+					string jobname = params[0];
+					string hostname = params[1];
+					string striptCmdString = "cp -pf " + jobname + ".out " + " " + OutputFolder + hostname + "_" + jobname + ".out";
+					ExecuteScript(striptCmdString);	
 					break;				
 				}
 				case AgentCommand::DelTempFileCmd: {
-					string jobname = va_arg(args, string);
-					string cmdString = "rm -f " + jobname + "*";
-					ExecuteCommand(cmdString);	
+					string filename = params[0];
+					string striptCmdString = "rm -f " + jobname + "*";
+					Logger::LogVerbose("Stript command "+striptCmdString);
+					ExecuteScript(striptCmdString);	
 					break;		
 				}
 				case AgentCommand::DelJobFilesCmd: {
-					string cmdString = "rm -f " + GetWorkloadFolderPath() + "*";
-					ExecuteCommand(cmdString);
+					string striptCmdString = "rm -f " + GetWorkloadFolderPath() + "*";
+					Logger::LogVerbose("Stript command "+striptCmdString);
+					ExecuteScript(striptCmdString);
 					break;					
 				}
 				default: {
-					BaseAgent::RunCommand(command, args);
+					BaseAgent::RunCommand(command, params);
 				}
 			}
-			return NULL;
+			return "";
 		}
 
 		void LinuxAgent::Wait(){
@@ -111,9 +107,7 @@ namespace IOStormPlus{
 	};
 }
 
-int main(int argc,char *argv[]) {
-	IOStormPlus::LinuxAgent agent;
-    
+int main(int argc,char *argv[]) {   
 	string hostname = agent.ExecuteCommand("hostname");
     if (hostname.find('\n') != string::npos)
         hostname = hostname.replace(hostname.find('\n'),1,"");
@@ -122,9 +116,9 @@ int main(int argc,char *argv[]) {
     fout.close();
 
 
-	while(true) {
-        agent.Sync();
-        agent.Run();
-    }
+	IOStormPlus::LinuxAgent agent;
+	while(true){
+		agent.Run();
+	}
 	return 0;
 }

@@ -398,12 +398,16 @@ namespace IOStormPlus{
             fout << "ID\tName\tIP Address\tOS\tSize\tR(MIN)\tR(MAX)\tR(AVG)\tW(MIN)\tW(MAX)\tW(AVG)" << endl;
             string vm_id;
             for (int i = 0;i < TestVMs.size();i++) {
+                Logger::LogVerbose("Job: " + job);
                 if (TestVMs[i].TestResults.count(job)) {
                     tempStream.clear();
                     tempStream << i + 1;
                     tempStream >> vm_id;
                     Logger::LogInfo(vm_id + "\t" + TestVMs[i].GetTestResult(job));
                     fout << vm_id + "\t" + TestVMs[i].GetTestResult(job) << endl;
+                }
+                else{
+                    Logger::LogWarning("No Job");
                 }
             }
         }
@@ -440,6 +444,7 @@ namespace IOStormPlus{
         if (jobName.find(".job") != string::npos) {
             jobName = jobName.replace(jobName.find(".job"),4,"");
         }
+        Logger::LogVerbose("Start AnalyzeJob "+ jobName);
         
         const string outputFile = OutputFolder + vm.GetName() + "_" + jobName + ".out";
         const string copyOutputCmd = "copy " + vm.GetSharePath() + outputFile + " " + outputFile + " /y";
@@ -448,10 +453,15 @@ namespace IOStormPlus{
             res = ExecCommand(copyOutputCmd);   
         } while (res.find("cannot") != string::npos);
 
-        vm.TestResults[jobName] = AnalyzeStandardOutput(outputFile);
+        Logger::LogInfo("Done execute command "+ copyOutputCmd);
+
+        Logger::LogVerbose("Jobname: "+jobName);
+        vm.TestResults[job] = AnalyzeStandardOutput(outputFile);
     }
 
     ReportSummary Controller::AnalyzeStandardOutput(string outputFile) {
+        Logger::LogVerbose("Start AnalyzeStandardOutput "+ outputFile);
+        
         ifstream fin(outputFile, ios_base::in);
         string buf;
         ReportSummary res;
@@ -470,6 +480,9 @@ namespace IOStormPlus{
                 res.WriteIOPS.push_back(GetIOPSNumber(buf, pos));
             }
         }
+
+        Logger::LogVerbose("End AnalyzeStandardOutput "+ outputFile);
+        
         return res;
     }
 
@@ -497,6 +510,7 @@ namespace IOStormPlus{
             }
         }
         num /= pow(10,pointCount);
+        Logger::LogVerbose("IOPS number done");
         return (int)num;
     }
 

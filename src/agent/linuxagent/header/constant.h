@@ -1,6 +1,6 @@
 #pragma once
 
-#include "..\constant.h"
+#include "../constant.h"
 
 #include <string>
 using namespace std;

@@ -42,7 +42,7 @@ namespace IOStormPlus{
 				throw;
 			}
 			_pclose(pipe);
-			Logger::LogInfo("Execute script succeed");
+			Logger::LogInfo("Execute script succeed "+result);
 			return result;
 		}
 
@@ -64,34 +64,35 @@ namespace IOStormPlus{
 			return res;
 		}
 
-		string WindowsAgent::RunScript(AgentCommand command, ...){
-			va_list args;
-			int count;
-			va_start(args, count);
+		string WindowsAgent::RunScript(AgentCommand command, vector<string> &params){
+			Logger::LogVerbose("RunScript Start");
+			string striptCmdString;
 			switch(command){
 				case AgentCommand::CopyOutputCmd: {
-					string jobname = va_arg(args, string);
-					string hostname = va_arg(args, string);
-					string copyOutputCmd = "copy " + jobname + ".out " + " " + OutputFolder + hostname + "_" + jobname + ".out";
-					ExecuteScript(copyOutputCmd);	
+					string jobname = params[0];
+					string hostname = params[1];
+					striptCmdString = "copy " + jobname + ".out " + " " + OutputFolder + hostname + "_" + jobname + ".out";
+					ExecuteScript(striptCmdString);	
 					break;				
 				}
 				case AgentCommand::DelTempFileCmd: {
-					string jobname = va_arg(args, string);
-					string rmTempFileCmd = "DEL /F /Q " + jobname + "*";
-					ExecuteScript(rmTempFileCmd);	
+					string filename = params[0];
+					striptCmdString = "DEL /F /Q " + filename + "*";
+					Logger::LogVerbose("Stript command "+striptCmdString);
+					ExecuteScript(striptCmdString);	
 					break;		
 				}
 				case AgentCommand::DelJobFilesCmd: {
-					string rmJobFilesCmd = "DEL /F /Q " + GetWorkloadFolderPath() + "*";
-					ExecuteScript(rmJobFilesCmd);
+					striptCmdString = "DEL /F /Q " + GetWorkloadFolderPath() + "*";
+					Logger::LogVerbose("Stript command "+striptCmdString);
+					ExecuteScript(striptCmdString);
 					break;					
 				}
 				default: {
-					BaseAgent::RunScript(command, args);
+					return BaseAgent::RunScript(command, params);
 				}
 			}
-			return NULL;
+			return "";
 		}
 
 		void WindowsAgent::Wait(){

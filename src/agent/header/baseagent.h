@@ -23,7 +23,7 @@ namespace IOStormPlus{
         void InitLogger();
         virtual string ExecuteScript(string command){return NULL;};
         virtual vector<string> ListFilesInDirectory(string rootPath){vector<string> a; return a;};
-        virtual string RunScript(AgentCommand command, ...);
+        virtual string RunScript(AgentCommand command, vector<string> &params);
         virtual void Wait(){};
         virtual string GetControlTempFilePath(){return NULL;};
         virtual string GetClientTempFilePath(){return NULL;};

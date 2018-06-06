@@ -2,7 +2,7 @@
 #include "../common/header/logger.h"
 #include <iostream>
 #include <cassert>
-#include <stdarg.h>
+#include <cstdarg>
 
 using namespace std;
 
@@ -17,6 +17,7 @@ namespace IOStormPlus{
 			Wait();
 			SCCommand cmd;
 			if (!GetControllerCmd(cmd)) {
+				Logger::LogVerbose("No valid command, waiting");
 				continue;
 			} 
 			Logger::LogVerbose("Get one command");
@@ -35,27 +36,24 @@ namespace IOStormPlus{
 		}
 	}	
 
-    string BaseAgent::RunScript(AgentCommand command, ...){
-		va_list args;
-		int count;
-		va_start(args, count);
+    string BaseAgent::RunScript(AgentCommand command, vector<string> &params){
 		switch(command){
 			case AgentCommand::HostnameCmd: {
 				return ExecuteScript("hostname");
-				break; 
 			}
 			case AgentCommand::RunFIOCmd: {
-				string job = va_arg(args, string);
-				string jobname = va_arg(args, string);
-				string runFIOCmd = "fio --output=" + jobname + ".out " + " " + GetWorkloadFolderPath() + job;
-				ExecuteScript(runFIOCmd);
+				assert(params.size() == 2);
+				string job = params[0];
+				string jobname = params[1];
+				string striptCmdString = "fio --output=" + jobname + ".out " + " " + GetWorkloadFolderPath() + job;
+				ExecuteScript(striptCmdString);
 				break; 
 			}
 			default: {
 				assert(false);
 			}
 		}
-		return NULL;
+		return "";
 	}	
 
     bool BaseAgent::GetControllerCmd(SCCommand &command){
@@ -65,7 +63,7 @@ namespace IOStormPlus{
 		ifstream fin;	
 		fin.open(GetControlTempFilePath(), ios_base::in);
 		if (!fin.is_open()) {
-			Logger::LogError("Failed to open controller temp file");	
+			Logger::LogInfo("Failed to open controller temp file");	
 			return false;
 		}
 
@@ -77,10 +75,11 @@ namespace IOStormPlus{
 
 		command = GetCommondFromString(buf);
 		Logger::LogInfo("Get command " + buf);
-		cout << buf << command << endl;
 		if (command != SCCommand::InvaildCmd) {
 			return true;
 		}
+
+		Logger::LogWarning("Unknown control command");
 		return false;
 	}
 
@@ -95,17 +94,22 @@ namespace IOStormPlus{
 		fout << GetCommandString(command);
 		fout.flush();
 		fout.close();
+
+		vector<string> params;
+		params.push_back(GetControlTempFilePath());		
+		RunScript(AgentCommand::DelTempFileCmd,params);
         
 		Logger::LogInfo("Done ack " + cmdstring + " command");
 	}
 
     void BaseAgent::RunJobs(){
 		Logger::LogVerbose("Start Job");
-		string hostname = RunScript(AgentCommand::HostnameCmd);
+		vector<string> params;		
+		string hostname = RunScript(AgentCommand::HostnameCmd, params);
 		if (hostname.find('\n') != string::npos) {
 			hostname = hostname.replace(hostname.find('\n'),1,"");
 		}
-		Logger::LogInfo("Hostname" + hostname);
+		Logger::LogInfo("Hostname " + hostname);
 
 		vector<string> jobs = ListFilesInDirectory(GetWorkloadFolderPath());
 		Logger::LogVerbose("Running fio workload.");
@@ -114,14 +118,24 @@ namespace IOStormPlus{
 			if (jobname.find(".job") != string::npos) {
 				jobname = jobname.replace(jobname.find(".job"),4,"");
 			}
-				
-			RunScript(AgentCommand::RunFIOCmd, jobs[i], jobname);
-			RunScript(AgentCommand::CopyOutputCmd, jobname, hostname);
-			RunScript(AgentCommand::DelTempFileCmd, jobname);
+
+			vector<string> params;
+			params.push_back(jobs[i]);
+			params.push_back(jobname);	
+			RunScript(AgentCommand::RunFIOCmd, params);
+			
+			params.clear();
+			params.push_back(jobname);
+			params.push_back(hostname);
+			RunScript(AgentCommand::CopyOutputCmd, params);
+
+			params.clear();
+			params.push_back(jobname);			
+			RunScript(AgentCommand::DelTempFileCmd,params);
 			Logger::LogInfo("Done Job "+jobname);
 		}
 
-		RunScript(AgentCommand::DelJobFilesCmd);
+		RunScript(AgentCommand::DelJobFilesCmd,params);
 
 		Logger::LogVerbose("Job Done");		
 	}

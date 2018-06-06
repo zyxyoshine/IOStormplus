@@ -72,6 +72,7 @@ namespace IOStormPlus {
         tempStream << GetName() << "\t" << GetInternalIP() << "\t" << GetOSTypeName() + "\t" + GetSize()
                    << "\t" << readMinIOPS << "\t" << readMaxIOPS << "\t" << readAvgIOPS << "\t" 
                    << writeMinIOPS << "\t" << writeMaxIOPS << "\t" << writeAvgIOPS;
+        Logger::LogVerbose(tempStream.str());
         return tempStream.str();
     }
 
