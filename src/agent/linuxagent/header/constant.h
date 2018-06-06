@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../constant.h"
+#include "../../header/constant.h"
 
 #include <string>
 using namespace std;
@@ -12,10 +12,10 @@ extern "C"
 
 namespace IOStormPlus{
     const string BinFolderPath = "/samba/";
-    const string WorkspaceFolderPath = "~/fiojob/";
     const string DirSpliter = "/";
+    const string WorkspaceFolderPath = "~/fiojob/";
     const string WorkLoadFolderPath = BinFolderPath + WorkspaceFolderPath + DirSpliter;
-    const string OutputFolderPath = BinFolderPath + OutputFolderName + DirSpliter;
+    const string OutputFolder = BinFolderPath + OutputFolderName + DirSpliter;
     const string ControllerTempFilePath = BinFolderPath + InfoTempFolderName + DirSpliter + ControllerTempFilename;
     const string ClientTempFilePath = BinFolderPath + InfoTempFolderName + DirSpliter + ClientTempFilename;
     const string LogFilePath = BinFolderPath + LogFilename;   

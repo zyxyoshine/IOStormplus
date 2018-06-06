@@ -23,12 +23,12 @@ namespace IOStormPlus{
     };
 
     inline SCCommand GetCommondFromString(string cmdString){
-        if(cmdString.compare("PRESYNC") == 0) return SCCommand::SyncCmd;
-        if(cmdString.compare("SYNCDONE") == 0) return SCCommand::SyncDoneCmd;
-        if(cmdString.compare("START") == 0) return SCCommand::StartJobCmd;
-        if(cmdString.compare("DONE") == 0) return SCCommand::JobDoneCmd;
+        if(cmdString.compare("PRESYNC") == 0) return SyncCmd;
+        if(cmdString.compare("SYNCDONE") == 0) return SyncDoneCmd;
+        if(cmdString.compare("START") == 0) return StartJobCmd;
+        if(cmdString.compare("DONE") == 0) return JobDoneCmd;
 
-        return SCCommand::InvaildCmd;
+        return InvaildCmd;
     }
 }
 

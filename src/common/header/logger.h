@@ -22,7 +22,7 @@ namespace IOStormPlus{
     
     public:
         /// Default logger will output both logfile and cout, log all
-        static void Init(string filename, LogLevel level = LogLevel::Verbose, bool needConsoleOutput = true);
+        static void Init(string filename, LogLevel level = Verbose, bool needConsoleOutput = true);
         static void SetLogLevel(LogLevel level);
         static LogLevel GetLogLevel();
         static void LogError(string message);

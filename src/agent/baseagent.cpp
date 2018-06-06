@@ -36,6 +36,10 @@ namespace IOStormPlus{
 		}
 	}	
 
+	string BaseAgent::ExecuteScript(string command){
+		return "";
+	}
+
     string BaseAgent::RunScript(AgentCommand command, vector<string> &params){
 		switch(command){
 			case AgentCommand::HostnameCmd: {

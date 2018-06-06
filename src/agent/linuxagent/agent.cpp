@@ -1,5 +1,5 @@
 #include "header/constant.h"
-#include "../header/agent.h"
+#include "../header/baseagent.h"
 #include "../../common/header/logger.h"
 #include <stdexcept>
 #include <iostream>
@@ -7,23 +7,23 @@
 #include <vector>
 #include <sstream>
 #include <ctime>
-//#include <unistd.h>
+#include <unistd.h>
 
-extern int pclose(FILE* stream);
-extern FILE* popen(const char *command, const char *mode);
+//extern int pclose(FILE* stream);
+//extern FILE* popen(const char *command, const char *mode);
 extern int sleep(double milliseconds);
 
 using namespace std;
 
 namespace IOStormPlus{
 
-	class LinuxAgent:public BaseAgent{
-	protected:        
+	class LinuxAgent: public BaseAgent{
+	public:
 
-		string LinuxAgent::ExecuteScript(string cmd) {
+		string LinuxAgent::ExecuteScript(string command) {
 			char buffer[128];
 			string result = "";
-			FILE* pipe = popen(cmd.c_str(), "r");
+			FILE* pipe = popen(command.c_str(), "r");
 			if (!pipe)
 				throw runtime_error("popen() failed!");
 			try {
@@ -40,6 +40,8 @@ namespace IOStormPlus{
 			pclose(pipe);
 			return result;
 		}
+
+	protected:        
 
 		vector<string> LinuxAgent::ListFilesInDirectory(string rootPath) {
 			vector<string> res;
@@ -58,35 +60,35 @@ namespace IOStormPlus{
 		string LinuxAgent::RunScript(AgentCommand command, vector<string> &params){
 			string striptCmdString;
 			switch(command){
-				case AgentCommand::CopyOutputCmd: {
+				case CopyOutputCmd: {
 					string jobname = params[0];
 					string hostname = params[1];
 					string striptCmdString = "cp -pf " + jobname + ".out " + " " + OutputFolder + hostname + "_" + jobname + ".out";
 					ExecuteScript(striptCmdString);	
 					break;				
 				}
-				case AgentCommand::DelTempFileCmd: {
+				case DelTempFileCmd: {
 					string filename = params[0];
-					string striptCmdString = "rm -f " + jobname + "*";
+					string striptCmdString = "rm -f " + filename + "*";
 					Logger::LogVerbose("Stript command "+striptCmdString);
 					ExecuteScript(striptCmdString);	
 					break;		
 				}
-				case AgentCommand::DelJobFilesCmd: {
+				case DelJobFilesCmd: {
 					string striptCmdString = "rm -f " + GetWorkloadFolderPath() + "*";
 					Logger::LogVerbose("Stript command "+striptCmdString);
 					ExecuteScript(striptCmdString);
 					break;					
 				}
 				default: {
-					BaseAgent::RunCommand(command, params);
+					BaseAgent::RunScript(command, params);
 				}
 			}
 			return "";
 		}
 
 		void LinuxAgent::Wait(){
-			Sleep(SyncWaitTime);
+			sleep(SyncWaitTime);
 		}
 
         string LinuxAgent::GetControlTempFilePath(){
@@ -108,15 +110,15 @@ namespace IOStormPlus{
 }
 
 int main(int argc,char *argv[]) {   
-	string hostname = agent.ExecuteCommand("hostname");
-    if (hostname.find('\n') != string::npos)
-        hostname = hostname.replace(hostname.find('\n'),1,"");
-    ofstream fout("/samba/info/" + hostname,ios_base::out | ios_base::trunc);
-    fout << argv[1] << " linux " << argv[2] << endl;
-    fout.close();
-
-
 	IOStormPlus::LinuxAgent agent;
+	// string hostname = agent.ExecuteScript("hostname");
+    // if (hostname.find('\n') != string::npos)
+    //     hostname = hostname.replace(hostname.find('\n'),1,"");
+    // ofstream fout("/samba/info/" + hostname,ios_base::out | ios_base::trunc);
+    // fout << argv[1] << " linux " << argv[2] << endl;
+    // fout.close();
+
+
 	while(true){
 		agent.Run();
 	}

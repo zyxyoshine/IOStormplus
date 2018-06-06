@@ -19,7 +19,7 @@ namespace IOStormPlus{
 		WindowsAgent(){
 			InitLogger();
 		}
-	protected:        
+
 		string WindowsAgent::ExecuteScript(string command) {
 			Logger::LogVerbose("Run Script "+command);
 			char buffer[128];
@@ -46,6 +46,7 @@ namespace IOStormPlus{
 			return result;
 		}
 
+	protected:        
 		vector<string> WindowsAgent::ListFilesInDirectory(string rootPath) {
 			Logger::LogVerbose("Start List Files under directory");
 			WIN32_FIND_DATA data;
