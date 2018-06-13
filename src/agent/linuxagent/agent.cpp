@@ -9,10 +9,6 @@
 #include <ctime>
 #include <unistd.h>
 
-//extern int pclose(FILE* stream);
-//extern FILE* popen(const char *command, const char *mode);
-extern int sleep(double milliseconds);
-
 using namespace std;
 
 namespace IOStormPlus{
@@ -20,7 +16,7 @@ namespace IOStormPlus{
 	class LinuxAgent: public BaseAgent{
 	public:
 
-		string LinuxAgent::ExecuteScript(string command) {
+		string ExecuteScript(string command) {
 			char buffer[128];
 			string result = "";
 			FILE* pipe = popen(command.c_str(), "r");
@@ -43,7 +39,7 @@ namespace IOStormPlus{
 
 	protected:        
 
-		vector<string> LinuxAgent::ListFilesInDirectory(string rootPath) {
+		vector<string> ListFilesInDirectory(string rootPath) {
 			vector<string> res;
 			string lsCmd = "ls " + rootPath;
 			string lsResut = ExecuteScript(lsCmd.c_str());
@@ -57,7 +53,7 @@ namespace IOStormPlus{
 			return res;
 		}
 
-		string LinuxAgent::RunScript(AgentCommand command, vector<string> &params){
+		string RunScript(AgentCommand command, vector<string> &params){
 			string striptCmdString;
 			switch(command){
 				case CopyOutputCmd: {
@@ -87,23 +83,23 @@ namespace IOStormPlus{
 			return "";
 		}
 
-		void LinuxAgent::Wait(){
-			sleep(SyncWaitTime);
+		void Wait(){
+			usleep(SyncWaitTime);
 		}
 
-        string LinuxAgent::GetControlTempFilePath(){
+        string GetControlTempFilePath(){
 			return ControllerTempFilePath;
 		}
 
-        string LinuxAgent::GetClientTempFilePath(){
+        string GetClientTempFilePath(){
 			return ClientTempFilePath;
 		}
 
-        string LinuxAgent::GetLogFilePath(){
+        string GetLogFilePath(){
 			return LogFilePath;
 		}	
 
-		string LinuxAgent::GetWorkloadFolderPath(){
+		string GetWorkloadFolderPath(){
 			return WorkLoadFolderPath;
 		}		
 	};

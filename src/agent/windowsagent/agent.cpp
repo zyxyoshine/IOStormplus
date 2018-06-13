@@ -20,7 +20,7 @@ namespace IOStormPlus{
 			InitLogger();
 		}
 
-		string WindowsAgent::ExecuteScript(string command) {
+		string ExecuteScript(string command) {
 			Logger::LogVerbose("Run Script "+command);
 			char buffer[128];
 			string result = "";
@@ -47,7 +47,7 @@ namespace IOStormPlus{
 		}
 
 	protected:        
-		vector<string> WindowsAgent::ListFilesInDirectory(string rootPath) {
+		vector<string> ListFilesInDirectory(string rootPath) {
 			Logger::LogVerbose("Start List Files under directory");
 			WIN32_FIND_DATA data;
 			HANDLE hFind = FindFirstFile((rootPath + "*").c_str(), &data);      // DIRECTORY
@@ -65,7 +65,7 @@ namespace IOStormPlus{
 			return res;
 		}
 
-		string WindowsAgent::RunScript(AgentCommand command, vector<string> &params){
+		string RunScript(AgentCommand command, vector<string> &params){
 			Logger::LogVerbose("RunScript Start");
 			string striptCmdString;
 			switch(command){
@@ -96,23 +96,23 @@ namespace IOStormPlus{
 			return "";
 		}
 
-		void WindowsAgent::Wait(){
+		void Wait(){
 			Sleep(SyncWaitTime);
 		}
 
-        string WindowsAgent::GetControlTempFilePath(){
+        string GetControlTempFilePath(){
 			return ControllerTempFilePath;
 		}
 
-        string WindowsAgent::GetClientTempFilePath(){
+        string GetClientTempFilePath(){
 			return ClientTempFilePath;
 		}
 
-        string WindowsAgent::GetLogFilePath(){
+        string GetLogFilePath(){
 			return LogFilePath;
 		}	
 
-		string WindowsAgent::GetWorkloadFolderPath(){
+		string GetWorkloadFolderPath(){
 			return WorkLoadFolderPath;
 		}
 	};
