@@ -1,0 +1,1 @@
+g++ -std=c++11 agent.cpp ../baseagent.cpp ../../common/logger.cpp -o agent.exe
