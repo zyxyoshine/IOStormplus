@@ -1,5 +1,5 @@
 #pragma once
-#include "../common/header/command.h"
+#include "../../common/header/command.h"
 #include <map>
 #include <vector>
 using namespace std;

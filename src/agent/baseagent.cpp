@@ -75,7 +75,7 @@ namespace IOStormPlus{
 
 		string buf;
 		fin >> buf;
-		fin.close();	
+		fin.close();
 
 		command = GetCommondFromString(buf);
 		Logger::LogInfo("Get command " + buf);
@@ -92,7 +92,7 @@ namespace IOStormPlus{
 		string cmdstring = GetCommandString(command);
 		Logger::LogInfo("Start ack " + cmdstring + " command");
 
-		Logger::LogVerbose("Open Client Acknowledge file "+GetClientTempFilePath());
+		Logger::LogVerbose("Open Client Acknowledge file " + GetClientTempFilePath());
 		
 		ofstream fout(GetClientTempFilePath(), ios_base::out | ios_base::trunc);
 		fout << GetCommandString(command);

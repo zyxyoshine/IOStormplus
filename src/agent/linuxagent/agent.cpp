@@ -15,7 +15,10 @@ namespace IOStormPlus{
 
 	class LinuxAgent: public BaseAgent{
 	public:
-
+		LinuxAgent() {
+			InitLogger();
+		}
+		
 		string ExecuteScript(string command) {
 			char buffer[128];
 			string result = "";
@@ -113,7 +116,6 @@ int main(int argc,char *argv[]) {
     // ofstream fout("/samba/info/" + hostname,ios_base::out | ios_base::trunc);
     // fout << argv[1] << " linux " << argv[2] << endl;
     // fout.close();
-
 
 	while(true){
 		agent.Run();

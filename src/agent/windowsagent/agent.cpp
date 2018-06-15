@@ -16,7 +16,7 @@ namespace IOStormPlus{
 
 	class WindowsAgent:public BaseAgent{
 	public:
-		WindowsAgent(){
+		WindowsAgent() {
 			InitLogger();
 		}
 

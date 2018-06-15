@@ -416,7 +416,6 @@ namespace IOStormPlus{
     }
 
     void Controller::AnalyzeData(string workloadRootPath) {
-        string outputFile;
         vector<string> linuxJobs = ListFilesInDirectory(workloadRootPath + "linux\\");
         vector<string> windowsJobs = ListFilesInDirectory(workloadRootPath + "windows\\");
 

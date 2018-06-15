@@ -1,6 +1,6 @@
 #pragma once
 #include "TestVM.h"
-#include "../common/header/command.h"
+#include "../../common/header/command.h"
 #include <vector>
 #include <map>
 #include <sstream>
