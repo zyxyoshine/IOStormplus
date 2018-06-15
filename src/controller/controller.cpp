@@ -176,6 +176,7 @@ namespace IOStormPlus{
 
         // Ask VM to sync    
         for (auto &vm : TestVMs) {
+            Logger::LogInfo("Sending pre-sync request to test VM " + vm.GetName() + "(" + vm.GetInternalIP() + ")");
             vm.SendCommand(SCCommand::SyncCmd);
         }
 

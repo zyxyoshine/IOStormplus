@@ -79,9 +79,8 @@ namespace IOStormPlus {
     
     void TestVM::SendCommand(SCCommand command){
         ofstream fout;
-        Logger::LogInfo("Sending pre-sync request to test VM " + GetName() + "(" + GetInternalIP() + ")");
         ExecCommand(string("del /f " + GetSharePath() + TempFolder + "client.tmp"));
-        fout.open(GetSharePath() + TempFolder + "Controller.tmp", ios_base::out | ios_base::trunc);
+        fout.open(GetSharePath() + TempFolder + "controller.tmp", ios_base::out | ios_base::trunc);
         fout << GetCommandString(command);
         fout.close();        
     }
