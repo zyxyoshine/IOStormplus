@@ -16,8 +16,12 @@ namespace IOStormPlus{
 
 	class WindowsAgent:public BaseAgent{
 	public:
-		WindowsAgent() {
+		WindowsAgent(int argc = 0,char *argv[] = NULL) {
 			InitLogger();
+			if (argc >= 4) {
+				ControllerIP = argv[1];
+				RegisterOnController(argv[2], argv[3], "windows");
+			}
 		}
 
 		string ExecuteScript(string command) {
@@ -115,17 +119,17 @@ namespace IOStormPlus{
 		string GetWorkloadFolderPath(){
 			return WorkLoadFolderPath;
 		}
+
+		string GetVMInfoFolderPath() {
+			return DirSpliter + DirSpliter + ControllerIP + DirSpliter + AgentsInfoFolderName + DirSpliter;
+		}
 	};
 
 }
 
 int main(int argc,char *argv[]) {
-	// cout << "hh222" << argv[1];
-	// ofstream fout("\\\\" + string(argv[1]) + "\\agents\\" + string(argv[2]));
-	// cout << "hh0";
-	// fout << string(argv[3]) << " windows " << string(argv[4]) << endl;
-	// fout.close();
-	IOStormPlus::WindowsAgent agent;
+	IOStormPlus::WindowsAgent agent(argc, argv);
+
 	while(true){
 		agent.Run();
 	}

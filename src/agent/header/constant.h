@@ -13,6 +13,7 @@ namespace IOStormPlus{
     const string InfoTempFolderName = "temp";
     const string OutputFolderName = "output";
     const string VMInfoFolderName = "info";
+    const string AgentsInfoFolderName = "agents";
     const string ControllerTempFilename = "controller.tmp";
     const string ClientTempFilename = "client.tmp";
     const string LogFilename = "log.txt";
