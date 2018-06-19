@@ -114,9 +114,12 @@ namespace IOStormPlus{
 	};
 }
 
-int main(int argc,char *argv[]) {   
-	IOStormPlus::LinuxAgent agent(argc, argv);
-
+int main(int argc,char *argv[]) {
+	if (argc >= 3) 
+		IOStormPlus::LinuxAgent agent(argc, argv);
+	else
+		IOStormPlus::LinuxAgent agent();
+		
 	while(true){
 		agent.Run();
 	}
