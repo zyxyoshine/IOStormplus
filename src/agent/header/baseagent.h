@@ -29,6 +29,7 @@ namespace IOStormPlus{
         virtual string GetClientTempFilePath() = 0;
         virtual string GetLogFilePath() = 0;
         virtual string GetWorkloadFolderPath() = 0;
+        virtual string GetVMInfoFolderPath() = 0;
         void RegisterOnController(string vmIP, string vmSize, string VMOS);
         bool GetControllerCmd(SCCommand &command);
         void Acknowledge(SCCommand command);
