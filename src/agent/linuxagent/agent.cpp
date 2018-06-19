@@ -15,12 +15,10 @@ namespace IOStormPlus{
 
 	class LinuxAgent: public BaseAgent{
 	public:
-		LinuxAgent(int argc,char *argv[]) {
+		LinuxAgent(int argc = 0,char *argv[] = NULL) {
 			InitLogger();
 			if (argc >= 3)
 				RegisterOnController(argv[1], argv[2], "linux");
-			else
-				assert(false);
 		}
 		
 		string ExecuteScript(string command) {
