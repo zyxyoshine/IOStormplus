@@ -9,13 +9,13 @@ FLAGS = -std=c++11
 
 all: agent
 
-logger.o : ../../common/header/logger.h
+logger.o : ../../common/header/logger.h ../../common/logger.cpp
 	$(CC) $(FLAGS) -c ../../common/logger.cpp
 
-baseagent.o : ../header/baseagent.h
+baseagent.o : ../header/baseagent.h ../baseagent.cpp ../../common/header/command.h ../../common/header/logger.h ../../common/logger.cpp
 	$(CC) $(FLAGS) -c ../baseagent.cpp 
 
-agent.o : header/agent.h
+agent.o : header/constant.h header/agent.h agent.cpp ../header/baseagent.h ../baseagent.cpp ../../common/header/logger.h ../../common/logger.cpp 
 	$(CC) $(FLAGS) -c agent.cpp
 
 agent : $(OBJ)
