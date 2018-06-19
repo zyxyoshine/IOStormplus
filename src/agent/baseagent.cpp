@@ -101,6 +101,16 @@ namespace IOStormPlus{
 		Logger::LogInfo("Done ack " + cmdstring + " command");
 	}
 
+	void BaseAgent::RegisterOnController(string vmIP, string vmSize, string VMOS) {
+		vector<string> params;
+		string hostname = BaseAgent::RunScript(AgentCommand::HostnameCmd, params);
+		if (hostname.find('\n') != string::npos)
+			hostname = hostname.replace(hostname.find('\n'),1,"");
+		ofstream fout(GetVMInfoFolderPath() + hostname,ios_base::out | ios_base::trunc);
+		fout << vmIP << ' ' << VMOS << ' ' << vmSize << endl;
+		fout.close();
+	}
+	
     void BaseAgent::RunJobs(){
 		Logger::LogVerbose("Start Job");
 		vector<string> params;		

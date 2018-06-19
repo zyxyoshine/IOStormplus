@@ -15,8 +15,12 @@ namespace IOStormPlus{
 
 	class LinuxAgent: public BaseAgent{
 	public:
-		LinuxAgent() {
+		LinuxAgent(int argc,char *argv[]) {
 			InitLogger();
+			if (argc >= 3)
+				RegisterOnController(argv[1], argv[2], "linux");
+			else
+				assert(false);
 		}
 		
 		string ExecuteScript(string command) {
@@ -80,7 +84,7 @@ namespace IOStormPlus{
 					break;					
 				}
 				default: {
-					BaseAgent::RunScript(command, params);
+					return BaseAgent::RunScript(command, params);
 				}
 			}
 			return "";
@@ -104,18 +108,16 @@ namespace IOStormPlus{
 
 		string GetWorkloadFolderPath(){
 			return WorkLoadFolderPath;
-		}		
+		}
+
+		string GetVMInfoFolderPath() {
+			return VMInfoFolderPath;
+		}
 	};
 }
 
 int main(int argc,char *argv[]) {   
-	IOStormPlus::LinuxAgent agent;
-	// string hostname = agent.ExecuteScript("hostname");
-    // if (hostname.find('\n') != string::npos)
-    //     hostname = hostname.replace(hostname.find('\n'),1,"");
-    // ofstream fout("/samba/info/" + hostname,ios_base::out | ios_base::trunc);
-    // fout << argv[1] << " linux " << argv[2] << endl;
-    // fout.close();
+	IOStormPlus::LinuxAgent agent(argc, argv);
 
 	while(true){
 		agent.Run();
