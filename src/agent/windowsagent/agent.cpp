@@ -123,6 +123,10 @@ namespace IOStormPlus{
 		string GetVMInfoFolderPath() {
 			return DirSpliter + DirSpliter + ControllerIP + DirSpliter + AgentsInfoFolderName + DirSpliter;
 		}
+
+	private:
+		string ControllerIP;
+		
 	};
 
 }
