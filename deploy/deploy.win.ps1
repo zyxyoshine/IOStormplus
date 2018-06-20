@@ -1,64 +1,60 @@
 ﻿#$logFile = 'C:\deploylog.txt'
 #Start-Transcript $logFile -Append -Force
 
-$Root = "C:\IOStormplus\"
-$WorkloadShare = $Root + "workload"
-$OutputShare = $Root + "output"
-$TempShare = $Root + "temp"
+$Root = "C:\"
+$WorkspacePath = $Root + "IOStormplus\"
+$WorkloadSharePath = $WorkspacePath + "workload\"
+$OutputSharePath = $WorkspacePath + "output\"
+$TempSharePath = $WorkspacePath + "temp\"
 
-#Create directories
-if ( -Not (Test-Path -Path $Root))
+#Download and unzip agent package
+
+$PackageName = "Agent.zip"
+$PackageUrl = "https://github.com/zyxyoshine/IOStormplus/raw/dev/deploy/binary/Agent.zip"
+[Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
+Invoke-WebRequest -Uri $PackageUrl -OutFile ($Root + $PackageName)
+
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+function Unzip
 {
-    New-Item -ItemType directory -Path $Root
+    param([string]$zipfile, [string]$outpath)
+
+    [System.IO.Compression.ZipFile]::ExtractToDirectory($zipfile, $outpath)
 }
-if ( -Not (Test-Path -Path $WorkloadShare))
-{
-    New-Item -ItemType directory -Path $WorkloadShare
-}
-if ( -Not (Test-Path -Path $OutputShare))
-{
-    New-Item -ItemType directory -Path $OutputShare
-}
-if ( -Not (Test-Path -Path $TempShare))
-{
-    New-Item -ItemType directory -Path $TempShare
-}
+
+Unzip ($Root + $PackageName) $Root
+Remove-Item ($Root + $PackageName)
+
+#Create shares
+
 if( -Not (Get-SMBShare -Name "workload" -ea 0)){
-    New-SmbShare -Name "workload" -Path $WorkloadShare -FullAccess Everyone
+    New-SmbShare -Name "workload" -Path $WorkloadSharePath -FullAccess Everyone
 }
 if( -Not (Get-SMBShare -Name "output" -ea 0)){
-    New-SmbShare -Name "output" -Path $OutputShare -FullAccess Everyone
+    New-SmbShare -Name "output" -Path $OutputSharePath -FullAccess Everyone
 }
 if( -Not (Get-SMBShare -Name "temp" -ea 0)){
-    New-SmbShare -Name "temp" -Path $TempShare -FullAccess Everyone
+    New-SmbShare -Name "temp" -Path $TempSharePath -FullAccess Everyone
 }
 
-Out-File ($TempShare + "\controller.tmp")
-Out-File ($TempShare + "\client.tmp")
+Out-File ($TempSharePath + "controller.tmp")
+Out-File ($TempSharePath + "client.tmp")
 
-#Download agent
-$AgentBinaryName = "agent.exe"
-$AgentUrl = "https://github.com/zyxyoshine/IOStormplus/raw/master/deploy/binary/agent.exe"
-[Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
-Invoke-WebRequest -Uri $AgentUrl -OutFile ($Root + $AgentBinaryName)
+#Install fio
 
-#Download and install fio
 $FioBinaryName = "fio-3.5-x64.msi"
-$FioUrl = "https://github.com/zyxyoshine/IOStormplus/raw/master/deploy/binary/fio-3.5-x64.msi"
-Invoke-WebRequest -Uri $FioUrl -OutFile ($Root + $FioBinaryName)
-
 $DataStamp = get-date -Format yyyyMMdd
-$logFile = '{0}-{1}.log' -f ($Root + $FioBinaryName),$DataStamp
+$logFile = '{0}-{1}.log' -f ($WorkspacePath + $FioBinaryName),$DataStamp
 $FioMSIArguments = @(
     "/i"
-    ('"{0}"' -f ($Root + $FioBinaryName))
+    ('"{0}"' -f ($WorkspacePath + $FioBinaryName))
     "/qn"
     "/norestart"
     "/L*v"
     $logFile
 )
 Start-Process "msiexec.exe" -ArgumentList $FioMSIArguments -Wait -NoNewWindow
-Remove-Item ($Root + $FioBinaryName)
+Remove-Item ($WorkspacePath + $FioBinaryName)
 
 #Initialize data disks
 $disks = Get-Disk | Where partitionstyle -eq 'raw' | sort number
@@ -81,16 +77,15 @@ netsh advfirewall set privateprofile state off
 netsh advfirewall set publicprofile state off
 
 $ControllerIP = $args[0]
-$VMname = hostname
 $VMSize = $args[1]
-$VMSize | Out-File ($Root + 'vmsize.txt')
+$VMSize | Out-File ($WorkspacePath + 'vmsize.txt')
 $VMIp = foreach($ip in (ipconfig) -like '*IPv4*') { ($ip -split ' : ')[-1]}
 $username = 'vmadmin'
 $password = '!!!!1234abcd'
 $agentName = "agent.exe"
-$agentPath = $Root + $agentName
-$args = ' ' + $ControllerIP + ' ' + $VMname + ' ' + $VMIp + ' ' + $VMSize
-$action = New-ScheduledTaskAction -Execute $agentPath -Argument $args -WorkingDirectory $Root
+$agentPath = $WorkspacePath + $agentName
+$args = ' ' + $ControllerIP + ' ' + $VMIp + ' ' + $VMSize
+$action = New-ScheduledTaskAction -Execute $agentPath -Argument $args -WorkingDirectory $WorkspacePath
 $trigger = @()
 $trigger += New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1)
 $trigger += New-ScheduledTaskTrigger -AtStartup

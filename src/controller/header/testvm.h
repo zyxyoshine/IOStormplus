@@ -1,5 +1,5 @@
 #pragma once
-#include "../common/header/command.h"
+#include "../../common/header/command.h"
 #include <map>
 #include <vector>
 using namespace std;
@@ -36,11 +36,10 @@ namespace IOStormPlus{
         TestVM(string name, string internalIP, string osType, string size):
             m_name(name), m_internalIP(internalIP), m_osType(osType == "linux" ? Linux : Windows), m_size(size){}
 
-        // TODO: not expose collection
-        map<string, ReportSummary> TestResults;
-
         string GetInfo();
-        string GetTestResult(string jobName);
+        string GetTestResult(const string& jobName);
+        void SetTestResult(const string& jobName, const ReportSummary& report);
+        int CountTestResult(const string& jobName);
         string GetSharePath();
         string GetName();
         string GetInternalIP();
@@ -55,6 +54,7 @@ namespace IOStormPlus{
         string m_internalIP;
         string m_size;
         OSType m_osType;
+        map<string, ReportSummary> m_testResults;
 
         string GetOSTypeName();
 
