@@ -40,7 +40,7 @@ namespace IOStormPlus{
             Logger::LogError(logStream.str());
             return;
         }
-        Logger::LogVerbose("Configure File has been parsed successfully!");
+        Logger::LogInfo("Configure File has been parsed successfully!");
 
         int vmCount = VMConfig["count"].GetInt();
         auto vmInfo = VMConfig["value"].GetArray();
@@ -202,7 +202,7 @@ namespace IOStormPlus{
                 Sleep(1000);
                 if (vm.GetResponse(command)) {
                     doneJobs[vm.GetInternalIP()] = true;
-                    Logger::LogInfo("Test VM " + vm.GetName() + "(" + vm.GetInternalIP() + ")" + " pre-sync succeeded.");                    
+                    Logger::LogInfo("Test VM " + vm.GetName() + "(" + vm.GetInternalIP() + ")" + " successfully executed command.");                    
                 }
                 else {
                     allDone = false;
@@ -359,8 +359,10 @@ namespace IOStormPlus{
         Logger::LogVerbose("ID\tName\tIP Address\tOS\tSize");
         
         logStream.clear();
+        logStream.str("");
         for (int i = 0;i < TestVMs.size(); ++i) {
             logStream.clear();
+            logStream.str("");
             logStream << i + 1 << "\t" << TestVMs[i].GetInfo() << endl;
             Logger::LogVerbose(logStream.str());
         }
@@ -388,6 +390,7 @@ namespace IOStormPlus{
         
         // Title
         tempStream.clear();
+        tempStream.str(""); // Clear() do not clear stream buffer
         tempStream << "VM Count: " << TestVMs.size() << endl;
         Logger::LogInfo(tempStream.str());
         fout << tempStream.str() << endl;
@@ -399,9 +402,10 @@ namespace IOStormPlus{
             fout << "ID\tName\tIP Address\tOS\tSize\tR(MIN)\tR(MAX)\tR(AVG)\tW(MIN)\tW(MAX)\tW(AVG)" << endl;
             string vm_id;
             for (int i = 0;i < TestVMs.size();i++) {
-                Logger::LogVerbose("Job: " + job);
-                if (TestVMs[i].TestResults.count(job)) {
+                // Logger::LogVerbose("Job: " + job);
+                if (TestVMs[i].CountTestResult(job)) {
                     tempStream.clear();
+                    tempStream.str("");
                     tempStream << i + 1;
                     tempStream >> vm_id;
                     Logger::LogInfo(vm_id + "\t" + TestVMs[i].GetTestResult(job));
@@ -453,10 +457,10 @@ namespace IOStormPlus{
             res = ExecCommand(copyOutputCmd);   
         } while (res.find("cannot") != string::npos);
 
-        Logger::LogInfo("Done execute command "+ copyOutputCmd);
+        Logger::LogInfo("Done execute command \"" + copyOutputCmd + "\"");
 
         Logger::LogVerbose("Jobname: "+jobName);
-        vm.TestResults[job] = AnalyzeStandardOutput(outputFile);
+        vm.SetTestResult(job, AnalyzeStandardOutput(outputFile));
     }
 
     ReportSummary Controller::AnalyzeStandardOutput(string outputFile) {
@@ -510,7 +514,7 @@ namespace IOStormPlus{
             }
         }
         num /= pow(10,pointCount);
-        Logger::LogVerbose("IOPS number done");
+        // Logger::LogVerbose("IOPS number done");
         return (int)num;
     }
 
