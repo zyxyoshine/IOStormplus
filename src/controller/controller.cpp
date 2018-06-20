@@ -354,7 +354,7 @@ namespace IOStormPlus{
     // Reporting
     void Controller::PrintTestVMInfo() {
         stringstream logStream;
-        logStream << "VM Count: " << TestVMs.size() << endl;
+        logStream << "VM Count: " << TestVMs.size();
         Logger::LogVerbose(logStream.str());
         Logger::LogVerbose("ID\tName\tIP Address\tOS\tSize");
         
@@ -391,7 +391,7 @@ namespace IOStormPlus{
         // Title
         tempStream.clear();
         tempStream.str(""); // Clear() do not clear stream buffer
-        tempStream << "VM Count: " << TestVMs.size() << endl;
+        tempStream << "VM Count: " << TestVMs.size();
         Logger::LogInfo(tempStream.str());
         fout << tempStream.str() << endl;
 
