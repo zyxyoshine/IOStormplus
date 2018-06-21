@@ -10,7 +10,7 @@ $TempSharePath = $WorkspacePath + "temp\"
 #Download and unzip agent package
 
 $PackageName = "Agent.zip"
-$PackageUrl = "https://github.com/zyxyoshine/IOStormplus/raw/dev/deploy/binary/Agent.zip"
+$PackageUrl = "https://github.com/zyxyoshine/IOStormplus/raw/master/deploy/binary/Agent.zip"
 [Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
 Invoke-WebRequest -Uri $PackageUrl -OutFile ($Root + $PackageName)
 
