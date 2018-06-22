@@ -80,8 +80,6 @@ $ControllerIP = $args[0]
 $VMSize = $args[1]
 $VMSize | Out-File ($WorkspacePath + 'vmsize.txt')
 $VMIp = foreach($ip in (ipconfig) -like '*IPv4*') { ($ip -split ' : ')[-1]}
-$username = 'vmadmin'
-$password = '!!!!1234abcd'
 $agentName = "agent.exe"
 $agentPath = $WorkspacePath + $agentName
 $args = ' ' + $ControllerIP + ' ' + $VMIp + ' ' + $VMSize
@@ -89,7 +87,7 @@ $action = New-ScheduledTaskAction -Execute $agentPath -Argument $args -WorkingDi
 $trigger = @()
 $trigger += New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1)
 $trigger += New-ScheduledTaskTrigger -AtStartup
-$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable # -RunOnlyIfNetworkAvailable -DontStopOnIdleEnd -Priority 4
+$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -DontStopOnIdleEnd
 Unregister-ScheduledTask -TaskName "VMIOSTORM" -Confirm:0 -ErrorAction Ignore
 Register-ScheduledTask -Action $action -Trigger $trigger -TaskName "VMIOSTORM" -Description "VM iostorm agent" -User "System" -RunLevel Highest -Settings $settings
 
