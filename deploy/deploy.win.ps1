@@ -89,9 +89,9 @@ $action = New-ScheduledTaskAction -Execute $agentPath -Argument $args -WorkingDi
 $trigger = @()
 $trigger += New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1)
 $trigger += New-ScheduledTaskTrigger -AtStartup
-$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -RunOnlyIfNetworkAvailable -DontStopOnIdleEnd -Priority 4
+$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable # -RunOnlyIfNetworkAvailable -DontStopOnIdleEnd -Priority 4
 Unregister-ScheduledTask -TaskName "VMIOSTORM" -Confirm:0 -ErrorAction Ignore
-Register-ScheduledTask -Action $action -Trigger $trigger -TaskName "VMIOSTORM" -Description "VM iostorm agent" -User $username -Password $password -RunLevel Highest -Settings $settings
+Register-ScheduledTask -Action $action -Trigger $trigger -TaskName "VMIOSTORM" -Description "VM iostorm agent" -User "System" -RunLevel Highest -Settings $settings
 
 #Stop-Transcript
 
