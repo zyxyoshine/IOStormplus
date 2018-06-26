@@ -17,18 +17,20 @@ namespace IOStormPlus{
     public:
         // IAgent 
         void Run();
-        virtual string ExecuteScript(string command);
+        virtual string ExecuteScript(string command) = 0;
     
     protected:
         // 
         void InitLogger();
-        virtual vector<string> ListFilesInDirectory(string rootPath){vector<string> a; return a;};
+        virtual vector<string> ListFilesInDirectory(string rootPath) = 0;
         virtual string RunScript(AgentCommand command, vector<string> &params);
         virtual void Wait(){};
-        virtual string GetControlTempFilePath(){return "";};
-        virtual string GetClientTempFilePath(){return "";};
-        virtual string GetLogFilePath(){return "";};
-        virtual string GetWorkloadFolderPath(){return "";};
+        virtual string GetControlTempFilePath() = 0;
+        virtual string GetClientTempFilePath() = 0;
+        virtual string GetLogFilePath() = 0;
+        virtual string GetWorkloadFolderPath() = 0;
+        virtual string GetVMInfoFolderPath() = 0;
+        void RegisterOnController(string vmIP, string vmSize, string VMOS);
         bool GetControllerCmd(SCCommand &command);
         void Acknowledge(SCCommand command);
         void RunJobs();

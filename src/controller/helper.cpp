@@ -20,7 +20,7 @@ namespace IOStormPlus{
 					result += buffer;
                 }
 			}
-			Logger::LogInfo(result);
+			// Logger::LogInfo(result);
 		} 
         catch (...) {
 			_pclose(pipe);
