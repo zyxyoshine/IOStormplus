@@ -92,6 +92,9 @@
 			"type": "Microsoft.Storage/storageAccounts",
 			"name": "[tolower(variables('uniqueStorageAccountName'))]",
 			"location": "[variables('location')]",
+            "tags":{ 
+                "pool": "_control"
+            },
 			"properties": {
 				"accountType": "[variables('storageAccountType')]"
 			}

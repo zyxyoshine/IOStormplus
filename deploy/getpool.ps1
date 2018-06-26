@@ -1,10 +1,20 @@
 Param(
-    [string] $vmPool
+    [string] $vmPool=""
 )
 
 $rg = "iostorm"
 
-$vms = get-azurermvm | where {$_.Tags.pool -eq $vmPool} | where ResourceGroupName -eq $rg
+if( $vmPool -eq "" )
+{
+    $vmPool = "_control"
+    $vms = get-azurermvm | where {$_.Tags.pool -ne $vmPool} | where ResourceGroupName -eq $rg
+    $vms.Tags.pool | sort | get-unique
+}
+else
+{
+    $vms = get-azurermvm | where {$_.Tags.pool -eq $vmPool} | where ResourceGroupName -eq $rg
+    $vms | select name, StatusCode, ProvisioningState | ft
+}
 
-$vms | select name, StatusCode, ProvisioningState | ft
+
 
