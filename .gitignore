@@ -4,3 +4,8 @@
 *.log
 *.o
 *.exe
+*.vs
+*.sln
+*.vcxproj*
+x64
+packages

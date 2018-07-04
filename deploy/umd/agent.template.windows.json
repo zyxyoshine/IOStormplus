@@ -117,7 +117,7 @@
         "vmName": "[concat(parameters('vmPool'),'-vm')]",
 		"vmAdminUsername": "vmadmin",
 		"vmAdminPassword": "!!!!1234abcd",
-        "vmOsDiskName": "[variables('vmName')]",
+        "vmOsDiskName": "[variables('vmName'))]",
         "vmDataDiskName": "[variables('vmName')]",
         "vmNicName": "[tolower(variables('vmName'))]",
         "virtualNetworkName": "[tolower(concat('vn', resourceGroup().name))]",
@@ -194,7 +194,7 @@
                         "caching": "ReadWrite",
                         "createOption": "FromImage",
                         "vhd": {
-                            "uri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('uniqueStorageAccountName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).primaryEndpoints.blob, concat(variables('vmOsDiskName'),copyIndex(parameters('vmIndex')),'-osd'),'/', concat(variables('vmOsDiskName'),copyIndex(parameters('vmIndex')),'-osd'),'.vhd')]"    
+                            "uri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('uniqueStorageAccountName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).primaryEndpoints.blob, variables('vmOsDiskName'),copyIndex(parameters('vmIndex'),'-osd'),'/', variables('vmOsDiskName'),copyIndex(parameters('vmIndex'),'-osd'),'.vhd')]"
                           },
 						"diskSizeGB": 128
                     },
@@ -230,7 +230,7 @@
                 }
             },
             "dependsOn": [
-                "[concat('Microsoft.Network/networkInterfaces/',variables('vmNicName'),copyIndex(parameters('vmIndex')),'-nic')]"
+                "[concat('Microsoft.Network/networkInterfaces/',variables('vmNicName'),copyIndex(parameters('vmIndex'),'-nic'))]"
             ]
         },
         {

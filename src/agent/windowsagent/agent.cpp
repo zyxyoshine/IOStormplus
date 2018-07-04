@@ -18,10 +18,10 @@ namespace IOStormPlus{
 	public:
 		WindowsAgent(int argc = 0,char *argv[] = NULL) {
 			InitLogger();
-			if (argc >= 4) {
-				ControllerIP = argv[1];
-				RegisterOnController(argv[2], argv[3], "windows");
-			}
+			CreateStorageClient(IOStormPlus::storageConfigFileName);
+			SetAgentInfo(argv[2], argv[3], "windows", argv[4]);
+			RegisterOnAzure();
+			//ControllerIP = argv[1];
 		}
 
 		string ExecuteScript(string command) {

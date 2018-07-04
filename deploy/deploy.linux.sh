@@ -6,7 +6,7 @@ apt-get install g++ -y
 apt-get install smbclient
 apt-get install unzip -y
 cd /home && wget https://github.com/zyxyoshine/IOStormplus/archive/master.zip
-cd /home && unzip master.zip
+cd /home && unzip IOStormplus-master.zip
 cd /home/IOStormplus-master/src/agent/linuxagent && make
 mkdir /home/fiojob
 cp -pf /home/IOStormplus-master/src/agent/linuxagent/agent /home/fiojob/

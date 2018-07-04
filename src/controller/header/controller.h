@@ -5,6 +5,11 @@
 #include <map>
 #include <sstream>
 #include <algorithm>
+#include <was/storage_account.h>
+#include <was/table.h>
+#include <was/blob.h>
+#include <cpprest/filestream.h>  
+#include <cpprest/containerstream.h> 
 
 using namespace std;
 
@@ -33,7 +38,7 @@ namespace IOStormPlus{
         vector<TestVM> TestVMs;
 
     public:
-        Controller(string TestVMs_config);
+        Controller(string configFilename, string storageConfigFileName);
         ~Controller(){};
 
         void InitAgents();
@@ -43,13 +48,22 @@ namespace IOStormPlus{
         void PrintUsage(ControllerCommand command);
         void CheckTestVMHealth();
 
+		void InitWorkload();
+		void UploadWorkload();
+
     private:
         bool m_isReady;
-        
+		
+		map<string, vector<string> > workload;
+
         void InitLogger();
         
+		//Azure Storage Client
+		azure::storage::cloud_table_client tableClient;
+		azure::storage::cloud_blob_client blobClient;
+
         // Health Check
-        void WaitForAllVMs(SCCommand command);
+        void WaitForAllVMs(azure::storage::cloud_table& table, SCCommand command);
 
         // Test Execution
         void RunStandardTest();

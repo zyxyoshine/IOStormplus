@@ -1,4 +1,4 @@
-#include "header/controller.h"
+﻿#include "header/controller.h"
 #include "header/constant.h"
 #include "rapidjson/document.h"     // rapidjson's DOM-style API
 #include "../common/header/logger.h"
@@ -13,11 +13,11 @@ using namespace rapidjson;
 using namespace std;
 
 namespace IOStormPlus{
-
+	//https://docs.microsoft.com/en-us/azure/storage/blobs/storage-c-plus-plus-how-to-use-blobs
     ////////////////////////////////////////////////////////////////////////////////////////////
     // Public function
     ///////////////////////////////////////////////////////////////////////////////////////////
-    Controller::Controller(string configFilename) {
+    Controller::Controller(string configFilename, string storageConfigFileName) {
         InitLogger();
         m_isReady = false;
 
@@ -44,14 +44,31 @@ namespace IOStormPlus{
 
         int vmCount = VMConfig["count"].GetInt();
         auto vmInfo = VMConfig["value"].GetArray();
-        
+
         stringstream logStream;
-        logStream << "Test VM Count " << vmCount;      
+        logStream << "Test VM Count " << vmCount;
         Logger::LogInfo(logStream.str());
-        
+
         for (int i = 0; i < vmCount; ++i) {
-            TestVMs.push_back(TestVM(vmInfo[i]["name"].GetString(), vmInfo[i]["ip"].GetString(), vmInfo[i]["info"]["type"].GetString(), vmInfo[i]["info"]["size"].GetString()));
+            TestVMs.push_back(TestVM(vmInfo[i]["name"].GetString(), vmInfo[i]["ip"].GetString(), vmInfo[i]["info"]["type"].GetString(), vmInfo[i]["info"]["size"].GetString(), vmInfo[i]["info"]["pool"].GetString()));
         }
+
+		fin.open(storageConfigFileName, ios_base::in);
+		Logger::LogInfo("Open Azure Storage configuration file: " + storageConfigFileName);
+		string storageAccountName, storageAccountKey, storageEndpointSuffix;
+		getline(fin, storageAccountName);
+		getline(fin, storageAccountKey);
+		getline(fin, storageEndpointSuffix);
+		fin.close();
+
+		storageAccountName.replace(storageAccountName.find("NAME="), 5, "");
+		storageAccountKey.replace(storageAccountKey.find("KEY="), 4, "");
+		storageEndpointSuffix.replace(storageEndpointSuffix.find("ENDPOINTSUF="), 12, "");
+		const utility::string_t storageConnectionString = utility::conversions::to_string_t("DefaultEndpointsProtocol=https;AccountName=" + storageAccountName + ";AccountKey=" + storageAccountKey + ";EndpointSuffix=" + storageEndpointSuffix);
+		azure::storage::cloud_storage_account storageAccount = azure::storage::cloud_storage_account::parse(storageConnectionString);
+
+		tableClient = storageAccount.create_cloud_table_client();
+		blobClient = storageAccount.create_cloud_blob_client();
 
         m_isReady = true;
     }
@@ -59,17 +76,28 @@ namespace IOStormPlus{
     /// Set the Agent info to the controller
     void Controller::InitAgents() {
         TestVMs.clear();
-        vector<string> agents = ListFilesInDirectory(AgentInfoFolder);
-        ifstream fin;
-        string internalIP = "", osType = "", size = "";
-        for (auto agentName : agents) {
-            fin.open(AgentInfoFolder + agentName);
-            fin >> internalIP >> osType >> size;
-            TestVMs.push_back(TestVM(agentName, internalIP, osType, size));
-            Logger::LogInfo("Register test VM " + agentName + " succeeded.");
-            fin.close();
-        }
-        
+		azure::storage::cloud_table table = tableClient.get_table_reference(IOStormPlus::storageTempTableName);
+		table.create_if_not_exists();
+
+		azure::storage::table_query query;
+		query.set_filter_string(azure::storage::table_query::generate_filter_condition(IOStormPlus::tableCommandColumnName, azure::storage::query_comparison_operator::equal, utility::conversions::to_string_t(GetCommandString(SCCommand::EmptyCmd))));
+		azure::storage::table_query_iterator itr = table.execute_query(query);
+		azure::storage::table_query_iterator end_of_results;
+		string agentName, internalIP, osType, size, pool;
+		for (; itr != end_of_results; ++itr) {
+			const azure::storage::table_entity::properties_type& properties = itr->properties();
+
+			agentName = utility::conversions::to_utf8string(itr->row_key());
+			pool = utility::conversions::to_utf8string(itr->partition_key());
+			internalIP = utility::conversions::to_utf8string(properties.at(IOStormPlus::tableIPColumnName).string_value());
+			osType = utility::conversions::to_utf8string(properties.at(IOStormPlus::tableOSColumnName).string_value());
+			size = utility::conversions::to_utf8string(properties.at(IOStormPlus::tableSizeColumnName).string_value());
+			pool = utility::conversions::to_utf8string(properties.at(IOStormPlus::tablePoolColumnName).string_value());
+
+			TestVMs.push_back(TestVM(agentName, internalIP, osType, size, pool));
+			Logger::LogInfo("Register test VM " + agentName + " succeeded.");
+		}
+
         WriteConfig();
         PrintTestVMInfo();
     }
@@ -100,20 +128,20 @@ namespace IOStormPlus{
             PrintUsage(ControllerCommand::AgentGeneral);
         }
     }
-    
+
     /// Run Test command
     void Controller::RunTest(int argc, char *argv[]) {
         if (argc == 0) {
-            Logger::LogVerbose("Start custom test.");
+            Logger::LogInfo("Start custom test.");
             CheckTestVMHealth();
             RunCustomTest();
-            Logger::LogVerbose("End custom test.");
+            Logger::LogInfo("End custom test.");
         }
         else if ( argc == 1 && (strcmp(argv[0], "-std") == 0)) {
-            Logger::LogVerbose("Start standard test.");
+            Logger::LogInfo("Start standard test.");
             CheckTestVMHealth();
             RunStandardTest();
-            Logger::LogVerbose("End standard test.");
+            Logger::LogInfo("End standard test.");
         }
         else {
             PrintUsage(ControllerCommand::WorkerGeneral);
@@ -143,7 +171,7 @@ namespace IOStormPlus{
                 break;
             }
             case ControllerCommand::AgentRegister:{
-                cout << "USAGE: IOStormplus agent add [VM name] [VM internal ip] [VM OS(linux / windows)] [VM size]" << endl;
+                cout << "USAGE: IOStormplus agent add [VM name] [VM internal ip] [VM OS(linux / windows)] [VM size] [VM pool]" << endl;
                 break;
             }
             case ControllerCommand::AgentRemove:{
@@ -164,7 +192,7 @@ namespace IOStormPlus{
     // Private function
     ///////////////////////////////////////////////////////////////////////////////////////////
     void Controller::InitLogger() {
-        time_t t = std::time(0);   
+        time_t t = std::time(0);
         tm* now = std::localtime(&t);
         stringstream logFilename;
         logFilename << now->tm_year + 1900 << now->tm_mon + 1 << now->tm_mday << ".log" ;
@@ -173,19 +201,20 @@ namespace IOStormPlus{
 
     // Health Check
     void Controller::CheckTestVMHealth() {
-
-        // Ask VM to sync    
+		azure::storage::cloud_table table = tableClient.get_table_reference(IOStormPlus::storageTempTableName);
+		azure::storage::table_batch_operation batchOperation;
+        // Ask VM to sync
         for (auto &vm : TestVMs) {
             Logger::LogInfo("Sending pre-sync request to test VM " + vm.GetName() + "(" + vm.GetInternalIP() + ")");
-            vm.SendCommand(SCCommand::SyncCmd);
+            vm.SendCommand(batchOperation, SCCommand::SyncCmd);
         }
-
+		vector<azure::storage::table_result> results = table.execute_batch(batchOperation);
         // Check all VMs to response sync
-        WaitForAllVMs(SCCommand::SyncDoneCmd);
+        WaitForAllVMs(table, SCCommand::SyncDoneCmd);
         Logger::LogInfo("All test VM pre-sync succeeded!");
     }
 
-    void Controller::WaitForAllVMs(SCCommand command){
+    void Controller::WaitForAllVMs(azure::storage::cloud_table& table, SCCommand command){
         // Check all VMs to response sync
         Logger::LogInfo("Waiting for agents response.");
         bool allDone = false;
@@ -194,15 +223,14 @@ namespace IOStormPlus{
         while (!allDone) {
             allDone = true;
             for (auto vm : TestVMs) {
-                
+
                 if (doneJobs[vm.GetInternalIP()]) {
                     continue;
                 }
 
-                Sleep(1000);
-                if (vm.GetResponse(command)) {
+                if (vm.GetResponse(table, command)) {
                     doneJobs[vm.GetInternalIP()] = true;
-                    Logger::LogInfo("Test VM " + vm.GetName() + "(" + vm.GetInternalIP() + ")" + " successfully executed command.");                    
+                    Logger::LogInfo("Test VM " + vm.GetName() + "(" + vm.GetInternalIP() + ")" + " successfully executed command.");
                 }
                 else {
                     allDone = false;
@@ -221,34 +249,43 @@ namespace IOStormPlus{
     }
 
     void Controller::RunTest(string rootPath){
-        for (auto &vm : TestVMs) {
-            if (vm.GetOSType() == OSType::Linux) {
-                ExecCommand(string("xcopy " + rootPath + "linux " + vm.GetSharePath() + WorkloadFolder + " /s /h /d /y"));
-            }
-            else if(vm.GetOSType() == OSType::Windows) {
-                ExecCommand(string("xcopy " + rootPath + "windows " + vm.GetSharePath() + WorkloadFolder + " /s /h /d /y"));
-            }
-            else {
-                assert(false);
-            }
+		azure::storage::cloud_table table = tableClient.get_table_reference(IOStormPlus::storageTempTableName);
+		azure::storage::table_batch_operation startOperation;
+		for (auto &vm : TestVMs) {
+			if (vm.GetOSType() == OSType::Linux) {
+				ExecCommand(string("xcopy " + rootPath + "linux " + vm.GetSharePath() + WorkloadFolder + " /s /h /d /y"));
+			}
+			else if (vm.GetOSType() == OSType::Windows) {
+				ExecCommand(string("xcopy " + rootPath + "windows " + vm.GetSharePath() + WorkloadFolder + " /s /h /d /y"));
+			}
+			else {
+				assert(false);
+			}
 
-            Logger::LogInfo("Sending work request to test VM " + vm.GetName() + "(" + vm.GetInternalIP() + ")");
-            vm.SendCommand(SCCommand::StartJobCmd);
-        }
+			Logger::LogInfo("Sending work request to test VM " + vm.GetName() + "(" + vm.GetInternalIP() + ")");
+			vm.SendCommand(startOperation, SCCommand::StartJobCmd);
+		}
+		vector<azure::storage::table_result> results = table.execute_batch(startOperation);
 
-        WaitForAllVMs(SCCommand::JobDoneCmd);
+        WaitForAllVMs(table, SCCommand::JobDoneCmd);
 
-        Logger::LogVerbose("All jobs done!");
+		azure::storage::table_batch_operation initOperation;
+		for (auto &vm : TestVMs) {
+			vm.SendCommand(initOperation, SCCommand::EmptyCmd);
+		}
+		results = table.execute_batch(initOperation);
+
+        Logger::LogInfo("All jobs done!");
 
         AnalyzeData(rootPath);
-
         PrintTestResultSummary(rootPath);
     }
 
     // Agent management
+	// TODO: Ues Azure
     void Controller::RegisterAgent(int argc, char *argv[]) {
-        string name, internalIP, osType, size = "";
-        if (argc != 4) {
+        string name, internalIP, osType, size, pool;
+        if (argc != 5) {
             PrintUsage(ControllerCommand::AgentRegister);
             return;
         }
@@ -258,6 +295,7 @@ namespace IOStormPlus{
             internalIP = argv[1];
             osType = argv[2];
             size = argv[3];
+			pool = argv[4];
             if (osType == "linux" || osType == "windows") {
                 bool vmExists = false;
                 for (auto &iter : TestVMs) {
@@ -270,7 +308,7 @@ namespace IOStormPlus{
                     Logger::LogWarning("VM " + name + " has already been registered.");
                 }
                 else {
-                    TestVMs.push_back(TestVM(name, internalIP, osType, size));
+                    TestVMs.push_back(TestVM(name, internalIP, osType, size, pool));
                     Logger::LogInfo("Register test VM " + name + " succeeded.");
                     WriteConfig();
                     PrintTestVMInfo();
@@ -287,13 +325,14 @@ namespace IOStormPlus{
         }
     }
 
+	// TODO: Ues Azure
     void Controller::RemoveAgent(int argc, char *argv[]) {
         string vmName;
         if (argc != 1) {
             PrintUsage(ControllerCommand::AgentRemove);
             return;
         }
-        
+
         vmName = argv[0];
 
         bool found = false;
@@ -305,7 +344,7 @@ namespace IOStormPlus{
             }
         }
         WriteConfig();
-        
+
         if (found){
             Logger::LogInfo("Remove test VM " + vmName + " succeeded.");
             PrintTestVMInfo();
@@ -321,7 +360,7 @@ namespace IOStormPlus{
     }
 
     void Controller::TestAgent() {
-        Logger::LogVerbose("Using pre-sync to determine the working status of all registered test VM.");
+        Logger::LogInfo("Using pre-sync to determine the working status of all registered test VM.");
         CheckTestVMHealth();
     }
 
@@ -337,7 +376,8 @@ namespace IOStormPlus{
             fout << "\t\t\t\t\"ip\":\"" << TestVMs[i].GetInternalIP() << "\",\n";
             fout << "\t\t\t\t\"info\":{\n";
             fout << "\t\t\t\t\t\"type\":\"" << (TestVMs[i].GetOSType() == OSType::Linux ? "linux" : "windows") << "\",\n";
-            fout << "\t\t\t\t\t\"size\":\"" << TestVMs[i].GetSize() << "\"\n";
+            fout << "\t\t\t\t\t\"size\":\"" << TestVMs[i].GetSize() << "\",\n";
+			fout << "\t\t\t\t\t\"pool\":\"" << TestVMs[i].GetPool() << "\"\n";
             fout << "\t\t\t\t}\n";
             if (i != TestVMs.size() - 1) {
                 fout << "\t\t\t},\n";
@@ -355,16 +395,16 @@ namespace IOStormPlus{
     void Controller::PrintTestVMInfo() {
         stringstream logStream;
         logStream << "VM Count: " << TestVMs.size();
-        Logger::LogVerbose(logStream.str());
-        Logger::LogVerbose("ID\tName\tIP Address\tOS\tSize");
-        
+        Logger::LogInfo(logStream.str());
+        Logger::LogInfo("ID\tName\tIP Address\tOS\tSize\tPool");
+
         logStream.clear();
         logStream.str("");
         for (int i = 0;i < TestVMs.size(); ++i) {
             logStream.clear();
             logStream.str("");
             logStream << i + 1 << "\t" << TestVMs[i].GetInfo() << endl;
-            Logger::LogVerbose(logStream.str());
+            Logger::LogInfo(logStream.str());
         }
     }
 
@@ -372,9 +412,9 @@ namespace IOStormPlus{
         vector<string> linuxJobs = ListFilesInDirectory(workloadRootPath + "linux\\");
         vector<string> jobs = ListFilesInDirectory(workloadRootPath + "windows\\");
         jobs.insert(jobs.end(), linuxJobs.begin(), linuxJobs.end());
-        
+
         sort(jobs.begin(), jobs.end());
-        vector<string>::iterator iter = unique(jobs.begin(),jobs.end());       
+        vector<string>::iterator iter = unique(jobs.begin(),jobs.end());
         jobs.erase(iter,jobs.end());
 
         stringstream tempStream;
@@ -387,7 +427,7 @@ namespace IOStormPlus{
         tempStream >> summaryOutputFile;
         summaryOutputFile = OutputFolder + summaryOutputFile + "_summary.out";
         ofstream fout(summaryOutputFile, ios_base::out | ios_base::app);
-        
+
         // Title
         tempStream.clear();
         tempStream.str(""); // Clear() do not clear stream buffer
@@ -398,11 +438,11 @@ namespace IOStormPlus{
         for (auto job : jobs) {
             Logger::LogInfo("Job: " + job);
             fout << "Job: " + job << endl;
-            Logger::LogInfo("ID\tName\tIP Address\tOS\tSize\tR(MIN)\tR(MAX)\tR(AVG)\tW(MIN)\tW(MAX)\tW(AVG)");
-            fout << "ID\tName\tIP Address\tOS\tSize\tR(MIN)\tR(MAX)\tR(AVG)\tW(MIN)\tW(MAX)\tW(AVG)" << endl;
+            Logger::LogInfo("ID\tName\tIP Address\tOS\tSize\tPool\tR(MIN)\tR(MAX)\tR(AVG)\tW(MIN)\tW(MAX)\tW(AVG)");
+            fout << "ID\tName\tIP Address\tOS\tSize\tPool\tR(MIN)\tR(MAX)\tR(AVG)\tW(MIN)\tW(MAX)\tW(AVG)" << endl;
             string vm_id;
             for (int i = 0;i < TestVMs.size();i++) {
-                // Logger::LogVerbose("Job: " + job);
+                // Logger::LogInfo("Job: " + job);
                 if (TestVMs[i].CountTestResult(job)) {
                     tempStream.clear();
                     tempStream.str("");
@@ -444,32 +484,32 @@ namespace IOStormPlus{
     void Controller::AnalyzeJob(const string& job, TestVM& vm){
         string jobName = job;
         string res;
-        
+
         if (jobName.find(".job") != string::npos) {
             jobName = jobName.replace(jobName.find(".job"),4,"");
         }
-        Logger::LogVerbose("Start AnalyzeJob "+ jobName);
-        
+        Logger::LogInfo("Start AnalyzeJob "+ jobName);
+
         const string outputFile = OutputFolder + vm.GetName() + "_" + jobName + ".out";
         const string copyOutputCmd = "copy " + vm.GetSharePath() + outputFile + " " + outputFile + " /y";
-        
+
         do {
-            res = ExecCommand(copyOutputCmd);   
+            res = ExecCommand(copyOutputCmd);
         } while (res.find("cannot") != string::npos);
 
         Logger::LogInfo("Done execute command \"" + copyOutputCmd + "\"");
 
-        Logger::LogVerbose("Jobname: "+jobName);
+        Logger::LogInfo("Jobname: "+jobName);
         vm.SetTestResult(job, AnalyzeStandardOutput(outputFile));
     }
 
     ReportSummary Controller::AnalyzeStandardOutput(string outputFile) {
-        Logger::LogVerbose("Start AnalyzeStandardOutput "+ outputFile);
-        
+        Logger::LogInfo("Start AnalyzeStandardOutput "+ outputFile);
+
         ifstream fin(outputFile, ios_base::in);
         string buf;
         ReportSummary res;
-        
+
         while (!fin.eof()) {
             getline(fin, buf);
             int pos = buf.find("read: IOPS=");
@@ -485,8 +525,8 @@ namespace IOStormPlus{
             }
         }
 
-        Logger::LogVerbose("End AnalyzeStandardOutput "+ outputFile);
-        
+        Logger::LogInfo("End AnalyzeStandardOutput "+ outputFile);
+
         return res;
     }
 
@@ -514,14 +554,14 @@ namespace IOStormPlus{
             }
         }
         num /= pow(10,pointCount);
-        // Logger::LogVerbose("IOPS number done");
+        // Logger::LogInfo("IOPS number done");
         return (int)num;
     }
 
 }
 
 int main(int argc,char *argv[]) {
-    IOStormPlus::Controller controller(IOStormPlus::AgentsConfigFilename);
+    IOStormPlus::Controller controller(IOStormPlus::AgentsConfigFilename, IOStormPlus::storageConfigFileName);
     if (!controller.IsReady()){
         return 0;
     }

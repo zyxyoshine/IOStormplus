@@ -229,7 +229,7 @@
                 }
             },
             "dependsOn": [
-                "[concat('Microsoft.Network/networkInterfaces/',variables('vmNicName'),copyIndex(parameters('vmIndex')),'-nic')]"
+                "[concat('Microsoft.Network/networkInterfaces/',variables('vmNicName'),copyIndex(parameters('vmIndex'),'-nic'))]"
             ]
         },
         {
