@@ -24,6 +24,7 @@ namespace IOStormPlus{
 	const utility::string_t tablePoolColumnName = U("POOL");
 	const utility::string_t tableIPColumnName = U("IP");
 	const utility::string_t tableSizeColumnName = U("SIZE");
+	const utility::string_t workloadBlobContainerName = U("WORKLOAD");
 }
 
 #ifdef __cplusplus

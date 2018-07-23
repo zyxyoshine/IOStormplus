@@ -48,7 +48,7 @@ namespace IOStormPlus{
         void PrintUsage(ControllerCommand command);
         void CheckTestVMHealth();
 
-		void InitWorkload();
+		void InitWorkload(string configFilename);
 		void UploadWorkload();
 
     private:

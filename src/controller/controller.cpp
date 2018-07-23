@@ -107,6 +107,55 @@ namespace IOStormPlus{
         return m_isReady;
     }
 
+	void Controller::InitWorkload(string configFilename) {
+		/* Load JSON file */
+		fstream fin(configFilename);
+		Logger::LogInfo("Open workload onfiguration file: " + configFilename);
+		string data, content = "";
+		while (!fin.eof()) {
+			getline(fin, data);
+			content += data;
+		}
+		fin.close();
+
+		// TODO: Handle configFilename not exisi
+
+		Document workloadConfig;
+		if (workloadConfig.Parse(content.c_str()).HasParseError()) {
+			stringstream logStream;
+			logStream << "parse workload configuration failed! " << content.c_str() << endl;
+			Logger::LogError(logStream.str());
+			return;
+		}
+		Logger::LogInfo("Configure File has been parsed successfully!");
+
+		int workloadCount = workloadConfig["count"].GetInt();
+		auto workloadInfo = workloadConfig["value"].GetArray();
+
+		stringstream logStream;
+		logStream << "Test VM Count " << vmCount;
+		Logger::LogInfo(logStream.str());
+
+		for (int i = 0; i < vmCount; ++i) {
+			TestVMs.push_back(TestVM(vmInfo[i]["name"].GetString(), vmInfo[i]["ip"].GetString(), vmInfo[i]["info"]["type"].GetString(), vmInfo[i]["info"]["size"].GetString(), vmInfo[i]["info"]["pool"].GetString()));
+		}
+	}
+
+
+	/// Upload workload to blob service
+	void Controller::UploadWorkload() {
+		vector<string> workloadFiles;
+		workloadFiles = ListFilesInDirectory(WorkloadFolder);
+		// Retrieve a reference to a container.
+		azure::storage::cloud_blob_container container = blobClient.get_container_reference(IOStormPlus::workloadBlobContainerName);
+		// Create the container if it doesn't already exist.
+		container.create_if_not_exists();
+		for (auto fna : workloadFiles) {
+			azure::storage::cloud_block_blob blockBlob = container.get_block_blob_reference(utility::conversions::to_string_t(fna));
+			blockBlob.upload_from_file(utility::conversions::to_string_t(WorkloadFolder + fna));
+		}
+		Logger::LogInfo("Upload workload files to blob succeeded.");
+	}
     /// Run Configure Agent command
     void Controller::ConfigureAgent(int argc, char *argv[]) {
         if (argc == 0) {
