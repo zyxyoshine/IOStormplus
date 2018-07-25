@@ -13,6 +13,7 @@ extern "C"
 namespace IOStormPlus{
     const string AgentsConfigFilename = "agents.json";
 	const string storageConfigFileName = "AzureStorage.config";
+	const string workloadConfigFileName = "workload.json";
     const string WorkloadFolder = "workload\\";
     const string StandardWorkloadFolder = "workload\\std\\";
     const string TempFolder = "temp\\";

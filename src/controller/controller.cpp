@@ -108,6 +108,7 @@ namespace IOStormPlus{
     }
 
 	void Controller::InitWorkload(string configFilename) {
+        workload.clear();
 		/* Load JSON file */
 		fstream fin(configFilename);
 		Logger::LogInfo("Open workload onfiguration file: " + configFilename);
@@ -132,13 +133,20 @@ namespace IOStormPlus{
 		int workloadCount = workloadConfig["count"].GetInt();
 		auto workloadInfo = workloadConfig["value"].GetArray();
 
-		stringstream logStream;
-		logStream << "Test VM Count " << vmCount;
-		Logger::LogInfo(logStream.str());
+        for (int i = 0; i < workloadCount; i++) {
+            string poolName = workloadInfo[i]["pool"].GetString();
+            int jobCount = workloadInfo[i]["count"].GetInt();
+            auto jobs = workloadInfo[i]["jobs"].GetArray();
+            for (int j = 0; j < jobCount; j++) {
+                workload[poolName].push_back(jobs[j].GetString());
+            }
+        }
 
-		for (int i = 0; i < vmCount; ++i) {
-			TestVMs.push_back(TestVM(vmInfo[i]["name"].GetString(), vmInfo[i]["ip"].GetString(), vmInfo[i]["info"]["type"].GetString(), vmInfo[i]["info"]["size"].GetString(), vmInfo[i]["info"]["pool"].GetString()));
-		}
+        if (workload.count("std") == 0) {
+            LogWarning("No standard test job!");
+        }
+    
+        LogInfo("Initialize workload settings succeeded.")
 	}
 
 
