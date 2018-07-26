@@ -104,20 +104,24 @@ namespace IOStormPlus{
 			Sleep(SyncWaitTime);
 		}
 
-        string GetControlTempFilePath(){
+        string GetControlTempFilePath() {
 			return ControllerTempFilePath;
 		}
 
-        string GetClientTempFilePath(){
+        string GetClientTempFilePath() {
 			return ClientTempFilePath;
 		}
 
-        string GetLogFilePath(){
+        string GetLogFilePath() {
 			return LogFilePath;
 		}	
 
-		string GetWorkloadFolderPath(){
+		string GetWorkloadFolderPath() {
 			return WorkLoadFolderPath;
+		}
+
+		string GetOutputFolderPath() {
+			return OutputFolder;
 		}
 
 		string GetVMInfoFolderPath() {

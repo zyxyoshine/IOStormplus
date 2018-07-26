@@ -44,12 +44,9 @@ namespace IOStormPlus{
         void InitAgents();
         bool IsReady();
         void ConfigureAgent(int argc, char *argv[]);
-        void RunTest(int argc, char *argv[]);
+		void RunTest(int argc, char *argv[]);
         void PrintUsage(ControllerCommand command);
         void CheckTestVMHealth();
-
-		void InitWorkload(string configFilename);
-		void UploadWorkload();
 
     private:
         bool m_isReady;
@@ -62,13 +59,17 @@ namespace IOStormPlus{
 		azure::storage::cloud_table_client tableClient;
 		azure::storage::cloud_blob_client blobClient;
 
+		void InitWorkload(string configFilename);
+		void UploadWorkload();
+		void DownloadOutput();
+
         // Health Check
         void WaitForAllVMs(azure::storage::cloud_table& table, SCCommand command);
 
         // Test Execution
         void RunStandardTest();
         void RunCustomTest();
-        void RunTest(string rootPath);
+        void RunTest(SCCommand startCMD);
     
         // Agent Management
         void RegisterAgent(int argc, char *argv[]);
@@ -79,8 +80,8 @@ namespace IOStormPlus{
 
         // Reporting
         void PrintTestVMInfo();
-        void PrintTestResultSummary(string workloadRootPath);
-        void AnalyzeData(string workloadRootPath);
+        void PrintTestResultSummary(SCCommand jobCMD);
+        void AnalyzeData(SCCommand jobCMD);
         void AnalyzeJob(const string& job, TestVM& vm);
         ReportSummary AnalyzeStandardOutput(string output_file);
         int GetIOPSNumber(string buf, int pos);

@@ -1,9 +1,11 @@
 #include "header/baseagent.h"
 #include "../common/header/logger.h"
+#include "../common/rapidjson/document.h"     // rapidjson's DOM-style API
 #include <iostream>
 #include <cassert>
 #include <cstdarg>
 
+using namespace rapidjson;
 using namespace std;
 
 namespace IOStormPlus{
@@ -27,6 +29,7 @@ namespace IOStormPlus{
 		azure::storage::cloud_storage_account storageAccount = azure::storage::cloud_storage_account::parse(storageConnectionString);
 
 		tableClient = storageAccount.create_cloud_table_client();
+		blobClient = storageAccount.create_cloud_blob_client();
 	}
 
 
@@ -74,7 +77,61 @@ namespace IOStormPlus{
 			}
 		}
 		return "";
-	}	
+	}
+
+	void BaseAgent::DownloadWorkload(SCCommand jobCMD, string configFilename) {
+		//Download configuration file
+		azure::storage::cloud_blob_container container = blobClient.get_container_reference(IOStormPlus::workloadBlobContainerName);
+		azure::storage::cloud_block_blob blockBlob = container.get_block_blob_reference(utility::conversions::to_string_t(configFilename));
+		string workloadConfigContent = utility::conversions::to_utf8string(blockBlob.download_text());
+
+		Document workloadConfig;
+		if (workloadConfig.Parse(workloadConfigContent.c_str()).HasParseError()) {
+			stringstream logStream;
+			logStream << "parse workload configuration failed! " << workloadConfigContent.c_str() << endl;
+			Logger::LogError(logStream.str());
+			return;
+		}
+		Logger::LogInfo("Configure File has been parsed successfully!");
+		
+		int workloadCount = workloadConfig["count"].GetInt();
+		auto workloadInfo = workloadConfig["value"].GetArray();
+
+		map<string, vector<string> > workload;
+
+		for (int i = 0; i < workloadCount; i++) {
+			string poolName = workloadInfo[i]["pool"].GetString();
+			int jobCount = workloadInfo[i]["count"].GetInt();
+			auto jobs = workloadInfo[i]["jobs"].GetArray();
+			for (int j = 0; j < jobCount; j++) {
+				workload[poolName].push_back(jobs[j].GetString());
+			}
+		}
+
+		string targetPool = m_vmPool;
+		if (jobCMD == SCCommand::StartStdJobCmd || workload.count(m_vmPool) == 0) {
+			targetPool = "std";
+		}
+
+		for (auto jna : workload[targetPool]) {
+			blockBlob = container.get_block_blob_reference(utility::conversions::to_string_t(jna));
+			blockBlob.download_to_file(utility::conversions::to_string_t(GetWorkloadFolderPath() + jna));
+		}
+	}
+
+	void BaseAgent::UploadOutput() {
+		vector<string> workloadFiles;
+		workloadFiles = ListFilesInDirectory();
+		// Retrieve a reference to a container.
+		azure::storage::cloud_blob_container container = blobClient.get_container_reference(IOStormPlus::workloadBlobContainerName);
+		// Create the container if it doesn't already exist.
+		container.create_if_not_exists();
+		for (auto fna : workloadFiles) {
+			azure::storage::cloud_block_blob blockBlob = container.get_block_blob_reference(utility::conversions::to_string_t(fna));
+			blockBlob.upload_from_file(utility::conversions::to_string_t(GetOutputFolderPath() + fna));
+		}
+		Logger::LogInfo("Upload workload files to blob succeeded.");
+	}
 
     bool BaseAgent::GetControllerCmd(azure::storage::cloud_table& table, SCCommand &command){
 		azure::storage::table_operation retrieveOperation = azure::storage::table_operation::retrieve_entity(utility::conversions::to_string_t(m_vmPool), utility::conversions::to_string_t(m_vmName));

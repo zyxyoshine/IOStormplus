@@ -1,6 +1,6 @@
 ﻿#include "header/controller.h"
 #include "header/constant.h"
-#include "rapidjson/document.h"     // rapidjson's DOM-style API
+#include "../common/rapidjson/document.h"     // rapidjson's DOM-style API
 #include "../common/header/logger.h"
 #include "header/helper.h"
 #include <windows.h>
@@ -111,7 +111,7 @@ namespace IOStormPlus{
         workload.clear();
 		/* Load JSON file */
 		fstream fin(configFilename);
-		Logger::LogInfo("Open workload onfiguration file: " + configFilename);
+		Logger::LogInfo("Open workload configuration file: " + configFilename);
 		string data, content = "";
 		while (!fin.eof()) {
 			getline(fin, data);
@@ -143,10 +143,10 @@ namespace IOStormPlus{
         }
 
         if (workload.count("std") == 0) {
-            LogWarning("No standard test job!");
+			Logger::LogWarning("No standard test job!");
         }
     
-        LogInfo("Initialize workload settings succeeded.")
+		Logger::LogInfo("Initialize workload settings succeeded.");
 	}
 
 
@@ -164,6 +164,20 @@ namespace IOStormPlus{
 		}
 		Logger::LogInfo("Upload workload files to blob succeeded.");
 	}
+
+	/// Download output files from blob
+	void Controller::DownloadOutput() {
+		azure::storage::cloud_blob_container container = blobClient.get_container_reference(IOStormPlus::outputBlobContainerName);
+		azure::storage::list_blob_item_iterator end_of_results;
+		for (auto it = container.list_blobs(); it != end_of_results; ++it) {
+			if (it->is_blob()) {
+				std::wcout << U("Blob: ") << it->as_blob().uri().primary_uri().to_string() << std::endl;
+				string blobName = utility::conversions::to_utf8string(it->as_blob().name());
+				it->as_blob().download_to_file(utility::conversions::to_string_t(OutputFolder + blobName));
+			}
+		}
+	}
+
     /// Run Configure Agent command
     void Controller::ConfigureAgent(int argc, char *argv[]) {
         if (argc == 0) {
@@ -191,12 +205,16 @@ namespace IOStormPlus{
         if (argc == 0) {
             Logger::LogInfo("Start custom test.");
             CheckTestVMHealth();
+			InitWorkload(IOStormPlus::workloadConfigFileName);
+			UploadWorkload();
             RunCustomTest();
             Logger::LogInfo("End custom test.");
         }
         else if ( argc == 1 && (strcmp(argv[0], "-std") == 0)) {
             Logger::LogInfo("Start standard test.");
             CheckTestVMHealth();
+			InitWorkload(IOStormPlus::workloadConfigFileName);
+			UploadWorkload();
             RunStandardTest();
             Logger::LogInfo("End standard test.");
         }
@@ -298,29 +316,18 @@ namespace IOStormPlus{
 
     // Test Execution
     void Controller::RunStandardTest() {
-        RunTest(StandardWorkloadFolder);
+        RunTest(SCCommand::StartStdJobCmd);
     }
 
     void Controller::RunCustomTest() {
-        RunTest(WorkloadFolder);
+        RunTest(SCCommand::StartJobCmd);
     }
 
-    void Controller::RunTest(string rootPath){
+    void Controller::RunTest(SCCommand startCMD){
 		azure::storage::cloud_table table = tableClient.get_table_reference(IOStormPlus::storageTempTableName);
 		azure::storage::table_batch_operation startOperation;
 		for (auto &vm : TestVMs) {
-			if (vm.GetOSType() == OSType::Linux) {
-				ExecCommand(string("xcopy " + rootPath + "linux " + vm.GetSharePath() + WorkloadFolder + " /s /h /d /y"));
-			}
-			else if (vm.GetOSType() == OSType::Windows) {
-				ExecCommand(string("xcopy " + rootPath + "windows " + vm.GetSharePath() + WorkloadFolder + " /s /h /d /y"));
-			}
-			else {
-				assert(false);
-			}
-
-			Logger::LogInfo("Sending work request to test VM " + vm.GetName() + "(" + vm.GetInternalIP() + ")");
-			vm.SendCommand(startOperation, SCCommand::StartJobCmd);
+			vm.SendCommand(startOperation, startCMD);
 		}
 		vector<azure::storage::table_result> results = table.execute_batch(startOperation);
 
@@ -334,8 +341,9 @@ namespace IOStormPlus{
 
         Logger::LogInfo("All jobs done!");
 
-        AnalyzeData(rootPath);
-        PrintTestResultSummary(rootPath);
+		DownloadOutput();
+        AnalyzeData(startCMD);
+        PrintTestResultSummary(startCMD);
     }
 
     // Agent management
@@ -465,15 +473,7 @@ namespace IOStormPlus{
         }
     }
 
-    void Controller::PrintTestResultSummary(string workloadRootPath) {
-        vector<string> linuxJobs = ListFilesInDirectory(workloadRootPath + "linux\\");
-        vector<string> jobs = ListFilesInDirectory(workloadRootPath + "windows\\");
-        jobs.insert(jobs.end(), linuxJobs.begin(), linuxJobs.end());
-
-        sort(jobs.begin(), jobs.end());
-        vector<string>::iterator iter = unique(jobs.begin(),jobs.end());
-        jobs.erase(iter,jobs.end());
-
+    void Controller::PrintTestResultSummary(SCCommand jobCMD) {
         stringstream tempStream;
         string summaryOutputFile;
         time_t t = std::time(0);
@@ -482,8 +482,8 @@ namespace IOStormPlus{
                    << (now->tm_mon + 1) << '-'
                    << now->tm_mday;
         tempStream >> summaryOutputFile;
-        summaryOutputFile = OutputFolder + summaryOutputFile + "_summary.out";
-        ofstream fout(summaryOutputFile, ios_base::out | ios_base::app);
+        summaryOutputFile = summaryOutputFile + "_summary.out";
+        ofstream fout(OutputFolder + summaryOutputFile, ios_base::out | ios_base::app);
 
         // Title
         tempStream.clear();
@@ -492,50 +492,59 @@ namespace IOStormPlus{
         Logger::LogInfo(tempStream.str());
         fout << tempStream.str() << endl;
 
-        for (auto job : jobs) {
-            Logger::LogInfo("Job: " + job);
-            fout << "Job: " + job << endl;
-            Logger::LogInfo("ID\tName\tIP Address\tOS\tSize\tPool\tR(MIN)\tR(MAX)\tR(AVG)\tW(MIN)\tW(MAX)\tW(AVG)");
-            fout << "ID\tName\tIP Address\tOS\tSize\tPool\tR(MIN)\tR(MAX)\tR(AVG)\tW(MIN)\tW(MAX)\tW(AVG)" << endl;
-            string vm_id;
-            for (int i = 0;i < TestVMs.size();i++) {
-                // Logger::LogInfo("Job: " + job);
-                if (TestVMs[i].CountTestResult(job)) {
-                    tempStream.clear();
-                    tempStream.str("");
-                    tempStream << i + 1;
-                    tempStream >> vm_id;
-                    Logger::LogInfo(vm_id + "\t" + TestVMs[i].GetTestResult(job));
-                    fout << vm_id + "\t" + TestVMs[i].GetTestResult(job) << endl;
-                }
-                else{
-                    Logger::LogWarning("No Job");
-                }
-            }
-        }
-
+		for (auto &iter : workload) {
+			string poolName = iter.first;
+			if (jobCMD == SCCommand::StartStdJobCmd && poolName != "std")
+				continue;
+			vector<string> jobs = iter.second;
+			Logger::LogInfo("Pool: " + poolName);
+			fout << "Pool: " + poolName << endl;
+			for (auto job : jobs) {
+				Logger::LogInfo("Job: " + job);
+				fout << "Job: " + job << endl;
+				Logger::LogInfo("ID\tName\tIP Address\tOS\tSize\tPool\tR(MIN)\tR(MAX)\tR(AVG)\tW(MIN)\tW(MAX)\tW(AVG)");
+				fout << "ID\tName\tIP Address\tOS\tSize\tPool\tR(MIN)\tR(MAX)\tR(AVG)\tW(MIN)\tW(MAX)\tW(AVG)" << endl;
+				string vm_id;
+				for (int i = 0; i < TestVMs.size(); i++) {
+					if (TestVMs[i].CountTestResult(job)) {
+						tempStream.clear();
+						tempStream.str("");
+						tempStream << i + 1;
+						tempStream >> vm_id;
+						Logger::LogInfo(vm_id + "\t" + TestVMs[i].GetTestResult(job));
+						fout << vm_id + "\t" + TestVMs[i].GetTestResult(job) << endl;
+					}
+				}
+			}
+		}
         fout.close();
+
+		//Upload summary
+		azure::storage::cloud_blob_container container = blobClient.get_container_reference(IOStormPlus::outputBlobContainerName);
+		azure::storage::cloud_block_blob blockBlob = container.get_block_blob_reference(utility::conversions::to_string_t(summaryOutputFile));
+		blockBlob.upload_from_file(utility::conversions::to_string_t(OutputFolder + summaryOutputFile));
+		Logger::LogInfo("Upload result summary file to blob succeeded.");
     }
 
-    void Controller::AnalyzeData(string workloadRootPath) {
-        vector<string> linuxJobs = ListFilesInDirectory(workloadRootPath + "linux\\");
-        vector<string> windowsJobs = ListFilesInDirectory(workloadRootPath + "windows\\");
-
-        for (auto &iter : TestVMs) {
-            if (iter.GetOSType() == OSType::Linux) {
-                for (auto job : linuxJobs) {
-                    AnalyzeJob(job, iter);
-                }
-            }
-            else if (iter.GetOSType() == OSType::Windows) {
-                for (auto job : windowsJobs) {
-                   AnalyzeJob(job, iter);
-                }
-            }
-            else {
-                assert(false);
-            }
-        }
+    void Controller::AnalyzeData(SCCommand jobCMD) {		
+		for (auto &iter : TestVMs) {
+			if (jobCMD == SCCommand::StartStdJobCmd) {
+				for (auto job : workload["std"]) {
+					AnalyzeJob(job, iter);
+				}
+			}
+			else if (jobCMD == SCCommand::StartJobCmd) {
+				string vmPool = iter.GetPool();
+				if (workload.count(vmPool) == 0)
+					vmPool = "std";
+				for (auto job : workload[vmPool]) {
+					AnalyzeJob(job, iter);
+				}
+			}
+			else {
+				assert(false);
+			}
+		}
     }
 
     void Controller::AnalyzeJob(const string& job, TestVM& vm){
@@ -545,23 +554,15 @@ namespace IOStormPlus{
         if (jobName.find(".job") != string::npos) {
             jobName = jobName.replace(jobName.find(".job"),4,"");
         }
-        Logger::LogInfo("Start AnalyzeJob "+ jobName);
 
+        Logger::LogInfo("Start AnalyzeJob " + jobName + "(" + vm.GetName() + ")");
         const string outputFile = OutputFolder + vm.GetName() + "_" + jobName + ".out";
-        const string copyOutputCmd = "copy " + vm.GetSharePath() + outputFile + " " + outputFile + " /y";
 
-        do {
-            res = ExecCommand(copyOutputCmd);
-        } while (res.find("cannot") != string::npos);
-
-        Logger::LogInfo("Done execute command \"" + copyOutputCmd + "\"");
-
-        Logger::LogInfo("Jobname: "+jobName);
         vm.SetTestResult(job, AnalyzeStandardOutput(outputFile));
     }
 
     ReportSummary Controller::AnalyzeStandardOutput(string outputFile) {
-        Logger::LogInfo("Start AnalyzeStandardOutput "+ outputFile);
+        Logger::LogInfo("Start AnalyzeStandardOutput " + outputFile);
 
         ifstream fin(outputFile, ios_base::in);
         string buf;
@@ -582,7 +583,7 @@ namespace IOStormPlus{
             }
         }
 
-        Logger::LogInfo("End AnalyzeStandardOutput "+ outputFile);
+        Logger::LogInfo("End AnalyzeStandardOutput " + outputFile);
 
         return res;
     }

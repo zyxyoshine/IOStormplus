@@ -7,6 +7,9 @@
 #include <vector>
 #include <was/storage_account.h>
 #include <was/table.h>
+#include <was/blob.h>
+#include <cpprest/filestream.h>  
+#include <cpprest/containerstream.h> 
 
 using namespace std;
 
@@ -31,6 +34,7 @@ namespace IOStormPlus{
         virtual string RunScript(AgentCommand command, vector<string> &params);
         virtual void Wait(){};
         virtual string GetControlTempFilePath() = 0;
+		virtual string GetOutputFolderPath() = 0;
         virtual string GetClientTempFilePath() = 0;
         virtual string GetLogFilePath() = 0;
         virtual string GetWorkloadFolderPath() = 0;
@@ -41,9 +45,13 @@ namespace IOStormPlus{
         void RunJobs();
 		void SetAgentInfo(string vmIP, string vmSize, string vmOS, string vmPool);
 
+		void DownloadWorkload(SCCommand jobCMD, string configFilename);
+		void UploadOutput();
+
 	private:
 		//Azure Storage Client
 		azure::storage::cloud_table_client tableClient;
+		azure::storage::cloud_blob_client blobClient;
 
 		string m_vmName;
 		string m_vmPool;
