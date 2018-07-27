@@ -15,7 +15,8 @@ namespace IOStormPlus{
         CopyOutputCmd = 1,
         DelTempFileCmd = 2,
         DelJobFilesCmd = 3,
-        HostnameCmd = 4
+        HostnameCmd = 4,
+		DelLocalOutputCmd = 5
     };
 
     class IAgent{

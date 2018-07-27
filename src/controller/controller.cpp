@@ -85,6 +85,8 @@ namespace IOStormPlus{
 		azure::storage::table_query_iterator end_of_results;
 		string agentName, internalIP, osType, size, pool;
 		for (; itr != end_of_results; ++itr) {
+			if ((utility::datetime::utc_now() - itr->timestamp()) > IOStormPlus::maxWaitTimeInSec)
+				continue;
 			const azure::storage::table_entity::properties_type& properties = itr->properties();
 
 			agentName = utility::conversions::to_utf8string(itr->row_key());
@@ -110,7 +112,7 @@ namespace IOStormPlus{
 	void Controller::InitWorkload(string configFilename) {
         workload.clear();
 		/* Load JSON file */
-		fstream fin(configFilename);
+		fstream fin(WorkloadFolder + configFilename);
 		Logger::LogInfo("Open workload configuration file: " + configFilename);
 		string data, content = "";
 		while (!fin.eof()) {
@@ -133,6 +135,7 @@ namespace IOStormPlus{
 		int workloadCount = workloadConfig["count"].GetInt();
 		auto workloadInfo = workloadConfig["value"].GetArray();
 
+		
         for (int i = 0; i < workloadCount; i++) {
             string poolName = workloadInfo[i]["pool"].GetString();
             int jobCount = workloadInfo[i]["count"].GetInt();

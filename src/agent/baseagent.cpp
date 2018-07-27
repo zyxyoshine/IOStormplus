@@ -34,26 +34,33 @@ namespace IOStormPlus{
 
 
 	void BaseAgent::Run() {
-		Logger::LogVerbose("Start Running");
+		Logger::LogInfo("Start Running");
 		azure::storage::cloud_table table = tableClient.get_table_reference(IOStormPlus::storageTempTableName);
 		while (true){
 			Wait();
 			SCCommand cmd;
 			if (!GetControllerCmd(table, cmd)) {
-				Logger::LogVerbose("No valid command, waiting");
+				Logger::LogInfo("No valid command, waiting");
 				continue;
 			}
-			Logger::LogVerbose("Get one command");
+			Logger::LogInfo("Get one command");
 			switch(cmd){
 				case SCCommand::SyncCmd:{
 					Acknowledge(table, SCCommand::SyncDoneCmd);
 					break;
 				}
 				case SCCommand::StartJobCmd:{
+					DownloadWorkload(SCCommand::StartJobCmd, IOStormPlus::workloadConfigFileName);
 					RunJobs();
 					Acknowledge(table, SCCommand::JobDoneCmd);
 					break;						
-					}
+				}
+				case SCCommand::StartStdJobCmd: {
+					DownloadWorkload(SCCommand::StartStdJobCmd, IOStormPlus::workloadConfigFileName);
+					RunJobs();
+					Acknowledge(table, SCCommand::JobDoneCmd);
+					break;
+				}
 				default: break;					
 			}
 		}
@@ -80,10 +87,19 @@ namespace IOStormPlus{
 	}
 
 	void BaseAgent::DownloadWorkload(SCCommand jobCMD, string configFilename) {
+		cout << jobCMD << endl;
 		//Download configuration file
 		azure::storage::cloud_blob_container container = blobClient.get_container_reference(IOStormPlus::workloadBlobContainerName);
 		azure::storage::cloud_block_blob blockBlob = container.get_block_blob_reference(utility::conversions::to_string_t(configFilename));
-		string workloadConfigContent = utility::conversions::to_utf8string(blockBlob.download_text());
+		blockBlob.download_to_file(utility::conversions::to_string_t(configFilename));
+		fstream fin(configFilename);
+		Logger::LogInfo("Open workload configuration file: " + configFilename);
+		string data, workloadConfigContent = "";
+		while (!fin.eof()) {
+			getline(fin, data);
+			workloadConfigContent += data;
+		}
+		fin.close();
 
 		Document workloadConfig;
 		if (workloadConfig.Parse(workloadConfigContent.c_str()).HasParseError()) {
@@ -120,13 +136,13 @@ namespace IOStormPlus{
 	}
 
 	void BaseAgent::UploadOutput() {
-		vector<string> workloadFiles;
-		workloadFiles = ListFilesInDirectory();
+		vector<string> outputFiles;
+		outputFiles = ListFilesInDirectory(GetOutputFolderPath());
 		// Retrieve a reference to a container.
-		azure::storage::cloud_blob_container container = blobClient.get_container_reference(IOStormPlus::workloadBlobContainerName);
+		azure::storage::cloud_blob_container container = blobClient.get_container_reference(IOStormPlus::outputBlobContainerName);
 		// Create the container if it doesn't already exist.
 		container.create_if_not_exists();
-		for (auto fna : workloadFiles) {
+		for (auto fna : outputFiles) {
 			azure::storage::cloud_block_blob blockBlob = container.get_block_blob_reference(utility::conversions::to_string_t(fna));
 			blockBlob.upload_from_file(utility::conversions::to_string_t(GetOutputFolderPath() + fna));
 		}
@@ -198,7 +214,7 @@ namespace IOStormPlus{
 
 
     void BaseAgent::RunJobs(){
-		Logger::LogVerbose("Start Job");
+		Logger::LogInfo("Start Job");
 		vector<string> params;		
 		string hostname = BaseAgent::RunScript(AgentCommand::HostnameCmd, params);
 		if (hostname.find('\n') != string::npos) {
@@ -207,7 +223,7 @@ namespace IOStormPlus{
 		Logger::LogInfo("Hostname " + hostname);
 
 		vector<string> jobs = ListFilesInDirectory(GetWorkloadFolderPath());
-		Logger::LogVerbose("Running fio workload.");
+		Logger::LogInfo("Running fio workload.");
 		for (int i = 0 ;i < jobs.size();i++){
 			string jobname = jobs[i];
 			if (jobname.find(".job") != string::npos) {
@@ -226,12 +242,14 @@ namespace IOStormPlus{
 
 			params.clear();
 			params.push_back(jobname);			
-			RunScript(AgentCommand::DelTempFileCmd,params);
+			RunScript(AgentCommand::DelTempFileCmd, params);
 			Logger::LogInfo("Done Job "+jobname);
 		}
 
-		RunScript(AgentCommand::DelJobFilesCmd,params);
-
-		Logger::LogVerbose("Job Done");		
+		RunScript(AgentCommand::DelJobFilesCmd, params);
+		UploadOutput();
+		RunScript(AgentCommand::DelLocalOutputCmd, params);
+		
+		Logger::LogInfo("Job Done");		
 	}
 }
