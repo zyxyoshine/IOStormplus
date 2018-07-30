@@ -72,10 +72,11 @@ namespace IOStormPlus{
 				return ExecuteScript("hostname");
 			}
 			case AgentCommand::RunFIOCmd: {
-				assert(params.size() == 2);
+				assert(params.size() == 3);
 				string job = params[0];
 				string jobname = params[1];
-				string striptCmdString = "fio --output=" + jobname + ".out " + " " + GetWorkloadFolderPath() + job;
+				string hostname = params[2];
+				string striptCmdString = "fio --output=" + GetOutputFolderPath() + hostname + "_" + jobname + ".out " + " " + GetWorkloadFolderPath() + job;
 				ExecuteScript(striptCmdString);
 				break; 
 			}
@@ -232,14 +233,10 @@ namespace IOStormPlus{
 
 			vector<string> params;
 			params.push_back(jobs[i]);
-			params.push_back(jobname);	
-			BaseAgent::RunScript(AgentCommand::RunFIOCmd, params);
-			
-			params.clear();
 			params.push_back(jobname);
 			params.push_back(hostname);
-			RunScript(AgentCommand::CopyOutputCmd, params);
-
+			BaseAgent::RunScript(AgentCommand::RunFIOCmd, params);
+			
 			params.clear();
 			params.push_back(jobname);			
 			RunScript(AgentCommand::DelTempFileCmd, params);

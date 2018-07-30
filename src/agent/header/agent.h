@@ -12,11 +12,10 @@ extern "C"
 namespace IOStormPlus{
     enum AgentCommand{
         RunFIOCmd = 0,
-        CopyOutputCmd = 1,
-        DelTempFileCmd = 2,
-        DelJobFilesCmd = 3,
-        HostnameCmd = 4,
-		DelLocalOutputCmd = 5
+        DelTempFileCmd = 1,
+        DelJobFilesCmd = 2,
+        HostnameCmd = 3,
+		DelLocalOutputCmd = 4
     };
 
     class IAgent{

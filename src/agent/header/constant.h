@@ -11,12 +11,9 @@ extern "C"
 
 namespace IOStormPlus{
     const string WorkLoadFolderName = "workload";
-    const string InfoTempFolderName = "temp";
     const string OutputFolderName = "output";
     const string VMInfoFolderName = "info";
     const string AgentsInfoFolderName = "agents";
-    const string ControllerTempFilename = "controller.tmp";
-    const string ClientTempFilename = "client.tmp";
     const string LogFilename = "log.txt";
 	const string storageConfigFileName = "AzureStorage.config";
 	const string workloadConfigFileName = "workload.json";
@@ -27,7 +24,7 @@ namespace IOStormPlus{
 	const utility::string_t tableIPColumnName = U("IP");
 	const utility::string_t tableSizeColumnName = U("SIZE");
 	const utility::string_t workloadBlobContainerName = U("workload");
-	const utility::string_t outputBlobContainerName = U("OUTPUT");
+	const utility::string_t outputBlobContainerName = U("output");
 }
 
 #ifdef __cplusplus

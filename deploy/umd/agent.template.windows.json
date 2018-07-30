@@ -9,6 +9,10 @@
                 "description": "The internal IP for controller VM."
             }
         },
+		"StorageEndpointSuffix": {
+            "defaultValue": "core.windows.net",
+            "type": "String"
+        },
 		"vmPool": {
             "type": "String",
             "metadata": {
@@ -254,7 +258,7 @@
 					"fileUris": [
 						"https://raw.githubusercontent.com/zyxyoshine/IOStormplus/master/deploy/deploy.win.ps1"
 					],
-					"commandToExecute": "[concat('powershell -ExecutionPolicy Unrestricted -File ','deploy.win.ps1 ',parameters('ControllerIP'),' ',parameters('vmSize'))]"
+					"commandToExecute": "[concat('powershell -ExecutionPolicy Unrestricted -File ','deploy.win.ps1 ',variables('uniqueStorageAccountName'),' ',listKeys(concat('Microsoft.Storage/storageAccounts/', variables('uniqueStorageAccountName')), '2015-06-15').key1,' ',parameters('StorageEndpointSuffix'),' ',parameters('vmSize')' ',parameters('vmPool'))]"
 				}
             },
             "dependsOn": [

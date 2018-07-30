@@ -19,9 +19,8 @@ namespace IOStormPlus{
 		WindowsAgent(int argc = 0,char *argv[] = NULL) {
 			InitLogger();
 			CreateStorageClient(IOStormPlus::storageConfigFileName);
-			SetAgentInfo(argv[2], argv[3], "windows", argv[4]);
+			SetAgentInfo(argv[1], argv[2], "windows", argv[3]);
 			RegisterOnAzure();
-			//ControllerIP = argv[1];
 		}
 
 		string ExecuteScript(string command) {
@@ -73,13 +72,6 @@ namespace IOStormPlus{
 			Logger::LogInfo("RunScript Start");
 			string striptCmdString;
 			switch(command){
-				case AgentCommand::CopyOutputCmd: {
-					string jobname = params[0];
-					string hostname = params[1];
-					striptCmdString = "copy " + jobname + ".out " + " " + OutputFolder + hostname + "_" + jobname + ".out";
-					ExecuteScript(striptCmdString);	
-					break;				
-				}
 				case AgentCommand::DelTempFileCmd: {
 					string filename = params[0];
 					striptCmdString = "DEL /F /Q " + filename + "*";
@@ -89,6 +81,9 @@ namespace IOStormPlus{
 				}
 				case AgentCommand::DelJobFilesCmd: {
 					striptCmdString = "DEL /F /Q " + GetWorkloadFolderPath() + "*";
+					Logger::LogInfo("Stript command " + striptCmdString);
+					ExecuteScript(striptCmdString);
+					striptCmdString = "DEL /F /Q " + IOStormPlus::workloadConfigFileName;
 					Logger::LogInfo("Stript command " + striptCmdString);
 					ExecuteScript(striptCmdString);
 					break;					
@@ -108,14 +103,6 @@ namespace IOStormPlus{
 
 		void Wait(){
 			Sleep(SyncWaitTime);
-		}
-
-        string GetControlTempFilePath() {
-			return ControllerTempFilePath;
-		}
-
-        string GetClientTempFilePath() {
-			return ClientTempFilePath;
 		}
 
         string GetLogFilePath() {

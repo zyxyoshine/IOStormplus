@@ -3,14 +3,11 @@
 
 $Root = "C:\"
 $WorkspacePath = $Root + "IOStormplus\"
-$WorkloadSharePath = $WorkspacePath + "workload\"
-$OutputSharePath = $WorkspacePath + "output\"
-$TempSharePath = $WorkspacePath + "temp\"
 
 #Download and unzip agent package
 
 $PackageName = "Agent.zip"
-$PackageUrl = "https://github.com/zyxyoshine/IOStormplus/raw/master/deploy/binary/Agent.zip"
+$PackageUrl = "https://github.com/zyxyoshine/IOStormplus/raw/dev2/deploy/binary/Agent.zip"
 [Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
 Invoke-WebRequest -Uri $PackageUrl -OutFile ($Root + $PackageName)
 
@@ -24,21 +21,6 @@ function Unzip
 
 Unzip ($Root + $PackageName) $Root
 Remove-Item ($Root + $PackageName)
-
-#Create shares
-
-if( -Not (Get-SMBShare -Name "workload" -ea 0)){
-    New-SmbShare -Name "workload" -Path $WorkloadSharePath -FullAccess Everyone
-}
-if( -Not (Get-SMBShare -Name "output" -ea 0)){
-    New-SmbShare -Name "output" -Path $OutputSharePath -FullAccess Everyone
-}
-if( -Not (Get-SMBShare -Name "temp" -ea 0)){
-    New-SmbShare -Name "temp" -Path $TempSharePath -FullAccess Everyone
-}
-
-Out-File ($TempSharePath + "controller.tmp")
-Out-File ($TempSharePath + "client.tmp")
 
 #Install fio
 
@@ -72,22 +54,29 @@ foreach ($disk in $disks) {
     $count++
 }
 
+#Create Azure Storage configuration file
+$storageConfigFileName = "AzureStorage.config"
+$storageAccountBuf = 'NAME=' + $args[0]
+$storageAccountKeyBuf = 'KEY=' + $args[1]
+$storageEndpointSuffixBuf = 'ENDPOINTSUF=' + $args[2]
+($storageAccountBuf + [Environment]::NewLine + $storageAccountKeyBuf + [Environment]::NewLine + $storageEndpointSuffixBuf) |  Out-File ($WorkspacePath + $storageConfigFileName)
+
 #Start Agent
 netsh advfirewall set privateprofile state off
 netsh advfirewall set publicprofile state off
 
-$ControllerIP = $args[0]
-$VMSize = $args[1]
+$VMSize = $args[3]
+$VMPool = $args[4]
 $VMSize | Out-File ($WorkspacePath + 'vmsize.txt')
 $VMIp = foreach($ip in (ipconfig) -like '*IPv4*') { ($ip -split ' : ')[-1]}
 $agentName = "agent.exe"
 $agentPath = $WorkspacePath + $agentName
-$args = ' ' + $ControllerIP + ' ' + $VMIp + ' ' + $VMSize
+$args = ' ' + $VMIp + ' ' + $VMSize + ' ' + $VMPool
 $action = New-ScheduledTaskAction -Execute $agentPath -Argument $args -WorkingDirectory $WorkspacePath
 $trigger = @()
 $trigger += New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1)
 $trigger += New-ScheduledTaskTrigger -AtStartup
-$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -DontStopOnIdleEnd
+$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -RunOnlyIfNetworkAvailable -DontStopOnIdleEnd
 Unregister-ScheduledTask -TaskName "VMIOSTORM" -Confirm:0 -ErrorAction Ignore
 Register-ScheduledTask -Action $action -Trigger $trigger -TaskName "VMIOSTORM" -Description "VM iostorm agent" -User "System" -RunLevel Highest -Settings $settings
 

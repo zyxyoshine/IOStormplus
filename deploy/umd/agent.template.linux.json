@@ -9,6 +9,10 @@
                 "description": "The internal IP for controller VM."
             }
         },
+		"StorageEndpointSuffix": {
+            "defaultValue": "core.windows.net",
+            "type": "String"
+        },
 		"vmPool": {
             "type": "String",
             "metadata": {
@@ -21,7 +25,7 @@
             "metadata": {
                 "description": "Start index for new VMs."
             }
-        },        
+        },
 		"vmCount": {
             "defaultValue": 1,
             "type": "Int",
