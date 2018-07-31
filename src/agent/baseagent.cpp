@@ -14,39 +14,15 @@ namespace IOStormPlus{
     }
     
 	void BaseAgent::CreateStorageClient(string storageConnectionString) {
-		/*
-		fstream fin(storageConfigFile, ios_base::in);
-		if (fin.fail()) {
-
-		}
-		Logger::LogInfo("Open Azure Storage configuration file: " + storageConfigFile);
-		string storageAccountName, storageAccountKey, storageEndpointSuffix;
-		getline(fin, storageAccountName);
-		getline(fin, storageAccountKey);
-		getline(fin, storageEndpointSuffix);
-		fin.close();
-		Logger::LogInfo("storageAccountName:" + storageAccountName);
-		storageAccountName.replace(storageAccountName.find("NAME="), 5, "");
-		storageAccountKey.replace(storageAccountKey.find("KEY="), 4, "");
-		storageEndpointSuffix.replace(storageEndpointSuffix.find("ENDPOINTSUF="),12, "");
-		const utility::string_t storageConnectionStringT = utility::conversions::to_string_t("DefaultEndpointsProtocol=https;AccountName=" + storageAccountName + ";AccountKey=" + storageAccountKey + ";EndpointSuffix=" + storageEndpointSuffix);
-		*/
 		Logger::LogInfo("storageConnectionString: " + storageConnectionString);
 		try {
 			azure::storage::cloud_storage_account storageAccount = azure::storage::cloud_storage_account::parse(utility::conversions::to_string_t(storageConnectionString));
-			Logger::LogInfo("suc1");
 			tableClient = storageAccount.create_cloud_table_client();
-			Logger::LogInfo("suc2");
 			blobClient = storageAccount.create_cloud_blob_client();
-			Logger::LogInfo("suc3");
 		}
-		catch (const std::exception& e)
-		{
-			std::wcout << U("Error: ") << e.what() << std::endl;
-			Logger::LogInfo("suc4");
+		catch (const std::exception& e){
 			Logger::LogInfo(e.what());
 		}
-		Logger::LogInfo("suc");
 	}
 
 
@@ -58,6 +34,7 @@ namespace IOStormPlus{
 			SCCommand cmd;
 			if (!GetControllerCmd(table, cmd)) {
 				Logger::LogInfo("No valid command, waiting");
+				Acknowledge(table, SCCommand::EmptyCmd);
 				continue;
 			}
 			Logger::LogInfo("Get one command");
