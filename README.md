@@ -22,22 +22,22 @@ We have created the rand-RW job as standard workload. <br>
 You can create your own jobs and upload them into `IOStormplus\workload\` and specify a VM pool to run it by edit `workload.json`.
 It's very easy to start work by run command
 ```PowerShell
-IOStormplus start
+IOStormplus_Controller start
 ```
 or 
 ```PowerShell
-IOStormplus start -std
+IOStormplus_Controller start -std
 ```
 NOTE: Standard test will ignore all custom pool settings and run `std` workload.<br>
 NOTE2: If you don't specify any workload for a pool, it will run `std` workload.
 ### 3.Other features
 1. Display test vm status.
 ```PowerShell
-IOStormplus init
+IOStormplus_Controller init
 ```
 or 
 ```PowerShell
-IOStormplus agent show
+IOStormplus_Controller agent show
 ```
 ## Get result
 When all jobs have been done (the standard job will cost about 6 minutes)
