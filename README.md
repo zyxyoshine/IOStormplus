@@ -8,36 +8,38 @@ Note: You need to create a new resource group for IOStormplus.
 IOStormplus support both windows and linux test VM. <br>
 For linux,deploy `deploy/agent.template.linux.json`. <br>
 For Windows,deploy `deploy/agent.template.win.json`. <br>
-Note:<br>
-1. Make sure the controller IP is correct.<br>
-2. If you want to deploy several times (e.g deploy both linux and windows test VM), you need to configure `VM Index` to avoid index conflict.<br>
-For example, at the first time you deploy 2 linux VM with the template (VM Index set to 0 by default), it will create testvm0 and testvm1. If you want to deploy 2 windows VM also, you need to set `VM Index` to 2 to make the VM as testvm2 and testvm3.
 ## Configure and run workload
 ### 1.Initialize controller and import test VM infomation into controller.
-Remote to controller VM (username:vmadmin,password:!!!!1234abcd) and open a console then navigate to `C:\IOStormplus`. <br>
-If you have deployed windows test VM, you need to configure and start agent manually. (Will improve soon).
-Run script for each windows test VM.
-```PowerShell
-PS C:\IOStormplus> .\StartWindowsAgent.ps1 {test VM IP}
-```
-Wait about 2 minutes after command done, when it has been done, you will find a file is named as testvm{id} in the `agents` folder.
+Remote to controller VM and open a console then navigate to `C:\IOStormplus`. <br>
 After all agents have been set up,run command
 ```PowerShell
-IOStormplus init
+IOStormplus_Controller init
 ```
+
 ### 2.Start work.
 IOStormplus is supported to run standard fio job (e.g.https://github.com/axboe/fio/tree/master/examples ). <br>
 We have created the rand-RW job as standard workload. <br>
-You can create your own jobs and upload them into `IOStormplus\workload\{OS}`. <br>
+You can create your own jobs and upload them into `IOStormplus\workload\` and specify a VM pool to run it by edit `workload.json`.
 It's very easy to start work by run command
 ```PowerShell
 IOStormplus start
 ```
-or
+or 
 ```PowerShell
 IOStormplus start -std
 ```
+NOTE: Standard test will ignore all custom pool settings and run `std` workload.<br>
+NOTE2: If you don't specify any workload for a pool, it will run `std` workload.
+### 3.Other features
+1. Display test vm status.
+```PowerShell
+IOStormplus init
+```
+or 
+```PowerShell
+IOStormplus agent show
+```
 ## Get result
 When all jobs have been done (the standard job will cost about 6 minutes)
-, all detail reports will be named as `testvm{id}_{job name}.out` and put into `output` folder. <br>
+, all detail reports will be named as `testvm{id}_{job name}.out` and put into `output` folder and blob. <br>
 IOStormplus will create a summary report `{date}_summary.out` by analyse IOPS data, it can be direct import into Excel.
