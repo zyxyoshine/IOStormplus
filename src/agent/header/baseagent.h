@@ -29,7 +29,7 @@ namespace IOStormPlus{
     protected:
         // 
         void InitLogger();
-		void CreateStorageClient(string storageConfigFileName);
+		void CreateStorageClient(string storageConnectionString);
         virtual vector<string> ListFilesInDirectory(string rootPath) = 0;
         virtual string RunScript(AgentCommand command, vector<string> &params);
         virtual void Wait(){};

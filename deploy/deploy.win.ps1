@@ -54,12 +54,11 @@ foreach ($disk in $disks) {
     $count++
 }
 
-#Create Azure Storage configuration file
-$storageConfigFileName = "AzureStorage.config"
-$storageAccountBuf = 'NAME=' + $args[0]
-$storageAccountKeyBuf = 'KEY=' + $args[1]
-$storageEndpointSuffixBuf = 'ENDPOINTSUF=' + $args[2]
-($storageAccountBuf + [Environment]::NewLine + $storageAccountKeyBuf + [Environment]::NewLine + $storageEndpointSuffixBuf) |  Out-File ($WorkspacePath + $storageConfigFileName)
+#Create Azure Storage connection string
+$storageAccountName = 'AccountName=' + $args[0] + ';'
+$storageAccountKey = 'AccountKey=' + $args[1] + ';'
+$storageEndpointSuffix = 'EndpointSuffix' + $args[2]
+$storageConnectionString = 'DefaultEndpointsProtocol=https;' + $storageAccountName + $storageAccountKey + $storageEndpointSuffix
 
 #Start Agent
 netsh advfirewall set privateprofile state off
@@ -71,7 +70,7 @@ $VMSize | Out-File ($WorkspacePath + 'vmsize.txt')
 $VMIp = foreach($ip in (ipconfig) -like '*IPv4*') { ($ip -split ' : ')[-1]}
 $agentName = "agent.exe"
 $agentPath = $WorkspacePath + $agentName
-$args = ' ' + $VMIp + ' ' + $VMSize + ' ' + $VMPool
+$args = ' ' + $VMIp + ' ' + $VMSize + ' ' + $VMPool + ' ' + $storageConnectionString
 $action = New-ScheduledTaskAction -Execute $agentPath -Argument $args -WorkingDirectory $WorkspacePath
 $trigger = @()
 $trigger += New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1)

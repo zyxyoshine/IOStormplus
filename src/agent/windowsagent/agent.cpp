@@ -18,7 +18,7 @@ namespace IOStormPlus{
 	public:
 		WindowsAgent(int argc = 0,char *argv[] = NULL) {
 			InitLogger();
-			CreateStorageClient(IOStormPlus::storageConfigFileName);
+			CreateStorageClient(argv[4]);
 			SetAgentInfo(argv[1], argv[2], "windows", argv[3]);
 			RegisterOnAzure();
 		}

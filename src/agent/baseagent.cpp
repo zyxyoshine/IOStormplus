@@ -13,20 +13,26 @@ namespace IOStormPlus{
 		Logger::Init(GetLogFilePath());
     }
     
-	void BaseAgent::CreateStorageClient(string storageConfigFile) {
-		fstream fin(storageConfigFile);
+	void BaseAgent::CreateStorageClient(string storageConnectionString) {
+		/*
+		fstream fin(storageConfigFile, ios_base::in);
+		if (fin.fail()) {
+
+		}
 		Logger::LogInfo("Open Azure Storage configuration file: " + storageConfigFile);
 		string storageAccountName, storageAccountKey, storageEndpointSuffix;
 		getline(fin, storageAccountName);
 		getline(fin, storageAccountKey);
 		getline(fin, storageEndpointSuffix);
 		fin.close();
-
+		Logger::LogInfo("storageAccountName:" + storageAccountName);
 		storageAccountName.replace(storageAccountName.find("NAME="), 5, "");
 		storageAccountKey.replace(storageAccountKey.find("KEY="), 4, "");
 		storageEndpointSuffix.replace(storageEndpointSuffix.find("ENDPOINTSUF="),12, "");
-		const utility::string_t storageConnectionString = utility::conversions::to_string_t("DefaultEndpointsProtocol=https;AccountName=" + storageAccountName + ";AccountKey=" + storageAccountKey + ";EndpointSuffix=" + storageEndpointSuffix);
-		azure::storage::cloud_storage_account storageAccount = azure::storage::cloud_storage_account::parse(storageConnectionString);
+		const utility::string_t storageConnectionStringT = utility::conversions::to_string_t("DefaultEndpointsProtocol=https;AccountName=" + storageAccountName + ";AccountKey=" + storageAccountKey + ";EndpointSuffix=" + storageEndpointSuffix);
+		*/
+		Logger::LogInfo("storageConnectionString: " + storageConnectionString);
+		azure::storage::cloud_storage_account storageAccount = azure::storage::cloud_storage_account::parse(utility::conversions::to_string_t(storageConnectionString));
 
 		tableClient = storageAccount.create_cloud_table_client();
 		blobClient = storageAccount.create_cloud_blob_client();
