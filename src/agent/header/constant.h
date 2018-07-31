@@ -13,7 +13,6 @@ namespace IOStormPlus{
     const string WorkLoadFolderName = "workload";
     const string OutputFolderName = "output";
     const string VMInfoFolderName = "info";
-    const string AgentsInfoFolderName = "agents";
     const string LogFilename = "log.txt";
 	const string storageConfigFileName = "AzureStorage.config";
 	const string workloadConfigFileName = "workload.json";

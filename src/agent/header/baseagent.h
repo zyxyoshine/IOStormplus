@@ -36,7 +36,6 @@ namespace IOStormPlus{
 		virtual string GetOutputFolderPath() = 0;
         virtual string GetLogFilePath() = 0;
         virtual string GetWorkloadFolderPath() = 0;
-        virtual string GetVMInfoFolderPath() = 0;
         void RegisterOnAzure();
         bool GetControllerCmd(azure::storage::cloud_table& table, SCCommand &command);
         void Acknowledge(azure::storage::cloud_table& table, SCCommand command = EmptyCmd);
