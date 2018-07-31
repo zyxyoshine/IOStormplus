@@ -50,7 +50,7 @@ namespace IOStormPlus{
 		string GetPool();
         OSType GetOSType();
 
-        void SendCommand(azure::storage::table_batch_operation& batchOperation, SCCommand command = EmptyCmd);
+        void SendCommand(azure::storage::cloud_table& table, SCCommand command = EmptyCmd);
         bool GetResponse(azure::storage::cloud_table& table, SCCommand command);
 		
     private:

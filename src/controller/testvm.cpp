@@ -101,12 +101,13 @@ namespace IOStormPlus {
         return false;
     }
 
-	void TestVM::SendCommand(azure::storage::table_batch_operation& batchOperation, SCCommand command) {
+	void TestVM::SendCommand(azure::storage::cloud_table& table, SCCommand command) {
 		azure::storage::table_entity agent(utility::conversions::to_string_t(m_pool), utility::conversions::to_string_t(m_name));
 		azure::storage::table_entity::properties_type& properties = agent.properties();
 		//properties.reserve(1);
 		properties[tableCommandColumnName] = azure::storage::entity_property(utility::conversions::to_string_t(GetCommandString(command)));
-		batchOperation.insert_or_merge_entity(agent);
+		azure::storage::table_operation opt = azure::storage::table_operation::insert_or_merge_entity(agent);
+		azure::storage::table_result insert_result = table.execute(opt);
 	}
 
     ////////////////////////////////////////////////////////////////////////////////////////////

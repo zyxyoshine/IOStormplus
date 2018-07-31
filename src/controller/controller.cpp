@@ -280,13 +280,11 @@ namespace IOStormPlus{
     // Health Check
     void Controller::CheckTestVMHealth() {
 		azure::storage::cloud_table table = tableClient.get_table_reference(IOStormPlus::storageTempTableName);
-		azure::storage::table_batch_operation batchOperation;
         // Ask VM to sync
         for (auto &vm : TestVMs) {
             Logger::LogInfo("Sending pre-sync request to test VM " + vm.GetName() + "(" + vm.GetInternalIP() + ")");
-            vm.SendCommand(batchOperation, SCCommand::SyncCmd);
+            vm.SendCommand(table, SCCommand::SyncCmd);
         }
-		vector<azure::storage::table_result> results = table.execute_batch(batchOperation);
         // Check all VMs to response sync
         WaitForAllVMs(table, SCCommand::SyncDoneCmd);
         Logger::LogInfo("All test VM pre-sync succeeded!");
@@ -328,19 +326,15 @@ namespace IOStormPlus{
 
     void Controller::RunTest(SCCommand startCMD){
 		azure::storage::cloud_table table = tableClient.get_table_reference(IOStormPlus::storageTempTableName);
-		azure::storage::table_batch_operation startOperation;
 		for (auto &vm : TestVMs) {
-			vm.SendCommand(startOperation, startCMD);
+			vm.SendCommand(table, startCMD);
 		}
-		vector<azure::storage::table_result> results = table.execute_batch(startOperation);
 
         WaitForAllVMs(table, SCCommand::JobDoneCmd);
 
-		azure::storage::table_batch_operation initOperation;
 		for (auto &vm : TestVMs) {
-			vm.SendCommand(initOperation, SCCommand::EmptyCmd);
+			vm.SendCommand(table, SCCommand::EmptyCmd);
 		}
-		results = table.execute_batch(initOperation);
 
         Logger::LogInfo("All jobs done!");
 

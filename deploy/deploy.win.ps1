@@ -57,7 +57,7 @@ foreach ($disk in $disks) {
 #Create Azure Storage connection string
 $storageAccountName = 'AccountName=' + $args[0] + ';'
 $storageAccountKey = 'AccountKey=' + $args[1] + ';'
-$storageEndpointSuffix = 'EndpointSuffix' + $args[2]
+$storageEndpointSuffix = 'EndpointSuffix=' + $args[2]
 $storageConnectionString = 'DefaultEndpointsProtocol=https;' + $storageAccountName + $storageAccountKey + $storageEndpointSuffix
 
 #Start Agent
@@ -82,4 +82,13 @@ Register-ScheduledTask -Action $action -Trigger $trigger -TaskName "VMIOSTORM" -
 #Stop-Transcript
 
 #Enable PSRemoting
-winrm quickconfig -q
+
+$DNSName = $env:COMPUTERNAME 
+Enable-PSRemoting -Force   
+
+New-NetFirewallRule -Name "WinRM HTTPS" -DisplayName "WinRM HTTPS" -Enabled True -Profile "Any" -Action "Allow" -Direction "Inbound" -LocalPort 5986 -Protocol "TCP"    
+
+$thumbprint = (New-SelfSignedCertificate -DnsName $DNSName -CertStoreLocation Cert:\LocalMachine\My).Thumbprint   
+$cmd = "winrm create winrm/config/Listener?Address=*+Transport=HTTPS @{Hostname=""$DNSName""; CertificateThumbprint=""$thumbprint""}" 
+
+cmd.exe /C $cmd  

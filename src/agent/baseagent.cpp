@@ -32,10 +32,21 @@ namespace IOStormPlus{
 		const utility::string_t storageConnectionStringT = utility::conversions::to_string_t("DefaultEndpointsProtocol=https;AccountName=" + storageAccountName + ";AccountKey=" + storageAccountKey + ";EndpointSuffix=" + storageEndpointSuffix);
 		*/
 		Logger::LogInfo("storageConnectionString: " + storageConnectionString);
-		azure::storage::cloud_storage_account storageAccount = azure::storage::cloud_storage_account::parse(utility::conversions::to_string_t(storageConnectionString));
-
-		tableClient = storageAccount.create_cloud_table_client();
-		blobClient = storageAccount.create_cloud_blob_client();
+		try {
+			azure::storage::cloud_storage_account storageAccount = azure::storage::cloud_storage_account::parse(utility::conversions::to_string_t(storageConnectionString));
+			Logger::LogInfo("suc1");
+			tableClient = storageAccount.create_cloud_table_client();
+			Logger::LogInfo("suc2");
+			blobClient = storageAccount.create_cloud_blob_client();
+			Logger::LogInfo("suc3");
+		}
+		catch (const std::exception& e)
+		{
+			std::wcout << U("Error: ") << e.what() << std::endl;
+			Logger::LogInfo("suc4");
+			Logger::LogInfo(e.what());
+		}
+		Logger::LogInfo("suc");
 	}
 
 
