@@ -2,14 +2,7 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
 	"contentVersion": "1.0.0",
 	"parameters": {
-        "ControllerIP": {
-            "defaultValue": "10.0.0.4",
-            "type": "String",
-            "metadata": {
-                "description": "The internal IP for controller VM."
-            }
-        },
-		"StorageEndpointSuffix": {
+        "StorageEndpointSuffix": {
             "defaultValue": "core.windows.net",
             "type": "String"
         },
@@ -19,15 +12,23 @@
                 "description": "The starting index number of VMs."
             }
         },
+		"vmAdminUsername": {
+			"defaultValue": "vmadmin",
+            "type": "String"
+        },
+		"vmAdminPassword": {
+			"defaultValue": "!!!!1234abcd",
+            "type": "String"
+        },
 		"vmIndex": {
             "defaultValue": 0,
             "type": "Int",
             "metadata": {
                 "description": "Start index for new VMs."
             }
-        },
+        },        
 		"vmCount": {
-            "defaultValue": 1,
+            "defaultValue": 2,
             "type": "Int",
             "metadata": {
                 "description": "Number of VMs to create and run IO simulation."
@@ -119,11 +120,9 @@
 		"storageAccountType": "Standard_LRS",
         "uniqueStorageAccountName": "[tolower(concat('sa', resourceGroup().name))]",
         "vmName": "[concat(parameters('vmPool'),'-vm')]",
-		"vmAdminUsername": "vmroot",
-		"vmAdminPassword": "!!!!1234abcd",
-        "vmOsDiskName": "[variables('vmName')]",
-        "vmDataDiskName": "[variables('vmName')]",
-        "vmNicName": "[tolower(variables('vmName'))]",
+        "vmOsDiskName": "[concat(parameters('vmPool'), '-od')]",
+        "vmDataDiskName": "[concat(parameters('vmPool'), '-dd')]",
+        "vmNicName": "[tolower(concat(parameters('vmPool'), '-nic'))]",
         "virtualNetworkName": "[tolower(concat('vn', resourceGroup().name))]",
         "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',variables('virtualNetworkName'))]",
         "subnetRef": "[concat(variables('vnetID'),'/subnets/',variables('subnetName'))]",
@@ -133,7 +132,7 @@
 	"resources": [
         {
             "type": "Microsoft.Network/networkInterfaces",
-            "name": "[concat(variables('vmNicName'),copyIndex(parameters('vmIndex')),'-nic')]",
+            "name": "[concat(variables('vmNicName'),copyIndex(parameters('vmIndex')))]",
             "apiVersion": "2015-06-15",
             "location": "[variables('location')]",
             "tags":{ 
@@ -162,7 +161,7 @@
         {
             "type": "Microsoft.Compute/virtualMachines",
             "name": "[concat(variables('vmName'),copyIndex(parameters('vmIndex')))]",
-            "apiVersion": "2016-03-30",
+            "apiVersion": "2017-03-30",
             "location": "[variables('location')]",
             "tags":{ 
                 "pool": "[parameters('vmPool')]"
@@ -177,8 +176,8 @@
                 },
                 "osProfile": {
                     "computerName": "[concat(variables('vmName'),copyIndex(parameters('vmIndex')))]",
-                    "adminUsername": "[variables('vmAdminUsername')]",
-                    "adminPassword": "[variables('vmAdminPassword')]",
+                    "adminUsername": "[parameters('vmAdminUsername')]",
+                    "adminPassword": "[parameters('vmAdminPassword')]",
 					"linuxConfiguration": {
                         "disablePasswordAuthentication": false
                     },
@@ -193,12 +192,9 @@
                     },
                     "osDisk": {
 						"osType": "Linux",
-                        "name": "[concat(variables('vmOsDiskName'),copyIndex(parameters('vmIndex')),'-osd')]",
+                        "name": "[concat(variables('vmOsDiskName'),copyIndex(parameters('vmIndex')))]",
                         "caching": "ReadWrite",
-                        "createOption": "FromImage",
-                        "vhd": {
-                          "uri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('uniqueStorageAccountName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).primaryEndpoints.blob, concat(variables('vmOSDiskName'), copyIndex(parameters('vmIndex')),'-osd'),'/',concat(variables('vmOSDiskName'),copyIndex(parameters('vmIndex')),'-osd'), '.vhd')]"
-                        },                        
+                        "createOption": "FromImage",     
 						"diskSizeGB": 30
                     },
                     "copy": [
@@ -206,14 +202,11 @@
 							"name": "dataDisks",
 							"count": "[parameters('vmDataDiskCount')]",
 							"input": {
-								"name": "[concat(variables('vmDataDiskName'),copyIndex(parameters('vmIndex')),'-dd',copyIndex('dataDisks'))]",
+								"name": "[concat(variables('vmDataDiskName'),copyIndex(parameters('vmIndex')),'-',copyIndex('dataDisks'))]",
 								"diskSizeGB": "[parameters('vmDataDiskSizeInGB')]",
 								"lun": "[copyIndex('dataDisks')]",
 								"createOption": "Empty",
-                                "caching": "None",
-                                "vhd": {
-                                    "uri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('uniqueStorageAccountName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).primaryEndpoints.blob, concat(variables('vmDataDiskName'), copyIndex(parameters('vmIndex')), '-dd', copyIndex('dataDisks')),'/',concat(variables('vmDataDiskName'),copyIndex(parameters('vmIndex')),'-dd',copyIndex('dataDisks')), '.vhd')]"
-                                }       
+                                "caching": "None"
 							}
 						}
                     ]                    
@@ -228,12 +221,12 @@
                 "diagnosticsProfile": {
                     "bootDiagnostics": {
                         "enabled": "true",
-                        "storageUri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('uniqueStorageAccountName')),providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).primaryEndpoints.blob)]"
+                        "storageUri": "[reference(concat('Microsoft.Storage/storageAccounts/', variables('uniqueStorageAccountName')),providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).primaryEndpoints.blob]"
                     }
                 }
             },
             "dependsOn": [
-                "[concat('Microsoft.Network/networkInterfaces/',variables('vmNicName'),copyIndex(parameters('vmIndex'),'-nic'))]"
+                "[concat('Microsoft.Network/networkInterfaces/',variables('vmNicName'),copyIndex(parameters('vmIndex')))]"
             ]
         },
         {
@@ -257,7 +250,7 @@
 					"fileUris": [
 						"https://raw.githubusercontent.com/zyxyoshine/IOStormplus/master/deploy/deploy.linux.sh"
 					],
-					"commandToExecute": "[concat('sudo sh ','deploy.linux.sh ',parameters('ControllerIP'),' ',parameters('vmSize'))]"
+					"commandToExecute": "[concat('sudo sh ','deploy.linux.sh \"DefaultEndpointsProtocol=https;AccountName=',variables('uniqueStorageAccountName'),';AccountKey=',listKeys(concat('Microsoft.Storage/storageAccounts/', variables('uniqueStorageAccountName')), '2015-06-15').key1,';EndpointSuffix=',parameters('StorageEndpointSuffix'),'\" ',parameters('vmSize'),' ',parameters('vmPool'))]"
 				}
             },
             "dependsOn": [
