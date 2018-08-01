@@ -12,6 +12,14 @@
                 "description": "The Windows Server version for the VM."
             }
         },
+		"vmAdminUsername": {
+			"defaultValue": "vmadmin",
+            "type": "String"
+        },
+		"vmAdminPassword": {
+			"defaultValue": "!!!!1234abcd",
+            "type": "String"
+        },
 		"vmSize": {
 			"type": "string",
 			"defaultValue": "Standard_A3",
@@ -74,17 +82,15 @@
 		"storageAccountType": "Standard_LRS",
         "uniqueStorageAccountName": "[tolower(concat('sa', resourceGroup().name))]",
         "uniqueStorageAccountContainerName": "[tolower(concat('sc', resourceGroup().name))]",
-        "vmName": "['vm']",
-        "vmAdminUsername": "vmadmin",
-		"vmAdminPassword": "!!!!1234abcd",
-        "vmOsDiskName": "[concat('od', resourceGroup().name)]",
-        "vmNicName": "[tolower(concat('nc', resourceGroup().name))]",
+        "vmName": "['controller']",
+        "vmOsDiskName": "['controller-od']",
+        "vmNicName": "['controller-nic']",
         "virtualNetworkName": "[tolower(concat('vn', resourceGroup().name))]",
         "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',variables('virtualNetworkName'))]",
         "subnetRef": "[concat(variables('vnetID'),'/subnets/',variables('subnetName'))]",
         "nsgName": "[tolower(concat('ng', resourceGroup().name))]",
         "nsgID": "[resourceId('Microsoft.Network/networkSecurityGroups',variables('nsgName'))]",
-		"publicIPAddressName": "[tolower(concat('controllerip',resourceGroup().name))]",
+		"publicIPAddressName": "['controller-ip']",
 		"dnsPrefix": "[tolower(concat('vmdns', resourceGroup().name))]"
     },
 	"resources": [
@@ -197,8 +203,8 @@
                 },
                 "osProfile": {
                     "computerName": "[concat(variables('vmName'), 'controller')]",
-                    "adminUsername": "[variables('vmAdminUsername')]",
-                    "adminPassword": "[variables('vmAdminPassword')]",
+                    "adminUsername": "[parameters('vmAdminUsername')]",
+                    "adminPassword": "[parameters('vmAdminPassword')]",
 					"windowsConfiguration": {
                         "provisionVMAgent": true,
                         "enableAutomaticUpdates": true

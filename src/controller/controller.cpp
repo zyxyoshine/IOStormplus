@@ -418,7 +418,7 @@ namespace IOStormPlus{
 
     // TODO: Change name
     void Controller::ShowAgent() {
-        PrintTestVMInfo();
+		InitAgents();
     }
 
     void Controller::TestAgent() {

@@ -214,7 +214,7 @@
                 "networkProfile": {
                     "networkInterfaces": [
                         {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces',concat(variables('vmNicName'),copyIndex(parameters('vmIndex')),'-nic'))]"
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces',concat(variables('vmNicName'),copyIndex(parameters('vmIndex'))))]"
                         }
                     ]
                 },

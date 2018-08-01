@@ -13,4 +13,6 @@ cd /home && tar -xjvf fio-3.5.tar.bz2
 ./fio-3.5/configure
 cd /home/fio-3.5 && make
 cd /home/fio-3.5 && make install
-cd /home/IOStormplus && nohup ./agent $(hostname --ip-address) $2 $3 $1 >agent.log 2>agent.err &
+cat /dev/null > /etc/profile.d/IOStormplus.sh
+echo "nohup ./home/IOStormplus/agent $(hostname --ip-address) $2 $3 \"$1\" >/dev/null 2>agent.err &" > /etc/profile.d/IOStormplus.sh
+cd /home/IOStormplus && nohup ./agent $(hostname --ip-address) $2 $3 $1 >/dev/null 2>agent.err &
