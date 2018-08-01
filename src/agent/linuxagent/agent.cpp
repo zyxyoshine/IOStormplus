@@ -17,16 +17,20 @@ namespace IOStormPlus{
 	public:
 		LinuxAgent(int argc = 0,char *argv[] = NULL) {
 			InitLogger();
-			if (argc >= 3)
-				RegisterOnController(argv[1], argv[2], "linux");
+			CreateStorageClient(argv[4]);
+			SetAgentInfo(argv[1], argv[2], "linux", argv[3]);
+			RegisterOnAzure();
 		}
 		
 		string ExecuteScript(string command) {
+			Logger::LogInfo("Run Script " + command);
 			char buffer[128];
 			string result = "";
 			FILE* pipe = popen(command.c_str(), "r");
-			if (!pipe)
+			if (!pipe){
+				Logger::LogError("popen() failed!");
 				throw runtime_error("popen() failed!");
+			}
 			try {
 				while (!feof(pipe)) {
 					if (fgets(buffer, 128, pipe) != NULL) {
@@ -36,15 +40,18 @@ namespace IOStormPlus{
 			} 
 			catch (...) {
 				pclose(pipe);
+				Logger::LogError("Execute script error");
 				throw;
 			}
 			pclose(pipe);
+			Logger::LogInfo("Execute script succeed " + result);
 			return result;
 		}
 
 	protected:        
 
 		vector<string> ListFilesInDirectory(string rootPath) {
+			Logger::LogInfo("Start List Files under directory");
 			vector<string> res;
 			string lsCmd = "ls " + rootPath;
 			string lsResut = ExecuteScript(lsCmd.c_str());
@@ -55,23 +62,18 @@ namespace IOStormPlus{
 					pre = i + 1;
 				}
 			}
+			Logger::LogInfo("Done List Files");
 			return res;
 		}
 
 		string RunScript(AgentCommand command, vector<string> &params){
+			Logger::LogInfo("RunScript Start");
 			string striptCmdString;
 			switch(command){
-				case CopyOutputCmd: {
-					string jobname = params[0];
-					string hostname = params[1];
-					string striptCmdString = "cp -pf " + jobname + ".out " + " " + OutputFolder + hostname + "_" + jobname + ".out";
-					ExecuteScript(striptCmdString);	
-					break;				
-				}
-				case DelTempFileCmd: {
+				case AgentCommand::DelTempFileCmd: {
 					string filename = params[0];
-					string striptCmdString = "rm -f " + filename + "*";
-					Logger::LogVerbose("Stript command "+striptCmdString);
+					striptCmdString = "rm -f " + filename + "*";
+					Logger::LogInfo("Stript command " + striptCmdString);
 					ExecuteScript(striptCmdString);	
 					break;		
 				}
@@ -79,7 +81,16 @@ namespace IOStormPlus{
 					string striptCmdString = "rm -f " + GetWorkloadFolderPath() + "*";
 					Logger::LogVerbose("Stript command "+striptCmdString);
 					ExecuteScript(striptCmdString);
+					striptCmdString = "rm -f " + IOStormPlus::workloadConfigFileName;
+					Logger::LogInfo("Stript command " + striptCmdString);
+					ExecuteScript(striptCmdString);
 					break;					
+				}
+				case AgentCommand::DelLocalOutputCmd: {
+					striptCmdString = "rm -f " + GetOutputFolderPath() + "*";
+					Logger::LogInfo("Stript command " + striptCmdString);
+					ExecuteScript(striptCmdString);
+					break;
 				}
 				default: {
 					return BaseAgent::RunScript(command, params);
@@ -92,14 +103,6 @@ namespace IOStormPlus{
 			usleep(SyncWaitTime);
 		}
 
-        string GetControlTempFilePath(){
-			return ControllerTempFilePath;
-		}
-
-        string GetClientTempFilePath(){
-			return ClientTempFilePath;
-		}
-
         string GetLogFilePath(){
 			return LogFilePath;
 		}	
@@ -108,9 +111,10 @@ namespace IOStormPlus{
 			return WorkLoadFolderPath;
 		}
 
-		string GetVMInfoFolderPath() {
-			return VMInfoFolderPath;
+		string GetOutputFolderPath() {
+			return OutputFolder;
 		}
+		
 	};
 }
 

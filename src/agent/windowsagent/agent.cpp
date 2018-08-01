@@ -18,14 +18,13 @@ namespace IOStormPlus{
 	public:
 		WindowsAgent(int argc = 0,char *argv[] = NULL) {
 			InitLogger();
-			if (argc >= 4) {
-				ControllerIP = argv[1];
-				RegisterOnController(argv[2], argv[3], "windows");
-			}
+			CreateStorageClient(argv[4]);
+			SetAgentInfo(argv[1], argv[2], "windows", argv[3]);
+			RegisterOnAzure();
 		}
 
 		string ExecuteScript(string command) {
-			Logger::LogVerbose("Run Script "+command);
+			Logger::LogInfo("Run Script " + command);
 			char buffer[128];
 			string result = "";
 			FILE* pipe = _popen(command.c_str(), "r");
@@ -46,13 +45,13 @@ namespace IOStormPlus{
 				throw;
 			}
 			_pclose(pipe);
-			Logger::LogInfo("Execute script succeed "+result);
+			Logger::LogInfo("Execute script succeed " + result);
 			return result;
 		}
 
 	protected:        
 		vector<string> ListFilesInDirectory(string rootPath) {
-			Logger::LogVerbose("Start List Files under directory");
+			Logger::LogInfo("Start List Files under directory");
 			WIN32_FIND_DATA data;
 			HANDLE hFind = FindFirstFile((rootPath + "*").c_str(), &data);      // DIRECTORY
 			vector<string> res;
@@ -65,33 +64,35 @@ namespace IOStormPlus{
 				while (FindNextFile(hFind, &data));
 				FindClose(hFind);
 			}
-			Logger::LogVerbose("Done List Files");
+			Logger::LogInfo("Done List Files");
 			return res;
 		}
 
 		string RunScript(AgentCommand command, vector<string> &params){
-			Logger::LogVerbose("RunScript Start");
+			Logger::LogInfo("RunScript Start");
 			string striptCmdString;
 			switch(command){
-				case AgentCommand::CopyOutputCmd: {
-					string jobname = params[0];
-					string hostname = params[1];
-					striptCmdString = "copy " + jobname + ".out " + " " + OutputFolder + hostname + "_" + jobname + ".out";
-					ExecuteScript(striptCmdString);	
-					break;				
-				}
 				case AgentCommand::DelTempFileCmd: {
 					string filename = params[0];
 					striptCmdString = "DEL /F /Q " + filename + "*";
-					Logger::LogVerbose("Stript command "+striptCmdString);
+					Logger::LogInfo("Stript command " + striptCmdString);
 					ExecuteScript(striptCmdString);	
 					break;		
 				}
 				case AgentCommand::DelJobFilesCmd: {
 					striptCmdString = "DEL /F /Q " + GetWorkloadFolderPath() + "*";
-					Logger::LogVerbose("Stript command "+striptCmdString);
+					Logger::LogInfo("Stript command " + striptCmdString);
+					ExecuteScript(striptCmdString);
+					striptCmdString = "DEL /F /Q " + IOStormPlus::workloadConfigFileName;
+					Logger::LogInfo("Stript command " + striptCmdString);
 					ExecuteScript(striptCmdString);
 					break;					
+				}
+				case AgentCommand::DelLocalOutputCmd: {
+					striptCmdString = "DEL /F /Q " + GetOutputFolderPath() + "*";
+					Logger::LogInfo("Stript command " + striptCmdString);
+					ExecuteScript(striptCmdString);
+					break;
 				}
 				default: {
 					return BaseAgent::RunScript(command, params);
@@ -104,28 +105,17 @@ namespace IOStormPlus{
 			Sleep(SyncWaitTime);
 		}
 
-        string GetControlTempFilePath(){
-			return ControllerTempFilePath;
-		}
-
-        string GetClientTempFilePath(){
-			return ClientTempFilePath;
-		}
-
-        string GetLogFilePath(){
+        string GetLogFilePath() {
 			return LogFilePath;
 		}	
 
-		string GetWorkloadFolderPath(){
+		string GetWorkloadFolderPath() {
 			return WorkLoadFolderPath;
 		}
 
-		string GetVMInfoFolderPath() {
-			return DirSpliter + DirSpliter + ControllerIP + DirSpliter + AgentsInfoFolderName + DirSpliter;
+		string GetOutputFolderPath() {
+			return OutputFolder;
 		}
-
-	private:
-		string ControllerIP;
 		
 	};
 

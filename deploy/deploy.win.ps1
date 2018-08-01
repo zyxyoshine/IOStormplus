@@ -3,14 +3,11 @@
 
 $Root = "C:\"
 $WorkspacePath = $Root + "IOStormplus\"
-$WorkloadSharePath = $WorkspacePath + "workload\"
-$OutputSharePath = $WorkspacePath + "output\"
-$TempSharePath = $WorkspacePath + "temp\"
 
 #Download and unzip agent package
 
-$PackageName = "Agent.zip"
-$PackageUrl = "https://github.com/zyxyoshine/IOStormplus/raw/master/deploy/binary/Agent.zip"
+$PackageName = "Agent.win.zip"
+$PackageUrl = "https://github.com/zyxyoshine/IOStormplus/raw/master/deploy/binary/Agent.win.zip"
 [Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
 Invoke-WebRequest -Uri $PackageUrl -OutFile ($Root + $PackageName)
 
@@ -24,21 +21,6 @@ function Unzip
 
 Unzip ($Root + $PackageName) $Root
 Remove-Item ($Root + $PackageName)
-
-#Create shares
-
-if( -Not (Get-SMBShare -Name "workload" -ea 0)){
-    New-SmbShare -Name "workload" -Path $WorkloadSharePath -FullAccess Everyone
-}
-if( -Not (Get-SMBShare -Name "output" -ea 0)){
-    New-SmbShare -Name "output" -Path $OutputSharePath -FullAccess Everyone
-}
-if( -Not (Get-SMBShare -Name "temp" -ea 0)){
-    New-SmbShare -Name "temp" -Path $TempSharePath -FullAccess Everyone
-}
-
-Out-File ($TempSharePath + "controller.tmp")
-Out-File ($TempSharePath + "client.tmp")
 
 #Install fio
 
@@ -72,28 +54,41 @@ foreach ($disk in $disks) {
     $count++
 }
 
+#Create Azure Storage connection string
+$storageAccountName = 'AccountName=' + $args[0] + ';'
+$storageAccountKey = 'AccountKey=' + $args[1] + ';'
+$storageEndpointSuffix = 'EndpointSuffix=' + $args[2]
+$storageConnectionString = 'DefaultEndpointsProtocol=https;' + $storageAccountName + $storageAccountKey + $storageEndpointSuffix
+
 #Start Agent
 netsh advfirewall set privateprofile state off
 netsh advfirewall set publicprofile state off
 
-$ControllerIP = $args[0]
-$VMSize = $args[1]
+$VMSize = $args[3]
+$VMPool = $args[4]
 $VMSize | Out-File ($WorkspacePath + 'vmsize.txt')
 $VMIp = foreach($ip in (ipconfig) -like '*IPv4*') { ($ip -split ' : ')[-1]}
-$username = 'vmadmin'
-$password = '!!!!1234abcd'
 $agentName = "agent.exe"
 $agentPath = $WorkspacePath + $agentName
-$args = ' ' + $ControllerIP + ' ' + $VMIp + ' ' + $VMSize
+$args = ' ' + $VMIp + ' ' + $VMSize + ' ' + $VMPool + ' ' + $storageConnectionString
 $action = New-ScheduledTaskAction -Execute $agentPath -Argument $args -WorkingDirectory $WorkspacePath
 $trigger = @()
 $trigger += New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1)
 $trigger += New-ScheduledTaskTrigger -AtStartup
-$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -RunOnlyIfNetworkAvailable -DontStopOnIdleEnd -Priority 4
+$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -RunOnlyIfNetworkAvailable -DontStopOnIdleEnd
 Unregister-ScheduledTask -TaskName "VMIOSTORM" -Confirm:0 -ErrorAction Ignore
-Register-ScheduledTask -Action $action -Trigger $trigger -TaskName "VMIOSTORM" -Description "VM iostorm agent" -User $username -Password $password -RunLevel Highest -Settings $settings
+Register-ScheduledTask -Action $action -Trigger $trigger -TaskName "VMIOSTORM" -Description "VM iostorm agent" -User "System" -RunLevel Highest -Settings $settings
 
 #Stop-Transcript
 
 #Enable PSRemoting
-winrm quickconfig -q
+
+$DNSName = $env:COMPUTERNAME 
+Enable-PSRemoting -Force   
+
+New-NetFirewallRule -Name "WinRM HTTPS" -DisplayName "WinRM HTTPS" -Enabled True -Profile "Any" -Action "Allow" -Direction "Inbound" -LocalPort 5986 -Protocol "TCP"    
+
+$thumbprint = (New-SelfSignedCertificate -DnsName $DNSName -CertStoreLocation Cert:\LocalMachine\My).Thumbprint   
+$cmd = "winrm create winrm/config/Listener?Address=*+Transport=HTTPS @{Hostname=""$DNSName""; CertificateThumbprint=""$thumbprint""}" 
+
+cmd.exe /C $cmd  

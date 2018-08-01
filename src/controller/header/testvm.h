@@ -2,6 +2,9 @@
 #include "../../common/header/command.h"
 #include <map>
 #include <vector>
+#include <was/storage_account.h>
+#include <was/table.h>
+
 using namespace std;
 
 #ifdef __cplusplus
@@ -30,11 +33,11 @@ namespace IOStormPlus{
     class TestVM {
 
     public:
-        TestVM(string name, string internalIP, OSType osType, string size):
-            m_name(name), m_internalIP(internalIP), m_osType(osType), m_size(size){}
+		TestVM(string name, string internalIP, OSType osType, string size, string pool) :
+            m_name(name), m_internalIP(internalIP), m_osType(osType), m_size(size), m_pool(pool){}
 
-        TestVM(string name, string internalIP, string osType, string size):
-            m_name(name), m_internalIP(internalIP), m_osType(osType == "linux" ? Linux : Windows), m_size(size){}
+        TestVM(string name, string internalIP, string osType, string size, string pool):
+            m_name(name), m_internalIP(internalIP), m_osType(osType == "linux" ? Linux : Windows), m_size(size), m_pool(pool) {}
 
         string GetInfo();
         string GetTestResult(const string& jobName);
@@ -44,15 +47,17 @@ namespace IOStormPlus{
         string GetName();
         string GetInternalIP();
         string GetSize();
+		string GetPool();
         OSType GetOSType();
 
-        void SendCommand(SCCommand command);
-        bool GetResponse(SCCommand command);
-
+        void SendCommand(azure::storage::cloud_table& table, SCCommand command = EmptyCmd);
+        bool GetResponse(azure::storage::cloud_table& table, SCCommand command);
+		
     private:
         string m_name;
         string m_internalIP;
         string m_size;
+		string m_pool;
         OSType m_osType;
         map<string, ReportSummary> m_testResults;
 
