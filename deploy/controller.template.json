@@ -168,7 +168,7 @@
 		},
         {
             "type": "Microsoft.Network/networkInterfaces",
-            "name": "[concat(variables('vmNicName'), 'controller')]",
+            "name": "[variables('vmNicName')]",
             "apiVersion": "2015-06-15",
             "location": "[variables('location')]",
             "properties": {
@@ -194,7 +194,7 @@
         },
         {
             "type": "Microsoft.Compute/virtualMachines",
-            "name": "[concat(variables('vmName'), 'controller')]",
+            "name": "[variables('vmName')]",
             "apiVersion": "2017-03-30",
             "location": "[variables('location')]",
             "properties": {
@@ -202,7 +202,7 @@
                     "vmSize": "[parameters('vmSize')]"
                 },
                 "osProfile": {
-                    "computerName": "[concat(variables('vmName'), 'controller')]",
+                    "computerName": "[variables('vmName')]",
                     "adminUsername": "[parameters('vmAdminUsername')]",
                     "adminPassword": "[parameters('vmAdminPassword')]",
 					"windowsConfiguration": {
@@ -220,7 +220,7 @@
                     },
                     "osDisk": {
 						"osType": "Windows",
-                        "name": "[concat(variables('vmOsDiskName'), 'controller')]",
+                        "name": "[variables('vmOsDiskName')]",
                         "caching": "ReadWrite",
                         "createOption": "FromImage",
 						"diskSizeGB": 128
@@ -230,7 +230,7 @@
                 "networkProfile": {
                     "networkInterfaces": [
                         {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces',concat(variables('vmNicName'), 'controller'))]"
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces',variables('vmNicName'))]"
                         }
                     ]
                 },
@@ -242,12 +242,12 @@
                 }
             },
             "dependsOn": [
-                "[concat('Microsoft.Network/networkInterfaces/',variables('vmNicName'), 'controller')]"
+                "[concat('Microsoft.Network/networkInterfaces/',variables('vmNicName'))]"
             ]
         },
         {
             "type": "Microsoft.Compute/virtualMachines/extensions",
-            "name": "[concat(variables('vmName'), 'controller','/IOStromExtension')]",
+            "name": "[concat(variables('vmName'),'/IOStromExtension')]",
             "apiVersion": "2015-06-15",
             "location": "[variables('location')]",
             "properties": {
@@ -263,7 +263,7 @@
 				}
             },
             "dependsOn": [
-                "[concat('Microsoft.Compute/virtualMachines/',variables('vmName'), 'controller')]"
+                "[concat('Microsoft.Compute/virtualMachines/',variables('vmName'))]"
             ]
         }
     ]
