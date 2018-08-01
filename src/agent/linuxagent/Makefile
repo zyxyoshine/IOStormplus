@@ -19,7 +19,7 @@ agent.o : header/constant.h agent.cpp ../header/baseagent.h ../baseagent.cpp ../
 	$(CC) $(FLAGS) -c agent.cpp
 
 agent : $(OBJ)
-	$(CC) $(FLAGS) -o agent $(OBJ)
+	$(CC) $(FLAGS) -o agent $(OBJ) -lboost_system -lcrypto -lssl -lcpprest -lazurestorage
 
 
 .PHONY: clean cleanall

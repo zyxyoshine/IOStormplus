@@ -11,7 +11,7 @@ extern "C"
 #endif
 
 namespace IOStormPlus{
-    const string BinFolderPath = "/home/IOStormplus";
+    const string BinFolderPath = "/home/IOStormplus/";
     const string DirSpliter = "/";
     const string WorkspaceFolderPath = "/home/fiojob/";
     const string WorkLoadFolderPath = BinFolderPath + WorkLoadFolderName + DirSpliter;
