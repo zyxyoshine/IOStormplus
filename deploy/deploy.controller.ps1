@@ -4,7 +4,7 @@ $Workspace = $Root + "IOStormplus\"
 #Download and unzip controller package
 
 $PackageName = "Controller.zip"
-$PackageUrl = "https://github.com/zyxyoshine/IOStormplus/raw/master/deploy/binary/Controller.zip"
+$PackageUrl = "https://github.com/zyxyoshine/IOStormplus/raw/dev2/deploy/binary/Controller.zip"
 [Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
 
 Invoke-WebRequest -Uri $PackageUrl -OutFile ($Root + $PackageName)
