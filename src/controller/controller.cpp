@@ -13,7 +13,7 @@ using namespace rapidjson;
 using namespace std;
 
 namespace IOStormPlus{
-	//https://docs.microsoft.com/en-us/azure/storage/blobs/storage-c-plus-plus-how-to-use-blobs
+	
     ////////////////////////////////////////////////////////////////////////////////////////////
     // Public function
     ///////////////////////////////////////////////////////////////////////////////////////////
@@ -60,16 +60,18 @@ namespace IOStormPlus{
 		getline(fin, storageAccountKey);
 		getline(fin, storageEndpointSuffix);
 		fin.close();
-
 		storageAccountName.replace(storageAccountName.find("NAME="), 5, "");
 		storageAccountKey.replace(storageAccountKey.find("KEY="), 4, "");
 		storageEndpointSuffix.replace(storageEndpointSuffix.find("ENDPOINTSUF="), 12, "");
 		const utility::string_t storageConnectionString = utility::conversions::to_string_t("DefaultEndpointsProtocol=https;AccountName=" + storageAccountName + ";AccountKey=" + storageAccountKey + ";EndpointSuffix=" + storageEndpointSuffix);
-		azure::storage::cloud_storage_account storageAccount = azure::storage::cloud_storage_account::parse(storageConnectionString);
-
-		tableClient = storageAccount.create_cloud_table_client();
-		blobClient = storageAccount.create_cloud_blob_client();
-
+		try {
+			azure::storage::cloud_storage_account storageAccount = azure::storage::cloud_storage_account::parse(storageConnectionString);
+			tableClient = storageAccount.create_cloud_table_client();
+			blobClient = storageAccount.create_cloud_blob_client();
+		}
+		catch(const std::exception& e) {
+			Logger::LogError(e.what());
+		}
         m_isReady = true;
     }
 

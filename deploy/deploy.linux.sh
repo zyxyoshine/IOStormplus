@@ -1,7 +1,7 @@
 apt-get update
 apt-get upgrade -y
 apt-get install make gcc g++ unzip zlib1g-dev libboost-all-dev libssl-dev libxml2-dev uuid-dev cmake -y
-cd /home/ && wget https://github.com/zyxyoshine/IOStormplus/raw/dev2/deploy/binary/Agent.linux.zip
+cd /home/ && wget https://github.com/zyxyoshine/IOStormplus/raw/master/deploy/binary/Agent.linux.zip
 cd /home/ && unzip Agent.linux.zip
 mkdir /home/IOStormplus/output
 mkdir /home/IOStormplus/workload

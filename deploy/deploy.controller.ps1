@@ -4,7 +4,7 @@ $Workspace = $Root + "IOStormplus\"
 #Download and unzip controller package
 
 $PackageName = "Controller.zip"
-$PackageUrl = "https://github.com/zyxyoshine/IOStormplus/raw/dev2/deploy/binary/Controller.zip"
+$PackageUrl = "https://github.com/zyxyoshine/IOStormplus/raw/master/deploy/binary/Controller.zip"
 [Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
 
 Invoke-WebRequest -Uri $PackageUrl -OutFile ($Root + $PackageName)
@@ -16,7 +16,7 @@ $storageConfigFileName = "AzureStorage.config"
 $storageAccountBuf = 'NAME=' + $args[0]
 $storageAccountKeyBuf = 'KEY=' + $args[1]
 $storageEndpointSuffixBuf = 'ENDPOINTSUF=' + $args[2]
-($storageAccountBuf + [Environment]::NewLine + $storageAccountKeyBuf + [Environment]::NewLine + $storageEndpointSuffixBuf) |  Out-File ($Workspace + $storageConfigFileName)
+($storageAccountBuf + [Environment]::NewLine + $storageAccountKeyBuf + [Environment]::NewLine + $storageEndpointSuffixBuf) |  Out-File -encoding ASCII ($Workspace + $storageConfigFileName)
 
 # Install AzureRM 
 Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser
