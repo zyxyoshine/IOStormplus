@@ -6,8 +6,8 @@ Open Azure portal, and deploy template `deploy/controller.template.json`.<br>
 Note: You need to create a new resource group for IOStormplus.
 ### 2.Deploy test VM.
 IOStormplus support both windows and linux test VM. <br>
-For linux,deploy `deploy/agent.template.linux.json`. <br>
-For Windows,deploy `deploy/agent.template.win.json`. <br>
+For linux,deploy `deploy/agent.template/agent.template.linux.json`. <br>
+For Windows,deploy `deploy/agent.template/agent.template.win.json`. <br>
 ## Configure and run workload
 ### 1.Initialize controller and import test VM infomation into controller.
 Remote to controller VM and open a console then navigate to `C:\IOStormplus`. <br>
