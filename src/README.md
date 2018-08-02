@@ -14,6 +14,14 @@ You should deploy linux environment (Ubuntu 16.04 LTS) for implement linux agent
 ln -s /home/IOStormplus/libazurestorage.so.5.0 /usr/lib/libazurestorage.so.5
 ln -s /home/IOStormplus/libcpprest.so.2.9 /usr/lib/libcpprest.so.2.9
 ```
+Install fio:
+``` shell
+cd /home && wget http://brick.kernel.dk/snaps/fio-3.5.tar.bz2
+tar -xjvf fio-3.5.tar.bz2
+./fio-3.5/configure
+cd /home/fio-3.5 && make
+make install
+```
 2. If you just want to dev with current library, you can just run script `/agent/linuxagent/deployDevEnv.sh` to deploy environment.
 
 ## Build
