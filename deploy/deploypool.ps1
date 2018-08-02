@@ -17,7 +17,7 @@ $controller="10.0.0.4"
 
 
 New-AzureRmResourceGroupDeployment -Name $dn -ResourceGroupName $rg `
-                                   -TemplateFile .\agent.template\agent.template.$vmOS.json `
+                                   -TemplateFile .\umd\agent.template\agent.template.$vmOS.json `
                                    -StorageEndpointSuffix $storageEndpointSuffix -vmPool $vmPool `
                                    -vmCount $vmCount -vmSize Standard_DS2 `
                                    -vmDataDiskCount $vmDataDisks -vmDataDiskSizeInGB $vmDataDiskGB `
