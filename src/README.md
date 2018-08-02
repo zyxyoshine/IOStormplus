@@ -1,45 +1,28 @@
-# IOStormplus
+# Development
 
-## Deploy IOStormplus
-### 1.Deploy controller VM and some resources.
-Open Azure portal, and deploy template `deploy/controller.template.json`.<br>
-Note: You need to create a new resource group for IOStormplus.
-### 2.Deploy test VM.
-IOStormplus support both windows and linux test VM. <br>
-For linux,deploy `deploy/agent.template/agent.template.linux.json`. <br>
-For Windows,deploy `deploy/agent.template/agent.template.win.json`. <br>
-## Configure and run workload
-### 1.Initialize controller and import test VM infomation into controller.
-Remote to controller VM and open a console then navigate to `C:\IOStormplus`. <br>
-After all agents have been set up,run command
-```PowerShell
-IOStormplus_Controller init
-```
+## Deploy environment
 
-### 2.Start work.
-IOStormplus is supported to run standard fio job (e.g.https://github.com/axboe/fio/tree/master/examples ). <br>
-We have created the rand-RW job as standard workload. <br>
-You can create your own jobs and upload them into `IOStormplus\workload\` and specify a VM pool to run it by edit `workload.json`.
-It's very easy to start work by run command
-```PowerShell
-IOStormplus_Controller start
+### 1.Windows environment
+Controller and Windows agent are implemented by Microsoft Visual Studio 2017 with Windows SDK 10.0.17134.0. </br>
+You can install them by Visual Studio Installer.</br>
+All packages can be restored from nuget.org.
+
+### 2.Linux environment
+You should deploy linux environment (Ubuntu 16.04 LTS) for implement linux agent. </br>
+1. If you want to try new Azure Storage Client please follow https://github.com/Azure/azure-storage-cpp and https://github.com/Microsoft/cpprestsdk/wiki/How-to-build-for-Linux to build `libcpprest.so` and `libazurestorage.so`, then create soft links to /usr/lib/ like:
+``` shell
+ln -s /home/IOStormplus/libazurestorage.so.5.0 /usr/lib/libazurestorage.so.5
+ln -s /home/IOStormplus/libcpprest.so.2.9 /usr/lib/libcpprest.so.2.9
 ```
-or 
-```PowerShell
-IOStormplus_Controller start -std
-```
-NOTE: Standard test will ignore all custom pool settings and run `std` workload.<br>
-NOTE2: If you don't specify any workload for a pool, it will run `std` workload.
-### 3.Other features
-1. Display test vm status.
-```PowerShell
-IOStormplus_Controller init
-```
-or 
-```PowerShell
-IOStormplus_Controller agent show
-```
-## Get result
-When all jobs have been done (the standard job will cost about 6 minutes)
-, all detail reports will be named as `testvm{id}_{job name}.out` and put into `output` folder and blob. <br>
-IOStormplus will create a summary report `{date}_summary.out` by analyse IOPS data, it can be direct import into Excel.
+2. If you just want to dev with current library, you can just run script `/agent/linuxagent/deployDevEnv.sh` to deploy environment.
+
+## Build
+For controller and Windows agent, build VS solution target x64 platform.  </br>
+For Linux agent, run command `make` at `linuxagent` floder. </br>
+Note: we only tested build Linux agent with g++ 5.4.0 .
+
+## Deploy and test
+1. Compress your executable file and libraries to a zip file (For example, `IOStormplus\deploy\binary\*.zip`). </br>
+2. Upload zip file. </br>
+3. If you changed file or floder path/name/struct, please don't forget to change deploy scripts and templates. </br>
+4. Use templates or scripts to deploy and test your work.
