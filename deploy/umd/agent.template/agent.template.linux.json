@@ -9,7 +9,7 @@
 		"vmPool": {
             "type": "String",
             "metadata": {
-                "description": "The starting index number of VMs."
+                "description": "Pool name."
             }
         },
 		"vmAdminUsername": {
@@ -162,7 +162,7 @@
         {
             "type": "Microsoft.Compute/virtualMachines",
             "name": "[concat(variables('vmName'),copyIndex(parameters('vmIndex')))]",
-            "apiVersion": "2017-03-30",
+            "apiVersion": "2016-03-30",
             "location": "[variables('location')]",
             "tags":{ 
                 "pool": "[parameters('vmPool')]"
@@ -193,9 +193,9 @@
                     },
                     "osDisk": {
 						"osType": "Linux",
-                        "name": "[concat(variables('vmOsDiskName'),copyIndex(parameters('vmIndex')))]",
+                        "name": "[concat(variables('vmOsDiskName'),copyIndex(parameters('vmIndex')),'-osd')]",
 						"vhd": {
-							"uri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('uniqueStorageAccountName')),providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).primaryEndpoints.blob,variables('uniqueStorageAccountContainerName'),'/',concat(variables('vmOsDiskName'),copyIndex(parameters('vmIndex'))),'.vhd')]"
+							"uri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('uniqueStorageAccountName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).primaryEndpoints.blob, concat(variables('vmOSDiskName'), copyIndex(parameters('vmIndex')),'-osd'),'/',concat(variables('vmOSDiskName'),copyIndex(parameters('vmIndex')),'-osd'), '.vhd')]" 
 						},
                         "caching": "ReadWrite",
                         "createOption": "FromImage",     
@@ -207,9 +207,9 @@
 							"count": "[parameters('vmDataDiskCount')]",
 							"input": {
 								"vhd": {
-									"uri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('uniqueStorageAccountName')),providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).primaryEndpoints.blob,variables('uniqueStorageAccountContainerName'),'/',concat(variables('vmDataDiskName'),copyIndex(parameters('vmIndex')),'-',copyIndex('dataDisks')),'.vhd')]"
+                                    "uri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('uniqueStorageAccountName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).primaryEndpoints.blob, concat(variables('vmDataDiskName'), copyIndex(parameters('vmIndex')), '-dd', copyIndex('dataDisks')),'/',concat(variables('vmDataDiskName'),copyIndex(parameters('vmIndex')),'-dd',copyIndex('dataDisks')), '.vhd')]" 
 								},
-								"name": "[concat(variables('vmDataDiskName'),copyIndex(parameters('vmIndex')),'-',copyIndex('dataDisks'))]",
+                                "name": "[concat(variables('vmDataDiskName'),copyIndex(parameters('vmIndex')),'-dd',copyIndex('dataDisks'))]",
 								"diskSizeGB": "[parameters('vmDataDiskSizeInGB')]",
 								"lun": "[copyIndex('dataDisks')]",
 								"createOption": "Empty",

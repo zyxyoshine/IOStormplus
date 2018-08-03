@@ -4,8 +4,7 @@ Param(
     [string] $vmOS="win",
     [string] $vmSize="Standard_DS2", 
     [int] $vmDataDisks=1, 
-    [int] $vmDataDiskGB=4,
-    [string] $storageEndpointSuffix="core.windows.net"
+    [int] $vmDataDiskGB=4
 )
 
 
@@ -13,12 +12,11 @@ Param(
 #lookup the resource group from a setting that is saved when iostorm controller is created
 $rg="iostorm"
 $dn=$rg+$vmPool
-$controller="10.0.0.4"
-
+$storageEndpointSuffix= ((Get-AzureRmContext).Environment | Get-AzureRmEnvironment).StorageEndpointSuffix
 
 New-AzureRmResourceGroupDeployment -Name $dn -ResourceGroupName $rg `
                                    -TemplateFile .\umd\agent.template\agent.template.$vmOS.json `
                                    -StorageEndpointSuffix $storageEndpointSuffix -vmPool $vmPool `
-                                   -vmCount $vmCount -vmSize Standard_DS2 `
+                                   -vmCount $vmCount -vmSize $vmSize `
                                    -vmDataDiskCount $vmDataDisks -vmDataDiskSizeInGB $vmDataDiskGB `
                                    -verbose

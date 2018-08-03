@@ -2,6 +2,14 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
 	"contentVersion": "1.0.0",
 	"parameters": {
+		"vmAdminUsername": {
+			"defaultValue": "vmadmin",
+            "type": "String"
+        },
+		"vmAdminPassword": {
+			"defaultValue": "!!!!1234abcd",
+            "type": "String"
+        },
 		"controllerVmOsSku": {
             "defaultValue": "2016-Datacenter",
             "allowedValues": [
@@ -16,17 +24,9 @@
             "defaultValue": "core.windows.net",
             "type": "String"
         },
-		"vmAdminUsername": {
-			"defaultValue": "vmadmin",
-            "type": "String"
-        },
-		"vmAdminPassword": {
-			"defaultValue": "!!!!1234abcd",
-            "type": "String"
-        },
 		"vmSize": {
 			"type": "string",
-			"defaultValue": "Standard_A3",
+			"defaultValue": "Standard_A1",
 				"allowedValues": [
 				"Standard_A0",
 				"Standard_A1",
@@ -199,7 +199,7 @@
         {
             "type": "Microsoft.Compute/virtualMachines",
             "name": "[variables('vmName')]",
-            "apiVersion": "2017-03-30",
+            "apiVersion": "2016-03-30",
             "location": "[variables('location')]",
             "properties": {
                 "hardwareProfile": {
