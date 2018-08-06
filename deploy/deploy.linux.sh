@@ -5,7 +5,7 @@ cd /home/ && wget https://github.com/zyxyoshine/IOStormplus/raw/master/deploy/bi
 cd /home/ && unzip Agent.linux.zip
 mkdir /home/IOStormplus/output
 mkdir /home/IOStormplus/workload
-ln -s /home/IOStormplus/libazurestorage.so.5.0 /usr/lib/libazurestorage.so.5
+ln -s /home/IOStormplus/libazurestorage.so.3.1 /usr/lib/libazurestorage.so.3
 ln -s /home/IOStormplus/libcpprest.so.2.9 /usr/lib/libcpprest.so.2.9
 chmod -R 0777 /home/IOStormplus
 cd /home && wget http://brick.kernel.dk/snaps/fio-3.5.tar.bz2

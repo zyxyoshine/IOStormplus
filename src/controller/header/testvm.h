@@ -51,7 +51,7 @@ namespace IOStormPlus{
         OSType GetOSType();
 
         void SendCommand(azure::storage::cloud_table& table, SCCommand command = EmptyCmd);
-        bool GetResponse(azure::storage::cloud_table& table, SCCommand command);
+        bool GetResponse(azure::storage::cloud_table& table, SCCommand command, SCCommand retryCMD = SCCommand::InvaildCmd);
 		
     private:
         string m_name;

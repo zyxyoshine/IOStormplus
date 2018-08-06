@@ -88,7 +88,7 @@ namespace IOStormPlus {
         return m_testResults.count(jobName);
     }
 
-    bool TestVM::GetResponse(azure::storage::cloud_table& table, SCCommand command){
+    bool TestVM::GetResponse(azure::storage::cloud_table& table, SCCommand command, SCCommand retryCMD){
 		azure::storage::table_operation retrieveOperation = azure::storage::table_operation::retrieve_entity(utility::conversions::to_string_t(m_pool), utility::conversions::to_string_t(m_name));
 		azure::storage::table_result retrieveResult = table.execute(retrieveOperation);
 		azure::storage::table_entity agentEntity = retrieveResult.entity();
@@ -98,6 +98,10 @@ namespace IOStormPlus {
         if(cmdString.compare(GetCommandString(command)) == 0)
 			return true;
 
+		if ((retryCMD != SCCommand::InvaildCmd) && (cmdString.compare(GetCommandString(SCCommand::EmptyCmd)) == 0)) {
+			Logger::LogInfo("Resending command " + GetCommandString(retryCMD) + " to " + m_name);
+			SendCommand(table, retryCMD);
+		}
         return false;
     }
 
