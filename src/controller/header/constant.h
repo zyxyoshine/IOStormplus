@@ -25,7 +25,7 @@ namespace IOStormPlus{
 	const utility::string_t tableSizeColumnName = U("SIZE");
 	const utility::string_t workloadBlobContainerName = U("workload");
 	const utility::string_t outputBlobContainerName = U("output");
-	const int maxWaitTimeInSec = 10 * 60;
+	const int maxWaitTimeInSec = 60 * 60;
 }
 
 #ifdef __cplusplus

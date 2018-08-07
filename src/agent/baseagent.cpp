@@ -8,11 +8,11 @@
 using namespace rapidjson;
 using namespace std;
 
-namespace IOStormPlus{
-    void BaseAgent::InitLogger(){
+namespace IOStormPlus {
+	void BaseAgent::InitLogger() {
 		Logger::Init(GetLogFilePath());
-    }
-    
+	}
+
 	void BaseAgent::CreateStorageClient(string storageConnectionString) {
 		Logger::LogInfo("storageConnectionString: " + storageConnectionString);
 		try {
@@ -20,7 +20,7 @@ namespace IOStormPlus{
 			tableClient = storageAccount.create_cloud_table_client();
 			blobClient = storageAccount.create_cloud_blob_client();
 		}
-		catch (const std::exception& e){
+		catch (const std::exception& e) {
 			Logger::LogInfo(e.what());
 		}
 	}
@@ -29,54 +29,59 @@ namespace IOStormPlus{
 	void BaseAgent::Run() {
 		Logger::LogInfo("Start Running");
 		azure::storage::cloud_table table = tableClient.get_table_reference(IOStormPlus::storageTempTableName);
-		while (true){
+		int retryCount = 0;
+		while (true) {
 			Wait();
 			SCCommand cmd;
 			if (!GetControllerCmd(table, cmd)) {
-				Logger::LogInfo("No valid command, waiting");
-				Acknowledge(table, SCCommand::EmptyCmd);
+				if (retryCount % 60 == 0) {
+					Logger::LogInfo("No valid command, waiting");
+					Acknowledge(table, SCCommand::EmptyCmd);
+					retryCount = 1;
+				}
+				retryCount++;
 				continue;
 			}
 			Logger::LogInfo("Get one command");
-			switch(cmd){
-				case SCCommand::SyncCmd:{
-					Acknowledge(table, SCCommand::SyncDoneCmd);
-					break;
-				}
-				case SCCommand::StartJobCmd:{
-					DownloadWorkload(SCCommand::StartJobCmd, IOStormPlus::workloadConfigFileName);
-					RunJobs();
-					Acknowledge(table, SCCommand::JobDoneCmd);
-					break;						
-				}
-				case SCCommand::StartStdJobCmd: {
-					DownloadWorkload(SCCommand::StartStdJobCmd, IOStormPlus::workloadConfigFileName);
-					RunJobs();
-					Acknowledge(table, SCCommand::JobDoneCmd);
-					break;
-				}
-				default: break;					
+			switch (cmd) {
+			case SCCommand::SyncCmd: {
+				Acknowledge(table, SCCommand::SyncDoneCmd);
+				break;
+			}
+			case SCCommand::StartJobCmd: {
+				DownloadWorkload(SCCommand::StartJobCmd, IOStormPlus::workloadConfigFileName);
+				RunJobs();
+				Acknowledge(table, SCCommand::JobDoneCmd);
+				break;
+			}
+			case SCCommand::StartStdJobCmd: {
+				DownloadWorkload(SCCommand::StartStdJobCmd, IOStormPlus::workloadConfigFileName);
+				RunJobs();
+				Acknowledge(table, SCCommand::JobDoneCmd);
+				break;
+			}
+			default: break;
 			}
 		}
-	}	
+	}
 
-    string BaseAgent::RunScript(AgentCommand command, vector<string> &params){
-		switch(command){
-			case AgentCommand::HostnameCmd: {
-				return ExecuteScript("hostname");
-			}
-			case AgentCommand::RunFIOCmd: {
-				assert(params.size() == 3);
-				string job = params[0];
-				string jobname = params[1];
-				string hostname = params[2];
-				string striptCmdString = "fio --output=" + GetOutputFolderPath() + hostname + "_" + jobname + ".out " + " " + GetWorkloadFolderPath() + job;
-				ExecuteScript(striptCmdString);
-				break; 
-			}
-			default: {
-				assert(false);
-			}
+	string BaseAgent::RunScript(AgentCommand command, vector<string> &params) {
+		switch (command) {
+		case AgentCommand::HostnameCmd: {
+			return ExecuteScript("hostname");
+		}
+		case AgentCommand::RunFIOCmd: {
+			assert(params.size() == 3);
+			string job = params[0];
+			string jobname = params[1];
+			string hostname = params[2];
+			string striptCmdString = "fio --output=" + GetOutputFolderPath() + hostname + "_" + jobname + ".out " + " " + GetWorkloadFolderPath() + job;
+			ExecuteScript(striptCmdString);
+			break;
+		}
+		default: {
+			assert(false);
+		}
 		}
 		return "";
 	}
@@ -104,7 +109,7 @@ namespace IOStormPlus{
 			return;
 		}
 		Logger::LogInfo("Configure File has been parsed successfully!");
-		
+
 		int workloadCount = workloadConfig["count"].GetInt();
 		auto workloadInfo = workloadConfig["value"].GetArray();
 
@@ -144,7 +149,7 @@ namespace IOStormPlus{
 		Logger::LogInfo("Upload workload files to blob succeeded.");
 	}
 
-    bool BaseAgent::GetControllerCmd(azure::storage::cloud_table& table, SCCommand &command){
+	bool BaseAgent::GetControllerCmd(azure::storage::cloud_table& table, SCCommand &command) {
 		azure::storage::table_operation retrieveOperation = azure::storage::table_operation::retrieve_entity(utility::conversions::to_string_t(m_vmPool), utility::conversions::to_string_t(m_vmName));
 
 		azure::storage::table_result retrieveResult = table.execute(retrieveOperation);
@@ -156,12 +161,12 @@ namespace IOStormPlus{
 			return true;
 		}
 
-		Logger::LogWarning("Unknown control command");
+		//	Logger::LogWarning("Unknown control command");
 		return false;
 	}
 
 
-    void BaseAgent::Acknowledge(azure::storage::cloud_table& table, SCCommand command){
+	void BaseAgent::Acknowledge(azure::storage::cloud_table& table, SCCommand command) {
 		string cmdstring = GetCommandString(command);
 		Logger::LogInfo("Start ack " + cmdstring + " command");
 
@@ -172,7 +177,7 @@ namespace IOStormPlus{
 
 		azure::storage::table_operation opt = azure::storage::table_operation::insert_or_merge_entity(agent);
 		azure::storage::table_result insert_result = table.execute(opt);
-        
+
 		Logger::LogInfo("Done ack " + cmdstring + " command");
 	}
 
@@ -194,7 +199,7 @@ namespace IOStormPlus{
 
 		Logger::LogInfo("Register agent succeeded");
 	}
-	
+
 	void BaseAgent::SetAgentInfo(string vmIP, string vmSize, string vmOS, string vmPool) {
 		vector<string> params;
 		m_vmName = BaseAgent::RunScript(AgentCommand::HostnameCmd, params);
@@ -208,21 +213,21 @@ namespace IOStormPlus{
 	}
 
 
-    void BaseAgent::RunJobs(){
+	void BaseAgent::RunJobs() {
 		Logger::LogInfo("Start Job");
-		vector<string> params;		
+		vector<string> params;
 		string hostname = BaseAgent::RunScript(AgentCommand::HostnameCmd, params);
 		if (hostname.find('\n') != string::npos) {
-			hostname = hostname.replace(hostname.find('\n'),1,"");
+			hostname = hostname.replace(hostname.find('\n'), 1, "");
 		}
 		Logger::LogInfo("Hostname " + hostname);
 
 		vector<string> jobs = ListFilesInDirectory(GetWorkloadFolderPath());
 		Logger::LogInfo("Running fio workload.");
-		for (int i = 0 ;i < jobs.size();i++){
+		for (int i = 0; i < jobs.size(); i++) {
 			string jobname = jobs[i];
 			if (jobname.find(".job") != string::npos) {
-				jobname = jobname.replace(jobname.find(".job"),4,"");
+				jobname = jobname.replace(jobname.find(".job"), 4, "");
 			}
 
 			vector<string> params;
@@ -230,17 +235,17 @@ namespace IOStormPlus{
 			params.push_back(jobname);
 			params.push_back(hostname);
 			BaseAgent::RunScript(AgentCommand::RunFIOCmd, params);
-			
+
 			params.clear();
-			params.push_back(jobname);			
+			params.push_back(jobname);
 			RunScript(AgentCommand::DelTempFileCmd, params);
-			Logger::LogInfo("Done Job "+jobname);
+			Logger::LogInfo("Done Job " + jobname);
 		}
 
 		RunScript(AgentCommand::DelJobFilesCmd, params);
 		UploadOutput();
 		RunScript(AgentCommand::DelLocalOutputCmd, params);
-		
-		Logger::LogInfo("Job Done");		
+
+		Logger::LogInfo("Job Done");
 	}
 }

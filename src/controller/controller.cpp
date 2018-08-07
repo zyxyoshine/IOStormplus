@@ -288,16 +288,18 @@ namespace IOStormPlus{
             vm.SendCommand(table, SCCommand::SyncCmd);
         }
         // Check all VMs to response sync
-        WaitForAllVMs(table, SCCommand::SyncDoneCmd);
-        Logger::LogInfo("All test VM pre-sync succeeded!");
+        WaitForAllVMs(table, SCCommand::SyncDoneCmd, SCCommand::SyncCmd);
+        Logger::LogInfo("Test VM pre-sync succeeded!");
     }
 
-    void Controller::WaitForAllVMs(azure::storage::cloud_table& table, SCCommand command){
+    void Controller::WaitForAllVMs(azure::storage::cloud_table& table, SCCommand command, SCCommand retryCMD){
         // Check all VMs to response sync
         Logger::LogInfo("Waiting for agents response.");
         bool allDone = false;
         map<string, bool> doneJobs;
-
+		
+		clock_t startTime = clock();
+		double duration;
         while (!allDone) {
             allDone = true;
             for (auto vm : TestVMs) {
@@ -306,7 +308,7 @@ namespace IOStormPlus{
                     continue;
                 }
 
-                if (vm.GetResponse(table, command)) {
+                if (vm.GetResponse(table, command, retryCMD)) {
                     doneJobs[vm.GetInternalIP()] = true;
                     Logger::LogInfo("Test VM " + vm.GetName() + "(" + vm.GetInternalIP() + ")" + " successfully executed command.");
                 }
@@ -314,7 +316,17 @@ namespace IOStormPlus{
                     allDone = false;
                 }
             }
+			duration = (std::clock() - startTime) / (double)CLOCKS_PER_SEC;
+			if (duration > IOStormPlus::maxWaitTimeInSec)
+				break;
         }
+		if (!allDone) {
+			for (auto vm : TestVMs) {
+				if (!doneJobs[vm.GetInternalIP()]) {
+					Logger::LogWarning("Test VM " + vm.GetName() + "(" + vm.GetInternalIP() + ") time out!");
+				}
+			}
+		}
     }
 
     // Test Execution
@@ -332,7 +344,7 @@ namespace IOStormPlus{
 			vm.SendCommand(table, startCMD);
 		}
 
-        WaitForAllVMs(table, SCCommand::JobDoneCmd);
+        WaitForAllVMs(table, SCCommand::JobDoneCmd, startCMD);
 
 		for (auto &vm : TestVMs) {
 			vm.SendCommand(table, SCCommand::EmptyCmd);

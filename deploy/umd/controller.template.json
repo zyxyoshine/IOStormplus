@@ -226,7 +226,7 @@
 						"osType": "Windows",
                         "name": "[variables('vmOsDiskName')]",
 						"vhd": {
-							"uri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('uniqueStorageAccountName')),providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).primaryEndpoints.blob,variables('uniqueStorageAccountContainerName'),'/',variables('vmOsDiskName'),'.vhd')]"
+							"uri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('uniqueStorageAccountName')),providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).primaryEndpoints.blob,variables('vmOsDiskName'),'/',variables('vmOsDiskName'),'.vhd')]"
 						},
                         "caching": "ReadWrite",
                         "createOption": "FromImage",
