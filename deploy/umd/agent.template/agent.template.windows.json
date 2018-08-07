@@ -194,9 +194,9 @@
                     },
                     "osDisk": {
 						"osType": "Windows",
-                        "name": "[concat(variables('vmOsDiskName'),copyIndex(parameters('vmIndex')),'-osd')]",
+                        "name": "[tolower(concat(variables('vmOsDiskName'),copyIndex(parameters('vmIndex'))))]",
 						"vhd": {
-                            "uri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('uniqueStorageAccountName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).primaryEndpoints.blob, concat(variables('vmOSDiskName'), copyIndex(parameters('vmIndex')),'-osd'),'/',concat(variables('vmOSDiskName'),copyIndex(parameters('vmIndex')),'-osd'), '.vhd')]" 
+                            "uri": "[tolower(concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('uniqueStorageAccountName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).primaryEndpoints.blob, concat(variables('vmOSDiskName'), copyIndex(parameters('vmIndex'))),'/',concat(variables('vmOSDiskName'),copyIndex(parameters('vmIndex'))), '.vhd'))]" 
 						},  
                         "caching": "ReadWrite",
                         "createOption": "FromImage",
@@ -208,9 +208,9 @@
 							"count": "[parameters('vmDataDiskCount')]",
 							"input": {
 								"vhd": {
-                                    "uri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('uniqueStorageAccountName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).primaryEndpoints.blob, concat(variables('vmDataDiskName'), copyIndex(parameters('vmIndex')), '-dd', copyIndex('dataDisks')),'/',concat(variables('vmDataDiskName'),copyIndex(parameters('vmIndex')),'-dd',copyIndex('dataDisks')), '.vhd')]" 
+                                    "uri": "[tolower(concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('uniqueStorageAccountName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).primaryEndpoints.blob, concat(variables('vmDataDiskName'), copyIndex(parameters('vmIndex')), '-', copyIndex('dataDisks')),'/',concat(variables('vmDataDiskName'),copyIndex(parameters('vmIndex')),'-',copyIndex('dataDisks')), '.vhd'))]" 
 								},
-                                "name": "[concat(variables('vmDataDiskName'),copyIndex(parameters('vmIndex')),'-dd',copyIndex('dataDisks'))]",
+                                "name": "[tolower(concat(variables('vmDataDiskName'),copyIndex(parameters('vmIndex')),'-',copyIndex('dataDisks')))]",
 								"diskSizeGB": "[parameters('vmDataDiskSizeInGB')]",
 								"lun": "[copyIndex('dataDisks')]",
 								"createOption": "Empty",
