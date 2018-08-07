@@ -1,6 +1,8 @@
 Param(
     [string] $vmPool,
-    [int] $vmAddCount=0
+    [int] $vmAddCount=0,
+    [string] $vmAdminUserName,
+    [string] $vmAdminPassword
 )
 
 $rg="iostorm" 
@@ -26,6 +28,7 @@ if( $vmAddCount -gt 0 )
                                    -StorageEndpointSuffix $storageEndpointSuffix -vmPool $vmPool `
                                    -vmIndex $index -vmCount $vmAddCount -vmSize $vmSize `
                                    -vmDataDiskCount $vmDataDisks -vmDataDiskSizeInGB $vmDataDiskGB `
+                                   -vmAdminUserName $vmAdminUserName -vmAdminPasswrod $vmAdminPassword `
                                    -verbose 
     }
 }   
