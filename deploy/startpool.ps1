@@ -1,4 +1,5 @@
 Param(
+    [string] $rg,
     [string] $vmPool
 )
 

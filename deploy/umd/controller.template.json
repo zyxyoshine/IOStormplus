@@ -10,17 +10,7 @@
 			"defaultValue": "!!!!1234abcd",
             "type": "String"
         },
-		"controllerVmOsSku": {
-            "defaultValue": "2016-Datacenter",
-            "allowedValues": [
-                "2016-Datacenter"
-            ],
-            "type": "String",
-            "metadata": {
-                "description": "The Windows Server version for the VM."
-            }
-        },
-		"StorageEndpointSuffix": {
+		"storageEndpointSuffix": {
             "defaultValue": "core.windows.net",
             "type": "String"
         },
@@ -78,7 +68,8 @@
 	},
 	"variables": {
         "imagePublisher": "MicrosoftWindowsServer",
-        "imageOffer": "WindowsServer",
+		"imageOffer": "WindowsServerSemiAnnual",
+		"imageSKU": "Datacenter-Core-1709-with-Containers-smalldisk",
         "addressPrefix": "10.0.0.0/16",
         "location": "[resourceGroup().location]",
         "subnetName": "[tolower(concat('sn', resourceGroup().name))]",
@@ -219,7 +210,7 @@
                     "imageReference": {
                         "publisher": "[variables('imagePublisher')]",
                         "offer": "[variables('imageOffer')]",
-                        "sku": "[parameters('controllerVmOsSku')]",
+                        "sku": "[variables('imageSku')]",
                         "version": "latest"
                     },
                     "osDisk": {

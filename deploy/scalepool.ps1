@@ -1,11 +1,11 @@
 Param(
+    [string] $rg,
     [string] $vmPool,
     [int] $vmAddCount=0,
     [string] $vmAdminUserName,
     [string] $vmAdminPassword
 )
 
-$rg="iostorm" 
 $dn=$rg+$vmPool+"scale"
 $acct = "sa"+$rg
 $storageEndpointSuffix= ((Get-AzureRmContext).Environment | Get-AzureRmEnvironment).StorageEndpointSuffix
