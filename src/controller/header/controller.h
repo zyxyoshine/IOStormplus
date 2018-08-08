@@ -47,13 +47,15 @@ namespace IOStormPlus{
 		void RunTest(int argc, char *argv[]);
         void PrintUsage(ControllerCommand command);
         void CheckTestVMHealth();
-		void SetMaxWaitTime(int timeInSec);
+		void SetMaxWaitTime(int timeInSec); //TODO: Add custom setting for the time limit.
 
     private:
         bool m_isReady;
 		int m_maxWaitTimeInSec;
+		string logFileName;
 
 		map<string, vector<string> > workload;
+		map<string, bool> doneJobs;
 
         void InitLogger();
         
@@ -64,9 +66,9 @@ namespace IOStormPlus{
 		void InitWorkload(string configFilename);
 		void UploadWorkload();
 		void DownloadOutput();
+		void UploadLog();
 
-        // Health Check
-        void WaitForAllVMs(azure::storage::cloud_table& table, SCCommand command, SCCommand retryCMd = SCCommand::InvaildCmd);
+        bool WaitForAllVMs(azure::storage::cloud_table& table, SCCommand command, int timeLimitInSec, SCCommand retryCMd = SCCommand::InvaildCmd);
 
         // Test Execution
         void RunStandardTest();

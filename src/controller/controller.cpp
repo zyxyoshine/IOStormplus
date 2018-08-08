@@ -87,7 +87,7 @@ namespace IOStormPlus{
 		azure::storage::table_query_iterator end_of_results;
 		string agentName, internalIP, osType, size, pool;
 		for (; itr != end_of_results; ++itr) {
-			if ((utility::datetime::utc_now() - itr->timestamp()) > IOStormPlus::maxWaitTimeInSec)
+			if ((utility::datetime::utc_now() - itr->timestamp()) > IOStormPlus::maxHeartbeatGapInSec)
 				continue;
 			const azure::storage::table_entity::properties_type& properties = itr->properties();
 
@@ -170,6 +170,16 @@ namespace IOStormPlus{
 		Logger::LogInfo("Upload workload files to blob succeeded.");
 	}
 
+	void Controller::UploadLog() {
+		// Retrieve a reference to a container.
+		azure::storage::cloud_blob_container container = blobClient.get_container_reference(IOStormPlus::logBlobContainerName);
+		// Create the container if it doesn't already exist.
+		container.create_if_not_exists();
+		azure::storage::cloud_block_blob blockBlob = container.get_block_blob_reference(utility::conversions::to_string_t("controller_" + logFileName));
+		blockBlob.upload_from_file(utility::conversions::to_string_t(logFileName));
+		Logger::LogInfo("Upload log to blob succeeded.");
+	}
+
 	/// Download output files from blob
 	void Controller::DownloadOutput() {
 		azure::storage::cloud_blob_container container = blobClient.get_container_reference(IOStormPlus::outputBlobContainerName);
@@ -214,6 +224,7 @@ namespace IOStormPlus{
 			UploadWorkload();
             RunCustomTest();
             Logger::LogInfo("End custom test.");
+			UploadLog();
         }
         else if ( argc == 1 && (strcmp(argv[0], "-std") == 0)) {
             Logger::LogInfo("Start standard test.");
@@ -222,6 +233,7 @@ namespace IOStormPlus{
 			UploadWorkload();
             RunStandardTest();
             Logger::LogInfo("End standard test.");
+			UploadLog();
         }
         else {
             PrintUsage(ControllerCommand::WorkerGeneral);
@@ -274,9 +286,10 @@ namespace IOStormPlus{
     void Controller::InitLogger() {
         time_t t = std::time(0);
         tm* now = std::localtime(&t);
-        stringstream logFilename;
-        logFilename << now->tm_year + 1900 << now->tm_mon + 1 << now->tm_mday << ".log" ;
-        Logger::Init(logFilename.str());
+        stringstream logFileNameStream;
+		logFileNameStream << now->tm_year + 1900 << now->tm_mon + 1 << now->tm_mday << ".log" ;
+		logFileName = logFileNameStream.str();
+        Logger::Init(logFileName);
     }
 
     // Health Check
@@ -288,15 +301,25 @@ namespace IOStormPlus{
             vm.SendCommand(table, SCCommand::SyncCmd);
         }
         // Check all VMs to response sync
-        WaitForAllVMs(table, SCCommand::SyncDoneCmd, SCCommand::SyncCmd);
-        Logger::LogInfo("Test VM pre-sync succeeded!");
+        bool allDone = WaitForAllVMs(table, SCCommand::SyncDoneCmd, IOStormPlus::maxHeartbeatGapInSec);
+		if (!allDone) {
+			for (auto i = TestVMs.begin(); i != TestVMs.end(); i++) {
+				if (!doneJobs[i->GetInternalIP()]) {
+					Logger::LogWarning("Test VM " + i->GetName() + " pre-sync failed!");
+					TestVMs.erase(i);
+				}
+			}
+			WriteConfig();
+		}
+		else
+			Logger::LogInfo("Test VM pre-sync succeeded!");
     }
 
-    void Controller::WaitForAllVMs(azure::storage::cloud_table& table, SCCommand command, SCCommand retryCMD){
+    bool Controller::WaitForAllVMs(azure::storage::cloud_table& table, SCCommand command, int timeLimitInSec, SCCommand retryCMD){
         // Check all VMs to response sync
         Logger::LogInfo("Waiting for agents response.");
         bool allDone = false;
-        map<string, bool> doneJobs;
+		doneJobs.clear();
 		
 		clock_t startTime = clock();
 		double duration;
@@ -317,7 +340,7 @@ namespace IOStormPlus{
                 }
             }
 			duration = (std::clock() - startTime) / (double)CLOCKS_PER_SEC;
-			if (duration > IOStormPlus::maxWaitTimeInSec)
+			if (duration > timeLimitInSec)
 				break;
         }
 		if (!allDone) {
@@ -327,6 +350,7 @@ namespace IOStormPlus{
 				}
 			}
 		}
+		return allDone;
     }
 
     // Test Execution
@@ -344,17 +368,17 @@ namespace IOStormPlus{
 			vm.SendCommand(table, startCMD);
 		}
 
-        WaitForAllVMs(table, SCCommand::JobDoneCmd, startCMD);
-
-		for (auto &vm : TestVMs) {
-			vm.SendCommand(table, SCCommand::EmptyCmd);
-		}
-
-        Logger::LogInfo("All jobs done!");
+        bool allDone = WaitForAllVMs(table, SCCommand::JobDoneCmd, IOStormPlus::maxWaitTimeInSec, startCMD);
+		if (allDone)
+			Logger::LogInfo("All jobs done!");
 
 		DownloadOutput();
         AnalyzeData(startCMD);
         PrintTestResultSummary(startCMD);
+
+		for (auto &vm : TestVMs) {
+			vm.SendCommand(table, SCCommand::EmptyCmd);
+		}
     }
 
     // Agent management
@@ -517,6 +541,9 @@ namespace IOStormPlus{
 				fout << "ID\tName\tIP Address\tOS\tSize\tPool\tR(MIN)\tR(MAX)\tR(AVG)\tW(MIN)\tW(MAX)\tW(AVG)" << endl;
 				string vm_id;
 				for (int i = 0; i < TestVMs.size(); i++) {
+					if (!doneJobs[TestVMs[i].GetInternalIP()]) {
+						continue;
+					}
 					if (TestVMs[i].CountTestResult(job)) {
 						tempStream.clear();
 						tempStream.str("");
@@ -539,6 +566,9 @@ namespace IOStormPlus{
 
     void Controller::AnalyzeData(SCCommand jobCMD) {		
 		for (auto &iter : TestVMs) {
+			if (!doneJobs[iter.GetInternalIP()]) {
+				continue;
+			}
 			if (jobCMD == SCCommand::StartStdJobCmd) {
 				for (auto job : workload["std"]) {
 					AnalyzeJob(job, iter);

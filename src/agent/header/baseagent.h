@@ -44,6 +44,7 @@ namespace IOStormPlus{
 
 		void DownloadWorkload(SCCommand jobCMD, string configFilename);
 		void UploadOutput();
+		void UploadLog();
 
 	private:
 		//Azure Storage Client

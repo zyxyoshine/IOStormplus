@@ -37,6 +37,7 @@ namespace IOStormPlus {
 				if (retryCount % 60 == 0) {
 					Logger::LogInfo("No valid command, waiting");
 					Acknowledge(table, SCCommand::EmptyCmd);
+					UploadLog();
 					retryCount = 1;
 				}
 				retryCount++;
@@ -147,6 +148,16 @@ namespace IOStormPlus {
 			blockBlob.upload_from_file(utility::conversions::to_string_t(GetOutputFolderPath() + fna));
 		}
 		Logger::LogInfo("Upload workload files to blob succeeded.");
+	}
+
+	void BaseAgent::UploadLog() {
+		// Retrieve a reference to a container.
+		azure::storage::cloud_blob_container container = blobClient.get_container_reference(IOStormPlus::logBlobContainerName);
+		// Create the container if it doesn't already exist.
+		container.create_if_not_exists();
+		azure::storage::cloud_block_blob blockBlob = container.get_block_blob_reference(utility::conversions::to_string_t(m_vmName + "_" + LogFilename));
+		blockBlob.upload_from_file(utility::conversions::to_string_t(GetLogFilePath()));
+		Logger::LogInfo("Upload log to blob succeeded.");
 	}
 
 	bool BaseAgent::GetControllerCmd(azure::storage::cloud_table& table, SCCommand &command) {

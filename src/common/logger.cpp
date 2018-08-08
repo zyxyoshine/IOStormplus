@@ -10,7 +10,7 @@ namespace IOStormPlus{
     ///////////////////////////////////////////////////////////////////////////////////////////
 
     void Logger::Init(string filename, LogLevel level, bool needConsoleOutput) {
-        cout << "call log init";
+        cout << "call log init ";
         if (s_logfileStream.is_open()){
             s_logfileStream.close();
         }
