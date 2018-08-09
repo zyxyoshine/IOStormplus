@@ -513,9 +513,8 @@ namespace IOStormPlus{
         string summaryOutputFile;
         time_t t = std::time(0);
         tm* now = std::localtime(&t);
-        tempStream << (now->tm_year + 1900) << '-'
-                   << (now->tm_mon + 1) << '-'
-                   << now->tm_mday;
+        tempStream << now->tm_year + 1900 << now->tm_mon + 1 << now->tm_mday << now->tm_hour << now->tm_min;
+
         tempStream >> summaryOutputFile;
         summaryOutputFile = summaryOutputFile + "_summary.out";
         ofstream fout(OutputFolder + summaryOutputFile, ios_base::out | ios_base::app);

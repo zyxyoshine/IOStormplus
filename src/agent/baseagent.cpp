@@ -4,6 +4,7 @@
 #include <iostream>
 #include <cassert>
 #include <cstdarg>
+#include <ctime>
 
 using namespace rapidjson;
 using namespace std;
@@ -137,6 +138,10 @@ namespace IOStormPlus {
 	}
 
 	void BaseAgent::UploadOutput() {
+		time_t t = std::time(0);
+		tm* now = std::localtime(&t);
+		stringstream timeBufStream;
+		timeBufStream << now->tm_year + 1900 << now->tm_mon + 1 << now->tm_mday << now->tm_hour << now->tm_min;
 		vector<string> outputFiles;
 		outputFiles = ListFilesInDirectory(GetOutputFolderPath());
 		// Retrieve a reference to a container.
@@ -144,10 +149,10 @@ namespace IOStormPlus {
 		// Create the container if it doesn't already exist.
 		container.create_if_not_exists();
 		for (auto fna : outputFiles) {
-			azure::storage::cloud_block_blob blockBlob = container.get_block_blob_reference(utility::conversions::to_string_t(fna));
+			azure::storage::cloud_block_blob blockBlob = container.get_block_blob_reference(utility::conversions::to_string_t(timeBufStream.str() + "_" + fna));
 			blockBlob.upload_from_file(utility::conversions::to_string_t(GetOutputFolderPath() + fna));
 		}
-		Logger::LogInfo("Upload workload files to blob succeeded.");
+		Logger::LogInfo("Upload output files to blob succeeded.");
 	}
 
 	void BaseAgent::UploadLog() {
