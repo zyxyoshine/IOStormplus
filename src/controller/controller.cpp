@@ -8,6 +8,7 @@
 #include <ctime>
 #include <iostream>
 #include <cassert>
+#include <iomanip>
 
 using namespace rapidjson;
 using namespace std;
@@ -287,7 +288,13 @@ namespace IOStormPlus{
         time_t t = std::time(0);
         tm* now = std::localtime(&t);
         stringstream logFileNameStream;
-		logFileNameStream << now->tm_year + 1900 << now->tm_mon + 1 << now->tm_mday << now->tm_hour << now->tm_min << ".log" ;
+		logFileNameStream << now->tm_year + 1900
+			<< setw(2) << setfill('0') << now->tm_mon + 1
+			<< setw(2) << setfill('0') << now->tm_mday
+			<< setw(2) << setfill('0') << now->tm_hour
+			<< setw(2) << setfill('0') << now->tm_min 
+			<< ".log" ;
+
 		logFileName = logFileNameStream.str();
         Logger::Init(logFileName);
     }
@@ -513,7 +520,11 @@ namespace IOStormPlus{
         string summaryOutputFile;
         time_t t = std::time(0);
         tm* now = std::localtime(&t);
-        tempStream << now->tm_year + 1900 << now->tm_mon + 1 << now->tm_mday << now->tm_hour << now->tm_min;
+        tempStream << now->tm_year + 1900 
+					<< setw(2) << setfill('0') << now->tm_mon + 1 
+					<< setw(2) << setfill('0') << now->tm_mday 
+					<< setw(2) << setfill('0') << now->tm_hour 
+					<< setw(2) << setfill('0') << now->tm_min;
 
         tempStream >> summaryOutputFile;
         summaryOutputFile = summaryOutputFile + "_summary.out";
@@ -596,7 +607,7 @@ namespace IOStormPlus{
         }
 
         Logger::LogInfo("Start AnalyzeJob " + jobName + "(" + vm.GetName() + ")");
-        const string outputFile = OutputFolder + vm.GetName() + "_" + jobName + ".out";
+        const string outputFile = OutputFolder + "latest_" + vm.GetName() + "_" + jobName + ".out";
 
         vm.SetTestResult(job, AnalyzeStandardOutput(outputFile));
     }

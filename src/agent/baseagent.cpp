@@ -5,6 +5,7 @@
 #include <cassert>
 #include <cstdarg>
 #include <ctime>
+#include <iomanip>
 
 using namespace rapidjson;
 using namespace std;
@@ -141,7 +142,12 @@ namespace IOStormPlus {
 		time_t t = std::time(0);
 		tm* now = std::localtime(&t);
 		stringstream timeBufStream;
-		timeBufStream << now->tm_year + 1900 << now->tm_mon + 1 << now->tm_mday << now->tm_hour << now->tm_min;
+		timeBufStream << now->tm_year + 1900
+			<< setw(2) << setfill('0') << now->tm_mon + 1
+			<< setw(2) << setfill('0') << now->tm_mday
+			<< setw(2) << setfill('0') << now->tm_hour
+			<< setw(2) << setfill('0') << now->tm_min;
+
 		vector<string> outputFiles;
 		outputFiles = ListFilesInDirectory(GetOutputFolderPath());
 		// Retrieve a reference to a container.
@@ -150,6 +156,8 @@ namespace IOStormPlus {
 		container.create_if_not_exists();
 		for (auto fna : outputFiles) {
 			azure::storage::cloud_block_blob blockBlob = container.get_block_blob_reference(utility::conversions::to_string_t(timeBufStream.str() + "_" + fna));
+			blockBlob.upload_from_file(utility::conversions::to_string_t(GetOutputFolderPath() + fna));
+			blockBlob = container.get_block_blob_reference(utility::conversions::to_string_t("latest_" + fna));
 			blockBlob.upload_from_file(utility::conversions::to_string_t(GetOutputFolderPath() + fna));
 		}
 		Logger::LogInfo("Upload output files to blob succeeded.");
