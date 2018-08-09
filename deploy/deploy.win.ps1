@@ -66,7 +66,7 @@ netsh advfirewall set publicprofile state off
 $VMSize = $args[3]
 $VMPool = $args[4]
 $VMSize | Out-File ($WorkspacePath + 'vmsize.txt')
-$VMIp = foreach($ip in (ipconfig) -like '*IPv4*') { ($ip -split ' : ')[-1]}
+$VMIp = (Get-NetIPAddress -AddressFamily IPv4 | where { $_.InterfaceAlias -notmatch 'Loopback'} | where { $_.InterfaceAlias -notmatch 'vEthernet'}).IPAddress
 $agentName = "agent.exe"
 $agentPath = $WorkspacePath + $agentName
 $args = ' ' + $VMIp + ' ' + $VMSize + ' ' + $VMPool + ' ' + $storageConnectionString
