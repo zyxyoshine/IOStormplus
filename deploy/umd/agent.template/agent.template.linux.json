@@ -213,7 +213,7 @@
 					"fileUris": [
 						"https://raw.githubusercontent.com/zyxyoshine/IOStormplus/master/deploy/deploy.linux.sh"
 					],
-					"commandToExecute": "[concat('sudo sh ','deploy.linux.sh \"DefaultEndpointsProtocol=https;AccountName=',variables('uniqueStorageAccountName'),';AccountKey=',listKeys(concat('Microsoft.Storage/storageAccounts/', variables('uniqueStorageAccountName')), '2015-06-15').key1,';EndpointSuffix=',parameters('StorageEndpointSuffix'),'\" ',parameters('vmSize'),' ',parameters('vmPool'))]"
+					"commandToExecute": "[concat('sudo bash ','deploy.linux.sh \"DefaultEndpointsProtocol=https;AccountName=',variables('uniqueStorageAccountName'),';AccountKey=',listKeys(concat('Microsoft.Storage/storageAccounts/', variables('uniqueStorageAccountName')), '2015-06-15').key1,';EndpointSuffix=',parameters('StorageEndpointSuffix'),'\" ',parameters('vmSize'),' ',parameters('vmPool'))]"
 				}
             },
             "dependsOn": [
