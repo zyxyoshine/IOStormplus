@@ -287,7 +287,7 @@ namespace IOStormPlus{
         time_t t = std::time(0);
         tm* now = std::localtime(&t);
         stringstream logFileNameStream;
-		logFileNameStream << now->tm_year + 1900 << now->tm_mon + 1 << now->tm_mday << ".log" ;
+		logFileNameStream << now->tm_year + 1900 << now->tm_mon + 1 << now->tm_mday << now->tm_hour << now->tm_min << ".log" ;
 		logFileName = logFileNameStream.str();
         Logger::Init(logFileName);
     }
@@ -622,6 +622,8 @@ namespace IOStormPlus{
                 pos += 12;
                 res.WriteIOPS.push_back(GetIOPSNumber(buf, pos));
             }
+			if (buf.find("Disk stats") != string::npos)
+				break;
         }
 
         Logger::LogInfo("End AnalyzeStandardOutput " + outputFile);

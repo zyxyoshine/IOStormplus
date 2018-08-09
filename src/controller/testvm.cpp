@@ -57,6 +57,9 @@ namespace IOStormPlus {
             readMaxIOPS = max(readMaxIOPS, iter);
             readAvgIOPS += iter;
         }
+		
+		if (readMinIOPS == (1 << 30))
+			readMinIOPS = 0;
 
         if (m_testResults[jobName].ReadIOPS.size() != 0) {
             readAvgIOPS /= m_testResults[jobName].ReadIOPS.size();
@@ -67,6 +70,9 @@ namespace IOStormPlus {
             writeMaxIOPS = max(writeMaxIOPS, iter);
             writeAvgIOPS += iter;
         }
+
+		if (writeMinIOPS == (1 << 30))
+			writeMinIOPS = 0;
 
         if (m_testResults[jobName].WriteIOPS.size() != 0) {
             writeAvgIOPS /= m_testResults[jobName].WriteIOPS.size();
