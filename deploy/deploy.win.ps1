@@ -38,21 +38,20 @@ $FioMSIArguments = @(
 Start-Process "msiexec.exe" -ArgumentList $FioMSIArguments -Wait -NoNewWindow
 Remove-Item ($WorkspacePath + $FioBinaryName)
 
-#Initialize data disks
-$disks = Get-Disk | Where partitionstyle -eq 'raw' | sort number
-
-$letters = 70..89 | ForEach-Object { [char]$_ }
-$count = 0
-$label = "data"
-
-foreach ($disk in $disks) {
-    $driveLetter = $letters[$count].ToString()
-    $disk |
-    Initialize-Disk -PartitionStyle MBR -PassThru |
-    New-Partition -UseMaximumSize -DriveLetter $driveLetter |
-    Format-Volume -FileSystem NTFS -NewFileSystemLabel ($label + $count) -Confirm:$false -Force
-    $count++
-}
+#Create storage space over data disks
+$poolname = "datapool"
+$vdname = "datavd"
+$disks = Get-PhysicalDisk -CanPool $True
+$storage = Get-StorageSubSystem
+$pool = New-StoragePool -FriendlyName $poolname -PhysicalDisks $disks -StorageSubSystemName $storage.Name
+$vdisk = New-VirtualDisk -FriendlyName $vdname `
+                -ResiliencySettingName Simple `
+                -NumberOfColumns $Disks.Count `
+                -UseMaximumSize -Interleave 256KB -StoragePoolFriendlyName $poolname
+$vdiskNumber = (Get-disk -FriendlyName $vdname).Number
+Initialize-Disk -FriendlyName $vdname
+$partition = New-Partition -UseMaximumSize -DiskNumber $vdiskNumber -DriveLetter X
+Format-Volume -DriveLetter X -FileSystem ReFS -NewFileSystemLabel "data"
 
 #Create Azure Storage connection string
 $storageAccountName = 'AccountName=' + $args[0] + ';'

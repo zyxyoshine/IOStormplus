@@ -28,7 +28,7 @@ if( $vmAddCount -gt 0 )
                                    -StorageEndpointSuffix $storageEndpointSuffix -vmPool $vmPool `
                                    -vmIndex $index -vmCount $vmAddCount -vmSize $vmSize `
                                    -vmDataDiskCount $vmDataDisks -vmDataDiskSizeInGB $vmDataDiskGB `
-                                   -vmAdminUserName $vmAdminUserName -vmAdminPasswrod $vmAdminPassword `
+                                   -vmAdminUserName $vmAdminUserName -vmAdminPassword $vmAdminPassword `
                                    -verbose 
     }
 }   
