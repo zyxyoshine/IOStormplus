@@ -35,9 +35,10 @@
             }
         },
 		"vmOsSku": {
-            "defaultValue": "2016-Datacenter",
+            "defaultValue": "Datacenter-Core-1709-with-Containers-smalldisk",
             "allowedValues": [
-                "2016-Datacenter"
+                "2016-Datacenter",
+                "Datacenter-Core-1709-with-Containers-smalldisk"
             ],
             "type": "String",
             "metadata": {
@@ -68,7 +69,7 @@
 	},
 	"variables": {
         "imagePublisher": "MicrosoftWindowsServer",
-        "imageOffer": "WindowsServer",
+		"imageOffer": "WindowsServerSemiAnnual",
         "addressPrefix": "10.0.0.0/16",
         "location": "[resourceGroup().location]",
         "subnetName": "[tolower(concat('sn', resourceGroup().name))]",

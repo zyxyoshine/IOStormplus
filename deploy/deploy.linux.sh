@@ -23,5 +23,6 @@ vgcreate datavg ${disks[*]}
 lvcreate -l 100%FREE --type striped -i ${#disks[*]} -n datav datavg
 mkfs -t ext4 /dev/mapper/datavg-datav
 mkdir /data
-mount -t ext4 /dev/mapper/datavg-datav  /data
 chmod 777 /data
+bash -c 'echo -e "/dev/datavg/datav\t/data\text4\tdefaults,nofail,barrier=0\t0\t2" >> /etc/fstab'
+mount -a

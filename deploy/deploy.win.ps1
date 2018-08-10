@@ -41,17 +41,17 @@ Remove-Item ($WorkspacePath + $FioBinaryName)
 #Create storage space over data disks
 $poolname = "datapool"
 $vdname = "datavd"
-$disks = Get-PhysicalDisk -CanPool $True
+$disks = Get-PhysicalDisk | where BusType -eq "SAS"
 $storage = Get-StorageSubSystem
 $pool = New-StoragePool -FriendlyName $poolname -PhysicalDisks $disks -StorageSubSystemName $storage.Name
 $vdisk = New-VirtualDisk -FriendlyName $vdname `
                 -ResiliencySettingName Simple `
                 -NumberOfColumns $Disks.Count `
-                -UseMaximumSize -Interleave 256KB -StoragePoolFriendlyName $poolname
+                -UseMaximumSize -Interleave 65536 -StoragePoolFriendlyName $poolname
 $vdiskNumber = (Get-disk -FriendlyName $vdname).Number
-Initialize-Disk -FriendlyName $vdname
+Initialize-Disk -FriendlyName $vdname -PartitionStyle GPT -PassThru
 $partition = New-Partition -UseMaximumSize -DiskNumber $vdiskNumber -DriveLetter X
-Format-Volume -DriveLetter X -FileSystem ReFS -NewFileSystemLabel "data"
+Format-Volume -DriveLetter X -FileSystem NTFS -NewFileSystemLabel "data" -AllocationUnitSize 65536
 
 #Create Azure Storage connection string
 $storageAccountName = 'AccountName=' + $args[0] + ';'
@@ -66,7 +66,7 @@ netsh advfirewall set publicprofile state off
 $VMSize = $args[3]
 $VMPool = $args[4]
 $VMSize | Out-File ($WorkspacePath + 'vmsize.txt')
-$VMIp = (Get-NetIPAddress -AddressFamily IPv4 | where { $_.InterfaceAlias -notmatch 'Loopback'} | where { $_.InterfaceAlias -notmatch 'vEthernet'}).IPAddress
+$VMIp = (Get-NetIPAddress -AddressFamily IPv4 | where { $_.InterfaceAlias -notmatch 'Loopback'} | where { $_.InterfaceAlias -notmatch 'vEthernet'}).IPAddress   
 $agentName = "agent.exe"
 $agentPath = $WorkspacePath + $agentName
 $args = ' ' + $VMIp + ' ' + $VMSize + ' ' + $VMPool + ' ' + $storageConnectionString
