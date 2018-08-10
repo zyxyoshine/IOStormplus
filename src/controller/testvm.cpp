@@ -79,10 +79,20 @@ namespace IOStormPlus {
         }
 
         stringstream tempStream;
-        tempStream << GetName() << "\t" << GetInternalIP() << "\t" << GetOSTypeName() + "\t" + GetSize() + "\t" + GetPool()
-                   << "\t" << readMinIOPS << "\t" << readMaxIOPS << "\t" << readAvgIOPS << "\t"
-                   << writeMinIOPS << "\t" << writeMaxIOPS << "\t" << writeAvgIOPS;
-        // Logger::LogVerbose(tempStream.str());
+		tempStream << GetName() << "\t" << GetInternalIP() << "\t" << GetOSTypeName() + "\t" + GetSize() + "\t" + GetPool();
+		vector<int> outputData;
+		outputData.push_back(readMinIOPS);
+		outputData.push_back(readMaxIOPS);
+		outputData.push_back(readAvgIOPS);
+		outputData.push_back(writeMinIOPS);
+		outputData.push_back(writeMaxIOPS);
+		outputData.push_back(writeAvgIOPS);
+		for (auto data : outputData) {
+			if (data == 0)
+				tempStream << "\tN/A";
+			else
+				tempStream << "\t" << data;
+		}
         return tempStream.str();
     }
 

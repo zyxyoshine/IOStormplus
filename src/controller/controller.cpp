@@ -189,7 +189,13 @@ namespace IOStormPlus{
 			if (it->is_blob()) {
 				std::wcout << U("Blob: ") << it->as_blob().uri().primary_uri().to_string() << std::endl;
 				string blobName = utility::conversions::to_utf8string(it->as_blob().name());
-				it->as_blob().download_to_file(utility::conversions::to_string_t(OutputFolder + blobName));
+				concurrency::streams::container_buffer<std::vector<uint8_t>> buffer;
+				concurrency::streams::ostream outputStream(buffer);
+				it->as_blob().download_to_stream(outputStream);
+				ofstream outfile(OutputFolder + blobName, ios_base::out | ios_base::binary | ios_base::trunc);
+				std::vector<unsigned char>& data = buffer.collection();
+				outfile.write((char *)&data[0], buffer.size());
+				outfile.close();
 			}
 		}
 	}
