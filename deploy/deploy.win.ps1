@@ -38,21 +38,20 @@ $FioMSIArguments = @(
 Start-Process "msiexec.exe" -ArgumentList $FioMSIArguments -Wait -NoNewWindow
 Remove-Item ($WorkspacePath + $FioBinaryName)
 
-#Initialize data disks
-$disks = Get-Disk | Where partitionstyle -eq 'raw' | sort number
-
-$letters = 70..89 | ForEach-Object { [char]$_ }
-$count = 0
-$label = "data"
-
-foreach ($disk in $disks) {
-    $driveLetter = $letters[$count].ToString()
-    $disk |
-    Initialize-Disk -PartitionStyle MBR -PassThru |
-    New-Partition -UseMaximumSize -DriveLetter $driveLetter |
-    Format-Volume -FileSystem NTFS -NewFileSystemLabel ($label + $count) -Confirm:$false -Force
-    $count++
-}
+#Create storage space over data disks
+$poolname = "datapool"
+$vdname = "datavd"
+$disks = Get-PhysicalDisk -CanPool $True
+$storage = Get-StorageSubSystem
+$pool = New-StoragePool -FriendlyName $poolname -PhysicalDisks $disks -StorageSubSystemName $storage.Name
+$vdisk = New-VirtualDisk -FriendlyName $vdname `
+                -ResiliencySettingName Simple `
+                -NumberOfColumns $Disks.Count `
+                -UseMaximumSize -Interleave 256KB -StoragePoolFriendlyName $poolname
+$vdiskNumber = (Get-disk -FriendlyName $vdname).Number
+Initialize-Disk -FriendlyName $vdname
+$partition = New-Partition -UseMaximumSize -DiskNumber $vdiskNumber -DriveLetter X
+Format-Volume -DriveLetter X -FileSystem ReFS -NewFileSystemLabel "data"
 
 #Create Azure Storage connection string
 $storageAccountName = 'AccountName=' + $args[0] + ';'
@@ -67,7 +66,7 @@ netsh advfirewall set publicprofile state off
 $VMSize = $args[3]
 $VMPool = $args[4]
 $VMSize | Out-File ($WorkspacePath + 'vmsize.txt')
-$VMIp = foreach($ip in (ipconfig) -like '*IPv4*') { ($ip -split ' : ')[-1]}
+$VMIp = (Get-NetIPAddress -AddressFamily IPv4 | where { $_.InterfaceAlias -notmatch 'Loopback'} | where { $_.InterfaceAlias -notmatch 'vEthernet'}).IPAddress
 $agentName = "agent.exe"
 $agentPath = $WorkspacePath + $agentName
 $args = ' ' + $VMIp + ' ' + $VMSize + ' ' + $VMPool + ' ' + $storageConnectionString

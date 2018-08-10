@@ -18,10 +18,10 @@ echo "nohup /home/IOStormplus/agent $(hostname --ip-address) $2 $3 \"$1\" >/dev/
 cd /home/IOStormplus && nohup ./agent $(hostname --ip-address) $2 $3 $1 >/dev/null 2>agent.err &
 #create one volume striped over all data disks
 disks=($(lsblk -l -p -o NAME | grep "sd" | grep -v "sda" | grep -v "sdb"))
-pvcreate ${disks[*]}
-vgcreate datavg ${disks[*]}
-lvcreate -l 100%FREE --type striped -i ${#disks[@]} -n datav datavg
-mkfs -t ext3 /dev/mapper/datavg-datav
-mkdir /mnt/data
-mount -t ext3 /dev/mapper/datavg-datav  /mnt/data
-chmod 777 /mnt/data
+sudo pvcreate ${disks[*]}
+sudo vgcreate datavg ${disks[*]}
+sudo lvcreate -l 100%FREE --type striped -i ${#disks[*]} -n datav datavg
+sudo mkfs -t ext4 /dev/mapper/datavg-datav
+sudo mkdir /data
+sudo mount -t ext4 /dev/mapper/datavg-datav  /data
+sudo chmod 777 /data

@@ -19,10 +19,10 @@ $storageEndpointSuffixBuf = 'ENDPOINTSUF=' + $args[2]
 ($storageAccountBuf + [Environment]::NewLine + $storageAccountKeyBuf + [Environment]::NewLine + $storageEndpointSuffixBuf) |  Out-File -encoding ASCII ($Workspace + $storageConfigFileName)
 
 # Install AzureRM 
-Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser
+Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
 Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
-Install-Module -Name AzureRm.BootStrapper -Force -Scope CurrentUser 
-Use-AzureRmProfile -Profile 2017-03-09-profile -Force -Scope CurrentUser
+Install-Module -Name AzureRm.BootStrapper -Force  
+Use-AzureRmProfile -Profile 2017-03-09-profile -Force
 
 
 #Enable PSRemoting
