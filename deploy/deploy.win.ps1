@@ -1,5 +1,5 @@
-﻿#$logFile = 'C:\deploylog.txt'
-#Start-Transcript $logFile -Append -Force
+﻿$logFile = 'C:\deploylog.txt'
+Start-Transcript $logFile -Append -Force
 
 $Root = "C:\"
 $WorkspacePath = $Root + "IOStormplus\"
@@ -78,7 +78,7 @@ $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -RunOnlyIfNetworkAv
 Unregister-ScheduledTask -TaskName "VMIOSTORM" -Confirm:0 -ErrorAction Ignore
 Register-ScheduledTask -Action $action -Trigger $trigger -TaskName "VMIOSTORM" -Description "VM iostorm agent" -User "System" -RunLevel Highest -Settings $settings
 
-#Stop-Transcript
+Stop-Transcript
 
 #Enable PSRemoting
 
