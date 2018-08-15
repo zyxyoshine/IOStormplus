@@ -1,16 +1,18 @@
-; -rand-RW.job for fiotest on linux
+; -rand-RW.job for fiotest on windows
 
-[job]
+[global]
 name=fio-rand-RW
 rw=randrw
 rwmixread=60
 rwmixwrite=40
 bs=8K
 direct=1
-numjobs=4
+numjobs=16
 time_based=1
 runtime=120
 group_reporting=1
-directory=/data
-size=1G
-iodepth=4
+
+[jobx]
+directory=X\:\\
+size=4G
+iodepth=16
