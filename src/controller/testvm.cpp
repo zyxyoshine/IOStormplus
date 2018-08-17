@@ -45,48 +45,13 @@ namespace IOStormPlus {
     }
 
     string TestVM::GetTestResult(const string& jobName) {
-        int readMinIOPS = 1 << 30;
-        int readMaxIOPS = 0;
-        int readAvgIOPS = 0;
-        int writeMinIOPS = 1 << 30;;
-        int writeMaxIOPS = 0;
-        int writeAvgIOPS = 0;
-
-        for (auto &iter : m_testResults[jobName].ReadIOPS) {
-            readMinIOPS = min(readMinIOPS, iter);
-            readMaxIOPS = max(readMaxIOPS, iter);
-            readAvgIOPS += iter;
-        }
-		
-		if (readMinIOPS == (1 << 30))
-			readMinIOPS = 0;
-
-        if (m_testResults[jobName].ReadIOPS.size() != 0) {
-            readAvgIOPS /= m_testResults[jobName].ReadIOPS.size();
-        }
-
-        for (auto &iter : m_testResults[jobName].WriteIOPS) {
-            writeMinIOPS = min(writeMinIOPS, iter);
-            writeMaxIOPS = max(writeMaxIOPS, iter);
-            writeAvgIOPS += iter;
-        }
-
-		if (writeMinIOPS == (1 << 30))
-			writeMinIOPS = 0;
-
-        if (m_testResults[jobName].WriteIOPS.size() != 0) {
-            writeAvgIOPS /= m_testResults[jobName].WriteIOPS.size();
-        }
-
         stringstream tempStream;
 		tempStream << GetName() << "\t" << GetInternalIP() << "\t" << GetOSTypeName() + "\t" + GetSize() + "\t" + GetPool();
-		vector<int> outputData;
-		outputData.push_back(readMinIOPS);
-		outputData.push_back(readMaxIOPS);
-		outputData.push_back(readAvgIOPS);
-		outputData.push_back(writeMinIOPS);
-		outputData.push_back(writeMaxIOPS);
-		outputData.push_back(writeAvgIOPS);
+		vector<double> outputData;
+		outputData.push_back(m_testResults[jobName].readIOPS);
+		outputData.push_back(m_testResults[jobName].readLat);
+		outputData.push_back(m_testResults[jobName].writeIOPS);
+		outputData.push_back(m_testResults[jobName].writeLat);
 		for (auto data : outputData) {
 			if (data == 0)
 				tempStream << "\tN/A";

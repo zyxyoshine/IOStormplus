@@ -22,12 +22,11 @@ namespace IOStormPlus{
 
     // TODO: Move to report class
     struct ReportSummary {
-        vector<int> ReadIOPS;
-        vector<int> WriteIOPS;
-        ReportSummary() {
-            ReadIOPS.clear();
-            WriteIOPS.clear();
-        }
+		double readIOPS,writeIOPS;
+		double readLat,writeLat;
+		ReportSummary() {
+			readIOPS = writeIOPS = readLat = writeLat = 0;
+		}
     };
 
     class TestVM {
@@ -51,7 +50,8 @@ namespace IOStormPlus{
         OSType GetOSType();
 
         void SendCommand(azure::storage::cloud_table& table, SCCommand command = EmptyCmd);
-        bool GetResponse(azure::storage::cloud_table& table, SCCommand command, SCCommand retryCMD = SCCommand::InvaildCmd);
+		void Reinit(azure::storage::cloud_table& table);
+        int GetResponse(azure::storage::cloud_table& table, SCCommand command, SCCommand retryCMD = SCCommand::InvaildCmd);
 		
     private:
         string m_name;

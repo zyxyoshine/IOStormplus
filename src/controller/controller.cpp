@@ -43,6 +43,7 @@ namespace IOStormPlus{
 		}
 		catch (const exception& e) {
 			Logger::LogError(e.what());
+			UploadLog();
 		}
         m_isReady = true;
     }
@@ -220,6 +221,7 @@ namespace IOStormPlus{
 		}
 		catch (const exception& e) {
 			Logger::LogError(e.what());
+			UploadLog();
 		}
     }
 
@@ -303,9 +305,13 @@ namespace IOStormPlus{
 			}
 			else
 				Logger::LogInfo("Test VM pre-sync succeeded!");
+			for (auto &vm : TestVMs) {
+				vm.SendCommand(table, SCCommand::EmptyCmd);
+			}
 		}
 		catch (const exception& e) {
 			Logger::LogError(e.what());
+			UploadLog();
 		}
     }
 
@@ -544,8 +550,8 @@ namespace IOStormPlus{
 			for (auto job : jobs) {
 				Logger::LogInfo("Job: " + job);
 				fout << "Job: " + job << endl;
-				Logger::LogInfo("ID\tName\tIP Address\tOS\tSize\tPool\tR(MIN)\tR(MAX)\tR(AVG)\tW(MIN)\tW(MAX)\tW(AVG)");
-				fout << "ID\tName\tIP Address\tOS\tSize\tPool\tR(MIN)\tR(MAX)\tR(AVG)\tW(MIN)\tW(MAX)\tW(AVG)" << endl;
+				Logger::LogInfo("ID\tName\tIP Address\tOS\tSize\tPool\tReadIOPS(AVG)\tReadLat(AVG)\tWriteIOPS(AVG)\tWriteLat(AVG)");
+				fout << "ID\tName\tIP Address\tOS\tSize\tPool\tReadIOPS(AVG)\tReadLat(AVG)\tWriteIOPS(AVG)\tWriteLat(AVG)" << endl;
 				string vm_id;
 				for (int i = 0; i < TestVMs.size(); i++) {
 					if (!doneJobs[TestVMs[i].GetInternalIP()]) {
@@ -615,23 +621,42 @@ namespace IOStormPlus{
         ifstream fin(outputFile, ios_base::in);
         string buf;
         ReportSummary res;
-
+		int flag = 0; // 0: not found, 1: read, 2: write
         while (!fin.eof()) {
             getline(fin, buf);
-            int pos = buf.find("IOPS=");
-            if (pos != string::npos) {
-                pos += 11;
-                res.IOPS.push_back((int)GetNumber(buf, pos));
-            }
+            int pos = buf.find("read:");
+			if (pos != string::npos)
+				flag = 1;
+			else {
+				pos = buf.find("write:");
+				if (pos != string::npos)
+					flag = 2;
+			}
 
-            pos = buf.find("lat (usec): ");
-            if (pos != string::npos) {
-				pos = buf.find("avg=") + 4;
-                res.lat.push_back(GetNumber(buf, pos));
-            }
+			if (flag != 1 && flag != 2)
+				continue;
 
 			if (buf.find("Disk stats") != string::npos)
 				break;
+
+			pos = buf.find("IOPS=");
+            if (pos != string::npos) {
+                pos += 5;
+				if (flag == 1)
+					res.readIOPS = GetNumber(buf, pos);
+				else
+					res.writeIOPS = GetNumber(buf, pos);
+            }
+
+            pos = buf.find("lat (usec):");
+			if (pos != string::npos) {
+				pos = buf.find("avg=") + 4;
+				if (flag == 1)
+					res.readLat = GetNumber(buf, pos);
+				else
+					res.writeLat = GetNumber(buf, pos);
+			}
+
         }
 
         Logger::LogInfo("End AnalyzeStandardOutput " + outputFile);
