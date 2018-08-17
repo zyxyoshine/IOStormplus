@@ -18,59 +18,30 @@ namespace IOStormPlus{
     ////////////////////////////////////////////////////////////////////////////////////////////
     // Public function
     ///////////////////////////////////////////////////////////////////////////////////////////
-    Controller::Controller(string configFilename, string storageConfigFileName) {
-        InitLogger();
-        m_isReady = false;
-
-        /* Load JSON file */
-        fstream fin(configFilename);
-        Logger::LogInfo("Open Configuration file: " + configFilename);
-        string data, content = "";
-        while (!fin.eof()) {
-            getline(fin, data);
-            content += data;
-        }
-        fin.close();
-
-        // TODO: Handle configFilename not exisi
-
-        Document VMConfig;
-        if (VMConfig.Parse(content.c_str()).HasParseError()) {
-            stringstream logStream;
-            logStream << "parse test VM configuration failed! " << content.c_str() << endl;
-            Logger::LogError(logStream.str());
-            return;
-        }
-        Logger::LogInfo("Configure File has been parsed successfully!");
-
-        int vmCount = VMConfig["count"].GetInt();
-        auto vmInfo = VMConfig["value"].GetArray();
-
-        stringstream logStream;
-        logStream << "Test VM Count " << vmCount;
-        Logger::LogInfo(logStream.str());
-
-        for (int i = 0; i < vmCount; ++i) {
-            TestVMs.push_back(TestVM(vmInfo[i]["name"].GetString(), vmInfo[i]["ip"].GetString(), vmInfo[i]["info"]["type"].GetString(), vmInfo[i]["info"]["size"].GetString(), vmInfo[i]["info"]["pool"].GetString()));
-        }
-
-		fin.open(storageConfigFileName, ios_base::in);
-		Logger::LogInfo("Open Azure Storage configuration file: " + storageConfigFileName);
-		string storageAccountName, storageAccountKey, storageEndpointSuffix;
-		getline(fin, storageAccountName);
-		getline(fin, storageAccountKey);
-		getline(fin, storageEndpointSuffix);
-		fin.close();
-		storageAccountName.replace(storageAccountName.find("NAME="), 5, "");
-		storageAccountKey.replace(storageAccountKey.find("KEY="), 4, "");
-		storageEndpointSuffix.replace(storageEndpointSuffix.find("ENDPOINTSUF="), 12, "");
-		const utility::string_t storageConnectionString = utility::conversions::to_string_t("DefaultEndpointsProtocol=https;AccountName=" + storageAccountName + ";AccountKey=" + storageAccountKey + ";EndpointSuffix=" + storageEndpointSuffix);
+    Controller::Controller(string storageConfigFileName) {
+		m_isReady = false;
 		try {
+			InitLogger();
+			/* Load JSON file */
+			fstream fin;
+			fin.open(storageConfigFileName, ios_base::in);
+			Logger::LogInfo("Open Azure Storage configuration file: " + storageConfigFileName);
+			string storageAccountName, storageAccountKey, storageEndpointSuffix;
+			getline(fin, storageAccountName);
+			getline(fin, storageAccountKey);
+			getline(fin, storageEndpointSuffix);
+			fin.close();
+			storageAccountName.replace(storageAccountName.find("NAME="), 5, "");
+			storageAccountKey.replace(storageAccountKey.find("KEY="), 4, "");
+			storageEndpointSuffix.replace(storageEndpointSuffix.find("ENDPOINTSUF="), 12, "");
+			const utility::string_t storageConnectionString = utility::conversions::to_string_t("DefaultEndpointsProtocol=https;AccountName=" + storageAccountName + ";AccountKey=" + storageAccountKey + ";EndpointSuffix=" + storageEndpointSuffix);
 			azure::storage::cloud_storage_account storageAccount = azure::storage::cloud_storage_account::parse(storageConnectionString);
 			tableClient = storageAccount.create_cloud_table_client();
 			blobClient = storageAccount.create_cloud_blob_client();
+			InitAgents();
+			failedJobs.clear();
 		}
-		catch(const std::exception& e) {
+		catch (const exception& e) {
 			Logger::LogError(e.what());
 		}
         m_isReady = true;
@@ -100,11 +71,11 @@ namespace IOStormPlus{
 			pool = utility::conversions::to_utf8string(properties.at(IOStormPlus::tablePoolColumnName).string_value());
 
 			TestVMs.push_back(TestVM(agentName, internalIP, osType, size, pool));
-			Logger::LogInfo("Register test VM " + agentName + " succeeded.");
+			//Logger::LogInfo("Register test VM " + agentName + " succeeded.");
 		}
-
-        WriteConfig();
-        PrintTestVMInfo();
+	   
+       // WriteConfig();
+       // PrintTestVMInfo();
     }
 
     /// True: if the Controller is ready for operation
@@ -224,42 +195,47 @@ namespace IOStormPlus{
 
     /// Run Test command
     void Controller::RunTest(int argc, char *argv[]) {
-        if (argc == 0) {
-            Logger::LogInfo("Start custom test.");
-            CheckTestVMHealth();
-			InitWorkload(IOStormPlus::workloadConfigFileName);
-			UploadWorkload();
-            RunCustomTest();
-            Logger::LogInfo("End custom test.");
-			UploadLog();
-        }
-        else if ( argc == 1 && (strcmp(argv[0], "-std") == 0)) {
-            Logger::LogInfo("Start standard test.");
-            CheckTestVMHealth();
-			InitWorkload(IOStormPlus::workloadConfigFileName);
-			UploadWorkload();
-            RunStandardTest();
-            Logger::LogInfo("End standard test.");
-			UploadLog();
-        }
-        else {
-            PrintUsage(ControllerCommand::WorkerGeneral);
-        }
+		try {
+			if (argc == 0) {
+				Logger::LogInfo("Start custom test.");
+				CheckTestVMHealth();
+				InitWorkload(IOStormPlus::workloadConfigFileName);
+				UploadWorkload();
+				RunCustomTest();
+				Logger::LogInfo("End custom test.");
+				UploadLog();
+			}
+			else if (argc == 1 && (strcmp(argv[0], "-std") == 0)) {
+				Logger::LogInfo("Start standard test.");
+				CheckTestVMHealth();
+				InitWorkload(IOStormPlus::workloadConfigFileName);
+				UploadWorkload();
+				RunStandardTest();
+				Logger::LogInfo("End standard test.");
+				UploadLog();
+			}
+			else {
+				PrintUsage(ControllerCommand::WorkerGeneral);
+			}
+		}
+		catch (const exception& e) {
+			Logger::LogError(e.what());
+		}
     }
 
     /// Usage
     void Controller::PrintUsage(ControllerCommand command) {
-        cout<<"Usage";
         switch(command) {
             case ControllerCommand::General: {
-                cout << "USAGE: IOStormplus [options] {parameters}        " << endl;
-                cout << "Options:                                             " << endl;
-                cout << "help                   Display usage.                " << endl;
-                cout << "agent                  Configure the test VM agents. " << endl;
-                cout << "start                  Start test job.               " << endl;
+                cout << "USAGE: IOStormplus [options] {parameters}                     " << endl;
+                cout << "Options:                                                      " << endl;
+                cout << "help                   Display usage.                         " << endl;
+                cout << "show                   Display all currently live test VM.    " << endl;
+                cout << "start                  Start test.                            " << endl;
+				cout << "test                   Check test VM health by pre-sync.      " << endl;
                 break;
             }
-            case ControllerCommand::AgentGeneral: {
+            case ControllerCommand::AgentGeneral: { //Unsupport
                 cout << "USAGE: IOStormplus agent [options] {parameters}                         " << endl;
                 cout << "Options:                                                                    " << endl;
                 cout << "help                Display usage.                                          " << endl;
@@ -269,11 +245,11 @@ namespace IOStormPlus{
             //   cout << "test                Determine the working status of all registered test VM. " << endl;
                 break;
             }
-            case ControllerCommand::AgentRegister:{
+            case ControllerCommand::AgentRegister:{//Unsupport
                 cout << "USAGE: IOStormplus agent add [VM name] [VM internal ip] [VM OS(linux / windows)] [VM size] [VM pool]" << endl;
                 break;
             }
-            case ControllerCommand::AgentRemove:{
+            case ControllerCommand::AgentRemove:{//Unsupport
                 cout << "USAGE: IOStormplus agent rm [VM name]" << endl;
                 break;
             }
@@ -307,25 +283,30 @@ namespace IOStormPlus{
 
     // Health Check
     void Controller::CheckTestVMHealth() {
-		azure::storage::cloud_table table = tableClient.get_table_reference(IOStormPlus::storageTempTableName);
-        // Ask VM to sync
-        for (auto &vm : TestVMs) {
-            Logger::LogInfo("Sending pre-sync request to test VM " + vm.GetName() + "(" + vm.GetInternalIP() + ")");
-            vm.SendCommand(table, SCCommand::SyncCmd);
-        }
-        // Check all VMs to response sync
-        bool allDone = WaitForAllVMs(table, SCCommand::SyncDoneCmd, IOStormPlus::maxHeartbeatGapInSec);
-		if (!allDone) {
-			for (auto i = TestVMs.begin(); i != TestVMs.end(); i++) {
-				if (!doneJobs[i->GetInternalIP()]) {
-					Logger::LogWarning("Test VM " + i->GetName() + " pre-sync failed!");
-					TestVMs.erase(i);
-				}
+		try {
+			azure::storage::cloud_table table = tableClient.get_table_reference(IOStormPlus::storageTempTableName);
+			// Ask VM to sync
+			for (auto &vm : TestVMs) {
+				Logger::LogInfo("Sending pre-sync request to test VM " + vm.GetName() + "(" + vm.GetInternalIP() + ")");
+				vm.SendCommand(table, SCCommand::SyncCmd);
 			}
-			WriteConfig();
+			// Check all VMs to response sync
+			bool allDone = WaitForAllVMs(table, SCCommand::SyncDoneCmd, IOStormPlus::maxHeartbeatGapInSec);
+			if (!allDone) {
+				for (auto i = TestVMs.begin(); i != TestVMs.end(); i++) {
+					if (!doneJobs[i->GetInternalIP()]) {
+						Logger::LogWarning("Test VM " + i->GetName() + " pre-sync failed!");
+						TestVMs.erase(i);
+					}
+				}
+				//WriteConfig();
+			}
+			else
+				Logger::LogInfo("Test VM pre-sync succeeded!");
 		}
-		else
-			Logger::LogInfo("Test VM pre-sync succeeded!");
+		catch (const exception& e) {
+			Logger::LogError(e.what());
+		}
     }
 
     bool Controller::WaitForAllVMs(azure::storage::cloud_table& table, SCCommand command, int timeLimitInSec, SCCommand retryCMD){
@@ -333,24 +314,33 @@ namespace IOStormPlus{
         Logger::LogInfo("Waiting for agents response.");
         bool allDone = false;
 		doneJobs.clear();
-		
+
 		clock_t startTime = clock();
 		double duration;
         while (!allDone) {
             allDone = true;
             for (auto vm : TestVMs) {
 
-                if (doneJobs[vm.GetInternalIP()]) {
+                if (doneJobs[vm.GetInternalIP()] || failedJobs[vm.GetInternalIP()]) {
                     continue;
                 }
 
-                if (vm.GetResponse(table, command, retryCMD)) {
-                    doneJobs[vm.GetInternalIP()] = true;
-                    Logger::LogInfo("Test VM " + vm.GetName() + "(" + vm.GetInternalIP() + ")" + " successfully executed command.");
-                }
-                else {
-                    allDone = false;
-                }
+				switch (vm.GetResponse(table, command, retryCMD)) {
+					case 1: {
+						doneJobs[vm.GetInternalIP()] = true;
+						Logger::LogInfo("Test VM " + vm.GetName() + "(" + vm.GetInternalIP() + ")" + " successfully executed command.");
+						break;
+					}
+					case -1: {
+						failedJobs[vm.GetInternalIP()] = true;
+						break;
+					}
+					case 0: {
+						allDone = false;
+						break;
+					}
+					default: break;
+				}
             }
 			duration = (std::clock() - startTime) / (double)CLOCKS_PER_SEC;
 			if (duration > timeLimitInSec)
@@ -358,8 +348,9 @@ namespace IOStormPlus{
         }
 		if (!allDone) {
 			for (auto vm : TestVMs) {
-				if (!doneJobs[vm.GetInternalIP()]) {
+				if (!doneJobs[vm.GetInternalIP()] && !failedJobs[vm.GetInternalIP()]) {
 					Logger::LogWarning("Test VM " + vm.GetName() + "(" + vm.GetInternalIP() + ") time out!");
+					failedJobs[vm.GetInternalIP()] = true;
 				}
 			}
 		}
@@ -469,7 +460,7 @@ namespace IOStormPlus{
 
     // TODO: Change name
     void Controller::ShowAgent() {
-		InitAgents();
+		PrintTestVMInfo();
     }
 
     void Controller::TestAgent() {
@@ -516,7 +507,7 @@ namespace IOStormPlus{
         for (int i = 0;i < TestVMs.size(); ++i) {
             logStream.clear();
             logStream.str("");
-            logStream << i + 1 << "\t" << TestVMs[i].GetInfo() << endl;
+            logStream << i + 1 << "\t" << TestVMs[i].GetInfo();
             Logger::LogInfo(logStream.str());
         }
     }
@@ -627,17 +618,18 @@ namespace IOStormPlus{
 
         while (!fin.eof()) {
             getline(fin, buf);
-            int pos = buf.find("read: IOPS=");
+            int pos = buf.find("IOPS=");
             if (pos != string::npos) {
                 pos += 11;
-                res.ReadIOPS.push_back(GetIOPSNumber(buf, pos));
+                res.IOPS.push_back((int)GetNumber(buf, pos));
             }
 
-            pos = buf.find("write: IOPS=");
+            pos = buf.find("lat (usec): ");
             if (pos != string::npos) {
-                pos += 12;
-                res.WriteIOPS.push_back(GetIOPSNumber(buf, pos));
+				pos = buf.find("avg=") + 4;
+                res.lat.push_back(GetNumber(buf, pos));
             }
+
 			if (buf.find("Disk stats") != string::npos)
 				break;
         }
@@ -647,7 +639,7 @@ namespace IOStormPlus{
         return res;
     }
 
-    int Controller::GetIOPSNumber(string buf, int pos){
+    double Controller::GetNumber(string buf, int pos){
         double num = 0;
         int pointCount = 0;
         bool pointFlag = false;
@@ -672,27 +664,24 @@ namespace IOStormPlus{
         }
         num /= pow(10,pointCount);
         // Logger::LogInfo("IOPS number done");
-        return (int)num;
+        return num;
     }
 
 }
 
 int main(int argc,char *argv[]) {
-    IOStormPlus::Controller controller(IOStormPlus::AgentsConfigFilename, IOStormPlus::storageConfigFileName);
+    IOStormPlus::Controller controller(IOStormPlus::storageConfigFileName);
     if (!controller.IsReady()){
         return 0;
     }
 
     if (argc == 1)
         controller.PrintUsage(IOStormPlus::ControllerCommand::General);
-    else if (strcmp(argv[1], "agent") == 0) {
-        controller.ConfigureAgent(argc - 2, argv + 2);
+    else if (strcmp(argv[1], "show") == 0) {
+        controller.ShowAgent();
     }
     else if (strcmp(argv[1], "start") == 0) {
         controller.RunTest(argc - 2, argv + 2);
-    }
-    else if (strcmp(argv[1], "init") == 0) {
-        controller.InitAgents();
     }
     else if (strcmp(argv[1], "test") == 0) {
         controller.CheckTestVMHealth();
