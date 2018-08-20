@@ -22,49 +22,56 @@ namespace IOStormPlus {
 			tableClient = storageAccount.create_cloud_table_client();
 			blobClient = storageAccount.create_cloud_blob_client();
 		}
-		catch (const std::exception& e) {
-			Logger::LogInfo(e.what());
+		catch (const exception& e) {
+			Logger::LogError(e.what());
+			SendErrorMessage(e.what());
 		}
 	}
 
 
 	void BaseAgent::Run() {
 		Logger::LogInfo("Start Running");
-		azure::storage::cloud_table table = tableClient.get_table_reference(IOStormPlus::storageTempTableName);
-		int retryCount = 0;
-		while (true) {
-			Wait();
-			SCCommand cmd;
-			if (!GetControllerCmd(table, cmd)) {
-				if (retryCount % 60 == 0) {
-					Logger::LogInfo("No valid command, waiting");
-					Acknowledge(table, SCCommand::EmptyCmd);
-					UploadLog();
-					retryCount = 1;
+		try {
+			azure::storage::cloud_table table = tableClient.get_table_reference(IOStormPlus::storageTempTableName);
+			int retryCount = 0;
+			while (true) {
+				Wait();
+				SCCommand cmd;
+				if (!GetControllerCmd(table, cmd)) {
+					if (retryCount % 60 == 0) {
+						Logger::LogInfo("No valid command, waiting");
+						Acknowledge(table, SCCommand::EmptyCmd);
+						UploadLog();
+						retryCount = 1;
+					}
+					retryCount++;
+					continue;
 				}
-				retryCount++;
-				continue;
+				Logger::LogInfo("Get one command");
+				switch (cmd) {
+					case SCCommand::SyncCmd: {
+						Acknowledge(table, SCCommand::SyncDoneCmd);
+						break;
+					}
+					case SCCommand::StartJobCmd: {
+						DownloadWorkload(SCCommand::StartJobCmd, IOStormPlus::workloadConfigFileName);
+						RunJobs();
+						Acknowledge(table, SCCommand::JobDoneCmd);
+						break;
+					}
+					case SCCommand::StartStdJobCmd: {
+						DownloadWorkload(SCCommand::StartStdJobCmd, IOStormPlus::workloadConfigFileName);
+						RunJobs();
+						Acknowledge(table, SCCommand::JobDoneCmd);
+						break;
+					}
+					default: break;
+				}
 			}
-			Logger::LogInfo("Get one command");
-			switch (cmd) {
-			case SCCommand::SyncCmd: {
-				Acknowledge(table, SCCommand::SyncDoneCmd);
-				break;
-			}
-			case SCCommand::StartJobCmd: {
-				DownloadWorkload(SCCommand::StartJobCmd, IOStormPlus::workloadConfigFileName);
-				RunJobs();
-				Acknowledge(table, SCCommand::JobDoneCmd);
-				break;
-			}
-			case SCCommand::StartStdJobCmd: {
-				DownloadWorkload(SCCommand::StartStdJobCmd, IOStormPlus::workloadConfigFileName);
-				RunJobs();
-				Acknowledge(table, SCCommand::JobDoneCmd);
-				break;
-			}
-			default: break;
-			}
+		}
+		catch (const exception& e) {
+			Logger::LogError(e.what());
+			SendErrorMessage(e.what());
 		}
 	}
 
@@ -90,7 +97,6 @@ namespace IOStormPlus {
 	}
 
 	void BaseAgent::DownloadWorkload(SCCommand jobCMD, string configFilename) {
-		cout << jobCMD << endl;
 		//Download configuration file
 		azure::storage::cloud_blob_container container = blobClient.get_container_reference(IOStormPlus::workloadBlobContainerName);
 		azure::storage::cloud_block_blob blockBlob = container.get_block_blob_reference(utility::conversions::to_string_t(configFilename));
@@ -181,6 +187,10 @@ namespace IOStormPlus {
 		const azure::storage::table_entity::properties_type& properties = agentEntity.properties();
 		string cmdString = utility::conversions::to_utf8string(properties.at(IOStormPlus::tableCommandColumnName).string_value());
 		command = GetCommondFromString(cmdString);
+		string errStatus = utility::conversions::to_utf8string(properties.at(IOStormPlus::tableErrorColumnName).string_value());
+		if (errStatus != emptyErrorMessage) {
+			return false;
+		}
 		if (command != SCCommand::InvaildCmd && command != SCCommand::EmptyCmd && command != SCCommand::SyncDoneCmd && command != SCCommand::JobDoneCmd) {
 			return true;
 		}
@@ -189,39 +199,57 @@ namespace IOStormPlus {
 		return false;
 	}
 
-
-	void BaseAgent::Acknowledge(azure::storage::cloud_table& table, SCCommand command) {
-		string cmdstring = GetCommandString(command);
-		Logger::LogInfo("Start ack " + cmdstring + " command");
-
+	void BaseAgent::UpdateTable(azure::storage::cloud_table& table, utility::string_t col, string info) {
 		azure::storage::table_entity agent(utility::conversions::to_string_t(m_vmPool), utility::conversions::to_string_t(m_vmName));
 		azure::storage::table_entity::properties_type& properties = agent.properties();
-		//properties.reserve(1);
-		properties[tableCommandColumnName] = azure::storage::entity_property(utility::conversions::to_string_t(GetCommandString(command)));
+		properties[col] = azure::storage::entity_property(utility::conversions::to_string_t(info));
 
 		azure::storage::table_operation opt = azure::storage::table_operation::insert_or_merge_entity(agent);
 		azure::storage::table_result insert_result = table.execute(opt);
+	}
 
-		Logger::LogInfo("Done ack " + cmdstring + " command");
+	void BaseAgent::SendErrorMessage(string msg) {
+		Logger::LogInfo("Uploading error message \"" + msg + "\".");
+		
+		azure::storage::cloud_table table = tableClient.get_table_reference(IOStormPlus::storageTempTableName);
+		UpdateTable(table, tableErrorColumnName, msg);
+		UploadLog();
+
+		Logger::LogInfo("Done upload error message.");
+	}
+
+	void BaseAgent::Acknowledge(azure::storage::cloud_table& table, SCCommand command) {
+		string cmdstring = GetCommandString(command);
+		Logger::LogInfo("Start ack " + cmdstring + " command.");
+
+		UpdateTable(table, tableCommandColumnName, GetCommandString(command));
+
+		Logger::LogInfo("Done ack " + cmdstring + " command.");
 	}
 
 	void BaseAgent::RegisterOnAzure() {
-		azure::storage::cloud_table table = tableClient.get_table_reference(IOStormPlus::storageTempTableName);
-		table.create_if_not_exists();
-		azure::storage::table_entity agent(utility::conversions::to_string_t(m_vmPool), utility::conversions::to_string_t(m_vmName));
-		azure::storage::table_entity::properties_type& properties = agent.properties();
+		try {
+			azure::storage::cloud_table table = tableClient.get_table_reference(IOStormPlus::storageTempTableName);
+			table.create_if_not_exists();
+			azure::storage::table_entity agent(utility::conversions::to_string_t(m_vmPool), utility::conversions::to_string_t(m_vmName));
+			azure::storage::table_entity::properties_type& properties = agent.properties();
 
-		properties.reserve(5);
-		properties[tableCommandColumnName] = azure::storage::entity_property(utility::conversions::to_string_t(GetCommandString(SCCommand::EmptyCmd)));
-		properties[tableOSColumnName] = azure::storage::entity_property(utility::conversions::to_string_t(m_vmOS));
-		properties[tablePoolColumnName] = azure::storage::entity_property(utility::conversions::to_string_t(m_vmPool));
-		properties[tableIPColumnName] = azure::storage::entity_property(utility::conversions::to_string_t(m_vmIP));
-		properties[tableSizeColumnName] = azure::storage::entity_property(utility::conversions::to_string_t(m_vmSize));
+			properties.reserve(6);
+			properties[tableCommandColumnName] = azure::storage::entity_property(utility::conversions::to_string_t(GetCommandString(SCCommand::EmptyCmd)));
+			properties[tableOSColumnName] = azure::storage::entity_property(utility::conversions::to_string_t(m_vmOS));
+			properties[tablePoolColumnName] = azure::storage::entity_property(utility::conversions::to_string_t(m_vmPool));
+			properties[tableIPColumnName] = azure::storage::entity_property(utility::conversions::to_string_t(m_vmIP));
+			properties[tableSizeColumnName] = azure::storage::entity_property(utility::conversions::to_string_t(m_vmSize));
+			properties[tableErrorColumnName] = azure::storage::entity_property(utility::conversions::to_string_t(emptyErrorMessage));
 
-		azure::storage::table_operation opt = azure::storage::table_operation::insert_or_replace_entity(agent);
-		azure::storage::table_result insert_result = table.execute(opt);
-
-		Logger::LogInfo("Register agent succeeded");
+			azure::storage::table_operation opt = azure::storage::table_operation::insert_or_replace_entity(agent);
+			azure::storage::table_result insert_result = table.execute(opt);
+		}
+		catch (const exception& e) {
+			Logger::LogError(e.what());
+			SendErrorMessage(e.what());
+		}
+		Logger::LogInfo("Register agent succeeded.");
 	}
 
 	void BaseAgent::SetAgentInfo(string vmIP, string vmSize, string vmOS, string vmPool) {
@@ -238,7 +266,7 @@ namespace IOStormPlus {
 
 
 	void BaseAgent::RunJobs() {
-		Logger::LogInfo("Start Job");
+		Logger::LogInfo("Start Job.");
 		vector<string> params;
 		string hostname = BaseAgent::RunScript(AgentCommand::HostnameCmd, params);
 		if (hostname.find('\n') != string::npos) {
@@ -270,6 +298,6 @@ namespace IOStormPlus {
 		UploadOutput();
 		RunScript(AgentCommand::DelLocalOutputCmd, params);
 
-		Logger::LogInfo("Job Done");
+		Logger::LogInfo("Job Done.");
 	}
 }

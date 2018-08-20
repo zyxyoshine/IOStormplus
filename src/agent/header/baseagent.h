@@ -38,7 +38,9 @@ namespace IOStormPlus{
         virtual string GetWorkloadFolderPath() = 0;
         void RegisterOnAzure();
         bool GetControllerCmd(azure::storage::cloud_table& table, SCCommand &command);
+		void UpdateTable(azure::storage::cloud_table& table, utility::string_t col, string info);
         void Acknowledge(azure::storage::cloud_table& table, SCCommand command = EmptyCmd);
+		void SendErrorMessage(string msg = emptyErrorMessage);
         void RunJobs();
 		void SetAgentInfo(string vmIP, string vmSize, string vmOS, string vmPool);
 

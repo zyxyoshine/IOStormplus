@@ -13,16 +13,17 @@ cd /home && tar -xjvf fio-3.5.tar.bz2
 cd /home && ./fio-3.5/configure
 cd /home/fio-3.5 && make
 cd /home/fio-3.5 && make install
-cat /dev/null > /etc/profile.d/IOStormplus.sh
-echo "nohup /home/IOStormplus/agent $(hostname --ip-address) $2 $3 \"$1\" >/dev/null 2>agent.err &" > /etc/profile.d/IOStormplus.sh
+sed -i '$inohup /home/IOStormplus/agent '$(hostname --ip-address)' '$2' '$3' \"'$1'\" >/dev/null 2>agent.err &' /etc/rc.local
 cd /home/IOStormplus && nohup ./agent $(hostname --ip-address) $2 $3 $1 >/dev/null 2>agent.err &
 #create one volume striped over all data disks
 disks=($(lsblk -l -p -o NAME | grep "sd" | grep -v "sda" | grep -v "sdb"))
-pvcreate ${disks[*]}
-vgcreate datavg ${disks[*]}
-lvcreate -l 100%FREE --type striped -i ${#disks[*]} -n datav datavg
-mkfs -t ext4 /dev/mapper/datavg-datav
+for disk in ${disks[*]}
+do
+       echo -e "n\np\n1\n\n\nt\nfd\nw" | fdisk $disk
+done
+pdisks=($(lsblk -l -p -o NAME | grep "sd" | grep -v "sda" | grep -v "sdb" | grep 1))
+mdadm --create /dev/md0 --level 0 --raid-devices ${#pdisks[*]} ${pdisks[*]}：
 mkdir /data
-chmod 777 /data
-bash -c 'echo -e "/dev/datavg/datav\t/data\text4\tdefaults,nofail,barrier=0\t0\t2" >> /etc/fstab'
+chmod -R 777 /data
+echo -e "UUID=$(lsblk /dev/md0 -no UUID)\t/data\text4\tdefaults\t0\t2" >> /etc/fstab
 mount -a

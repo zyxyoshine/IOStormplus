@@ -38,7 +38,7 @@ namespace IOStormPlus{
         vector<TestVM> TestVMs;
 
     public:
-        Controller(string configFilename, string storageConfigFileName);
+        Controller(string storageConfigFileName);
         ~Controller(){};
 
         void InitAgents();
@@ -47,6 +47,7 @@ namespace IOStormPlus{
 		void RunTest(int argc, char *argv[]);
         void PrintUsage(ControllerCommand command);
         void CheckTestVMHealth();
+		void ShowAgent();
 		void SetMaxWaitTime(int timeInSec); //TODO: Add custom setting for the time limit.
 
     private:
@@ -56,6 +57,8 @@ namespace IOStormPlus{
 
 		map<string, vector<string> > workload;
 		map<string, bool> doneJobs;
+		map<string, bool> failedJobs;
+
 
         void InitLogger();
         
@@ -78,7 +81,6 @@ namespace IOStormPlus{
         // Agent Management
         void RegisterAgent(int argc, char *argv[]);
         void RemoveAgent(int argc, char *argv[]);
-        void ShowAgent();
         void TestAgent();
         void WriteConfig();
 
@@ -88,7 +90,7 @@ namespace IOStormPlus{
         void AnalyzeData(SCCommand jobCMD);
         void AnalyzeJob(const string& job, TestVM& vm);
         ReportSummary AnalyzeStandardOutput(string output_file);
-        int GetIOPSNumber(string buf, int pos);
+        double GetNumber(string buf, int pos);
 
     };
 
