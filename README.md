@@ -8,7 +8,7 @@ Note: You need to create a new resource group for IOStormplus.
 IOStormplus support both windows and linux test VM. <br>
 For linux,deploy `deploy/umd/agent.template/agent.template.linux.json`. <br>
 For Windows,deploy `deploy/umd/agent.template/agent.template.win.json`. <br>
-We also support deploy and manage test VM by scripts:
+We also support deploy and manage test VM by scripts: <br>
 `deploy/deploycontroller.ps1` <br>
 `deploy/deploypool.ps1` <br>
 `deploy/getpool.ps1` <br>
