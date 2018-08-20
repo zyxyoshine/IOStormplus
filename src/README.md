@@ -22,8 +22,8 @@ tar -xjvf fio-3.5.tar.bz2
 cd /home/fio-3.5 && make
 make install
 ```
-2. If you just want to dev with current library, you can just run script `/agent/linuxagent/deployDevEnv.sh` to deploy environment.
-
+2. If you just want to dev with current library (was 3.1.0), you can just run script `/agent/linuxagent/deployDevEnv.sh` to deploy environment.</br>
+NOTE: Azure Stack only supports 3.1.0.
 ## Build
 For controller and Windows agent, build VS solution target x64 platform.  </br>
 For Linux agent, run command `make` at `linuxagent` floder. </br>
