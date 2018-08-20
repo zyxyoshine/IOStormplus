@@ -550,8 +550,8 @@ namespace IOStormPlus{
 			for (auto job : jobs) {
 				Logger::LogInfo("Job: " + job);
 				fout << "Job: " + job << endl;
-				Logger::LogInfo("ID\tName\tIP Address\tOS\tSize\tPool\tReadIOPS(AVG)\tReadLat(AVG)\tWriteIOPS(AVG)\tWriteLat(AVG)");
-				fout << "ID\tName\tIP Address\tOS\tSize\tPool\tReadIOPS(AVG)\tReadLat(AVG)\tWriteIOPS(AVG)\tWriteLat(AVG)" << endl;
+				Logger::LogInfo("ID\tName\tIP Address\tOS\tSize\tPool\tReadIOPS\tReadLat(usec)\tWriteIOPS\tWriteLat(usec)");
+				fout << "ID\tName\tIP Address\tOS\tSize\tPool\tReadIOPS\tReadLat(usec)\tWriteIOPS\tWriteLat(usec)" << endl;
 				string vm_id;
 				for (int i = 0; i < TestVMs.size(); i++) {
 					if (!doneJobs[TestVMs[i].GetInternalIP()]) {
