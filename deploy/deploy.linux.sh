@@ -22,7 +22,7 @@ do
        echo -e "n\np\n1\n\n\nt\nfd\nw" | fdisk $disk
 done
 pdisks=($(lsblk -l -p -o NAME | grep "sd" | grep -v "sda" | grep -v "sdb" | grep 1))
-mdadm --create /dev/md0 --level 0 --raid-devices ${#pdisks[*]} ${pdisks[*]} --force;
+mdadm --create /dev/md0 --level 0 --raid-devices ${#pdisks[*]} ${pdisks[*]} --force
 mkfs -t ext4 /dev/md0
 mkdir /data
 chmod -R 777 /data
