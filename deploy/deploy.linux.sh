@@ -26,5 +26,5 @@ mdadm --create /dev/md0 --level 0 --raid-devices ${#pdisks[*]} ${pdisks[*]} --fo
 mkfs -t ext4 /dev/md0
 mkdir /data
 chmod -R 777 /data
-echo -e "UUID=$(lsblk /dev/md0 -no UUID)\t/data\text4\tdefaults\t0\t2" >> /etc/fstab
+echo -e "/dev/md0\t/data\text4\tdefaults\t0\t2" >> /etc/fstab
 mount -a
