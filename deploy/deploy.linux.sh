@@ -1,4 +1,4 @@
-apt-get update
+﻿apt-get update
 apt-get upgrade -y
 apt-get install make gcc g++ unzip zlib1g-dev libboost-all-dev libssl-dev libxml2-dev libxml++2.6-dev libxml++2.6-doc uuid-dev libaio-dev cmake -y
 cd /home/ && wget https://github.com/zyxyoshine/IOStormplus/raw/master/deploy/binary/Agent.linux.zip
@@ -23,6 +23,7 @@ do
 done
 pdisks=($(lsblk -l -p -o NAME | grep "sd" | grep -v "sda" | grep -v "sdb" | grep 1))
 mdadm --create /dev/md0 --level 0 --raid-devices ${#pdisks[*]} ${pdisks[*]}：
+mkfs -t ext4 /dev/md0
 mkdir /data
 chmod -R 777 /data
 echo -e "UUID=$(lsblk /dev/md0 -no UUID)\t/data\text4\tdefaults\t0\t2" >> /etc/fstab
