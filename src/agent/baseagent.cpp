@@ -23,6 +23,7 @@ namespace IOStormPlus {
 			blobClient = storageAccount.create_cloud_blob_client();
 		}
 		catch (const exception& e) {
+			Logger::LogError("Create storage client failed!");
 			Logger::LogError(e.what());
 			SendErrorMessage(e.what());
 		}
@@ -170,13 +171,19 @@ namespace IOStormPlus {
 	}
 
 	void BaseAgent::UploadLog() {
-		// Retrieve a reference to a container.
-		azure::storage::cloud_blob_container container = blobClient.get_container_reference(IOStormPlus::logBlobContainerName);
-		// Create the container if it doesn't already exist.
-		container.create_if_not_exists();
-		azure::storage::cloud_block_blob blockBlob = container.get_block_blob_reference(utility::conversions::to_string_t(m_vmName + "_" + LogFilename));
-		blockBlob.upload_from_file(utility::conversions::to_string_t(GetLogFilePath()));
-		Logger::LogInfo("Upload log to blob succeeded.");
+		try {
+			// Retrieve a reference to a container.
+			azure::storage::cloud_blob_container container = blobClient.get_container_reference(IOStormPlus::logBlobContainerName);
+			// Create the container if it doesn't already exist.
+			container.create_if_not_exists();
+			azure::storage::cloud_block_blob blockBlob = container.get_block_blob_reference(utility::conversions::to_string_t(m_vmName + "_" + LogFilename));
+			blockBlob.upload_from_file(utility::conversions::to_string_t(GetLogFilePath()));
+			Logger::LogInfo("Upload log to blob succeeded.");
+		}
+		catch (const exception& e) {
+			Logger::LogError("Upload log to blob failed!");
+			throw;
+		}
 	}
 
 	bool BaseAgent::GetControllerCmd(azure::storage::cloud_table& table, SCCommand &command) {
@@ -209,13 +216,19 @@ namespace IOStormPlus {
 	}
 
 	void BaseAgent::SendErrorMessage(string msg) {
-		Logger::LogInfo("Uploading error message \"" + msg + "\".");
-		
-		azure::storage::cloud_table table = tableClient.get_table_reference(IOStormPlus::storageTempTableName);
-		UpdateTable(table, tableErrorColumnName, msg);
-		UploadLog();
+		try {
+			Logger::LogInfo("Uploading error message \"" + msg + "\".");
 
-		Logger::LogInfo("Done upload error message.");
+			azure::storage::cloud_table table = tableClient.get_table_reference(IOStormPlus::storageTempTableName);
+			UpdateTable(table, tableErrorColumnName, msg);
+			UploadLog();
+
+			Logger::LogInfo("Done upload error message.");
+		}
+		catch (const exception& e) {
+			Logger::LogError("Upload error message failed!");
+			Logger::LogError(e.what());
+		}
 	}
 
 	void BaseAgent::Acknowledge(azure::storage::cloud_table& table, SCCommand command) {
@@ -246,6 +259,7 @@ namespace IOStormPlus {
 			azure::storage::table_result insert_result = table.execute(opt);
 		}
 		catch (const exception& e) {
+			Logger::LogError("Register on Azure failed!");
 			Logger::LogError(e.what());
 			SendErrorMessage(e.what());
 		}
