@@ -580,12 +580,12 @@ namespace IOStormPlus{
 			for (auto job : jobs) {
 				Logger::LogInfo("Job: " + job);
 				fout << "Job: " + job << endl;
-				Logger::LogInfo("\t\t\t\t\t\t\t\tLagency percentiles(ms) ");
-				fout << "\t\t\t\t\t\t\t\tLagency percentiles(ms) " << endl;;
+				Logger::LogInfo("\t\t\t\t\tLagency percentiles(ms) ");
+				fout << "\t\t\t\t\tLagency percentiles(ms) " << endl;;
 				Logger::LogInfo("\t\tAVG IOPS\t\tAVG Bandwidth(MB/s)\t\tREAD\t\t\tWRITE");
-				fout << "\t\tAVG IOPS\t\tAVG Bandwidth(MB/s)\t\tREAD\t\t\tWRITE" << endl;
+				fout << "\tAVG IOPS\t\tAVG Bandwidth(MB/s)\t\tREAD\t\t\tWRITE" << endl;
 				Logger::LogInfo("Name\tREAD\tWRITE\tREAD\tWRITE\t50th\t90th\t99th\t50th\t90th\t99th");
-				fout << "Name\READ\tWRITE\tREAD\tWRITE\t50th\t90th\t99th\t50th\t90th\t99th" << endl;
+				fout << "Name\tREAD\tWRITE\tREAD\tWRITE\t50th\t90th\t99th\t50th\t90th\t99th" << endl;
 				string vm_id;
 				for (int i = 0; i < TestVMs.size(); i++) {
 					if (!doneJobs[TestVMs[i].GetInternalIP()]) {
