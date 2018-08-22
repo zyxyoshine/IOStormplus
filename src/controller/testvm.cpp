@@ -46,7 +46,7 @@ namespace IOStormPlus {
 
     string TestVM::GetTestResult(const string& jobName) {
         stringstream tempStream;
-		tempStream << GetName() << "\t" << GetInternalIP() << "\t" << GetOSTypeName() + "\t" + GetSize() + "\t" + GetPool();
+		tempStream << GetName();
 		vector<double> outputData;
 		for (int i = 0; i < 2; i++)
 			outputData.push_back(m_testResults[jobName].IOPS[i]);
