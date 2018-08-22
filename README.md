@@ -55,6 +55,10 @@ or
 ```PowerShell
 IOStormplus_Controller start -std
 ```
+If you want to run workload more than 1hr (default time limit), you should use `-waittime` <br>
+```PowerShell
+IOStormplus_Controller start -waittime <TimeInSec>
+```
 NOTE: Standard test will ignore all custom pool settings and run `std` workload.<br>
 NOTE2: If you don't specify any workload for a pool, it will run `std` workload.
 ### 3.Other features
