@@ -277,9 +277,9 @@ namespace IOStormPlus{
             case ControllerCommand::WorkerGeneral:{
                 cout << "USAGE: IOStormplus start {parameters}            " << endl;
                 cout << "parameters:                                          " << endl;
-                cout << "-std                   Start standard test.          " << endl;
-				cout << "-waittime Number       The time in second that controller will wait for agents response." << endl;
-                cout << "{default}              Start custom test, wait agents 1hr.            " << endl;
+                cout << "-std                        Start standard test.          " << endl;
+				cout << "-waittime <TimeInSec>       The time in second that controller will wait for agents response." << endl;
+                cout << "{default}                   Start custom test, wait agents 1hr.            " << endl;
                 break;
             }
         }
