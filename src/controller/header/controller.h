@@ -48,11 +48,13 @@ namespace IOStormPlus{
         void PrintUsage(ControllerCommand command);
         void CheckTestVMHealth();
 		void ShowAgent();
-		void SetMaxWaitTime(int timeInSec); //TODO: Add custom setting for the time limit.
+		void SetMaxWaitTime(int timeInSec);
+
 
     private:
         bool m_isReady;
-		int m_maxWaitTimeInSec;
+		int maxWaitTimeInSec;
+
 		string logFileName;
 
 		map<string, vector<string> > workload;

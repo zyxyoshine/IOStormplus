@@ -22,11 +22,7 @@ namespace IOStormPlus{
 
     // TODO: Move to report class
     struct ReportSummary {
-		double readIOPS,writeIOPS;
-		double readLat,writeLat;
-		ReportSummary() {
-			readIOPS = writeIOPS = readLat = writeLat = 0;
-		}
+		double IOPS[2] = { 0 }, bandWidth[2] = { 0 }, cLat[2][3] = { 0 };
     };
 
     class TestVM {

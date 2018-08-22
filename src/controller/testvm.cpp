@@ -48,15 +48,24 @@ namespace IOStormPlus {
         stringstream tempStream;
 		tempStream << GetName() << "\t" << GetInternalIP() << "\t" << GetOSTypeName() + "\t" + GetSize() + "\t" + GetPool();
 		vector<double> outputData;
-		outputData.push_back(m_testResults[jobName].readIOPS);
-		outputData.push_back(m_testResults[jobName].readLat);
-		outputData.push_back(m_testResults[jobName].writeIOPS);
-		outputData.push_back(m_testResults[jobName].writeLat);
+		for (int i = 0; i < 2; i++)
+			outputData.push_back(m_testResults[jobName].IOPS[i]);
+		for (int i = 0; i < 2; i++)
+			outputData.push_back(m_testResults[jobName].bandWidth[i]);
+		for (int i = 0; i < 2; i++)
+			for (int j = 0;j < 3;j++)
+				outputData.push_back(m_testResults[jobName].cLat[i][j]);
 		for (auto data : outputData) {
 			if (data == 0)
 				tempStream << "\tN/A";
-			else
-				tempStream << "\t" << data;
+			else {
+				if (data > 1000 * 1000)
+					tempStream << "\t" << data / (1000 * 1000) << "M";
+				else if (data > 1000)
+					tempStream << "\t" << data / 1000  << "k";
+				else
+					tempStream << "\t" << data;
+			}
 		}
         return tempStream.str();
     }

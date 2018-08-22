@@ -42,6 +42,7 @@ namespace IOStormPlus{
 			failedJobs.clear();
 		}
 		catch (const exception& e) {
+			Logger::LogError("Initialize controller failed!");
 			Logger::LogError(e.what());
 			UploadLog();
 		}
@@ -144,13 +145,19 @@ namespace IOStormPlus{
 	}
 
 	void Controller::UploadLog() {
-		// Retrieve a reference to a container.
-		azure::storage::cloud_blob_container container = blobClient.get_container_reference(IOStormPlus::logBlobContainerName);
-		// Create the container if it doesn't already exist.
-		container.create_if_not_exists();
-		azure::storage::cloud_block_blob blockBlob = container.get_block_blob_reference(utility::conversions::to_string_t("controller_" + logFileName));
-		blockBlob.upload_from_file(utility::conversions::to_string_t(logFileName));
-		Logger::LogInfo("Upload log to blob succeeded.");
+		try {
+			// Retrieve a reference to a container.
+			azure::storage::cloud_blob_container container = blobClient.get_container_reference(IOStormPlus::logBlobContainerName);
+			// Create the container if it doesn't already exist.
+			container.create_if_not_exists();
+			azure::storage::cloud_block_blob blockBlob = container.get_block_blob_reference(utility::conversions::to_string_t("controller_" + logFileName));
+			blockBlob.upload_from_file(utility::conversions::to_string_t(logFileName));
+			Logger::LogInfo("Upload log to blob succeeded.");
+		}
+		catch (const exception& e) {
+			Logger::LogError("Upload log to blob failed!");
+			Logger::LogError(e.what());
+		}
 	}
 
 	/// Download output files from blob
@@ -197,7 +204,18 @@ namespace IOStormPlus{
     /// Run Test command
     void Controller::RunTest(int argc, char *argv[]) {
 		try {
-			if (argc == 0) {
+			int cur = 0;
+			if (argc > 1 && (strcmp(argv[0], "-waittime") == 0)) {
+				SetMaxWaitTime((int)GetNumber(argv[1], 0));
+				cur += 2;
+			}
+			else if (argc > 2 && (strcmp(argv[argc - 2], "-waittime") == 0)) {
+				SetMaxWaitTime((int)GetNumber(argv[argc - 1], 0));
+				argc -= 2;
+			}
+			else
+				SetMaxWaitTime(-1);
+			if (argc - cur == 0) {
 				Logger::LogInfo("Start custom test.");
 				CheckTestVMHealth();
 				InitWorkload(IOStormPlus::workloadConfigFileName);
@@ -206,7 +224,7 @@ namespace IOStormPlus{
 				Logger::LogInfo("End custom test.");
 				UploadLog();
 			}
-			else if (argc == 1 && (strcmp(argv[0], "-std") == 0)) {
+			else if (argc - cur == 1 && (strcmp(argv[cur], "-std") == 0)) {
 				Logger::LogInfo("Start standard test.");
 				CheckTestVMHealth();
 				InitWorkload(IOStormPlus::workloadConfigFileName);
@@ -220,6 +238,7 @@ namespace IOStormPlus{
 			}
 		}
 		catch (const exception& e) {
+			Logger::LogError("Run tests failed!");
 			Logger::LogError(e.what());
 			UploadLog();
 		}
@@ -259,7 +278,8 @@ namespace IOStormPlus{
                 cout << "USAGE: IOStormplus start {parameters}            " << endl;
                 cout << "parameters:                                          " << endl;
                 cout << "-std                   Start standard test.          " << endl;
-                cout << "{default}              Start custom test.            " << endl;
+				cout << "-waittime Number       The time in second that controller will wait for agents response." << endl;
+                cout << "{default}              Start custom test, wait agents 1hr.            " << endl;
                 break;
             }
         }
@@ -310,14 +330,24 @@ namespace IOStormPlus{
 			}
 		}
 		catch (const exception& e) {
+			Logger::LogError("Run pre-sync failed!");
 			Logger::LogError(e.what());
 			UploadLog();
 		}
     }
 
+	void Controller::SetMaxWaitTime(int timeInSec) {
+		if (timeInSec > 0)
+			maxWaitTimeInSec = timeInSec;
+		else
+			maxWaitTimeInSec = IOStormPlus::defaultMaxWaitTimeInSec;
+	}
+
     bool Controller::WaitForAllVMs(azure::storage::cloud_table& table, SCCommand command, int timeLimitInSec, SCCommand retryCMD){
         // Check all VMs to response sync
-        Logger::LogInfo("Waiting for agents response.");
+		stringstream logStream;
+		logStream << "Waiting for agents response, time limit = " << timeLimitInSec << " seconds.";
+        Logger::LogInfo(logStream.str());
         bool allDone = false;
 		doneJobs.clear();
 
@@ -378,7 +408,7 @@ namespace IOStormPlus{
 			vm.SendCommand(table, startCMD);
 		}
 
-        bool allDone = WaitForAllVMs(table, SCCommand::JobDoneCmd, IOStormPlus::maxWaitTimeInSec, startCMD);
+        bool allDone = WaitForAllVMs(table, SCCommand::JobDoneCmd, maxWaitTimeInSec, startCMD);
 		if (allDone)
 			Logger::LogInfo("All jobs done!");
 
@@ -550,20 +580,20 @@ namespace IOStormPlus{
 			for (auto job : jobs) {
 				Logger::LogInfo("Job: " + job);
 				fout << "Job: " + job << endl;
-				Logger::LogInfo("ID\tName\tIP Address\tOS\tSize\tPool\tReadIOPS\tReadLat(usec)\tWriteIOPS\tWriteLat(usec)");
-				fout << "ID\tName\tIP Address\tOS\tSize\tPool\tReadIOPS\tReadLat(usec)\tWriteIOPS\tWriteLat(usec)" << endl;
+				Logger::LogInfo("\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tLagency percentiles(ms) ");
+				fout << "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tLagency percentiles(ms) " << endl;;
+				Logger::LogInfo("\t\t\t\t\t\t\t\t\t\tAVG IOPS\t\tAVG Bandwidth(MB/s)\t\tREAD\t\t\tWRITE");
+				fout << "\t\t\t\t\t\t\t\t\t\tAVG IOPS\t\tAVG Bandwidth(MB/s)\t\tREAD\t\t\tWRITE";
+				Logger::LogInfo("Name\tIP Address\tOS\tSize\tPool\tREAD\tWRITE\tREAD\tWRITE\t50th\t90th\t99th\t50th\t90th\t99th");
+				fout << "Name\tIP Address\tOS\tSize\tPool\tREAD\tWRITE\tREAD\tWRITE\t50th\t90th\t99th\t50th\t90th\t99th" << endl;
 				string vm_id;
 				for (int i = 0; i < TestVMs.size(); i++) {
 					if (!doneJobs[TestVMs[i].GetInternalIP()]) {
 						continue;
 					}
 					if (TestVMs[i].CountTestResult(job)) {
-						tempStream.clear();
-						tempStream.str("");
-						tempStream << i + 1;
-						tempStream >> vm_id;
-						Logger::LogInfo(vm_id + "\t" + TestVMs[i].GetTestResult(job));
-						fout << vm_id + "\t" + TestVMs[i].GetTestResult(job) << endl;
+						Logger::LogInfo(TestVMs[i].GetTestResult(job));
+						fout << TestVMs[i].GetTestResult(job) << endl;
 					}
 				}
 			}
@@ -615,6 +645,14 @@ namespace IOStormPlus{
         vm.SetTestResult(job, AnalyzeStandardOutput(outputFile));
     }
 
+	double convertTimeToMs(string timeType, double time) {
+		if (timeType == "nsec")
+			time /= 1000 * 1000;
+		if (timeType == "usec")
+			time /= 1000;
+		return time;
+	}
+
     ReportSummary Controller::AnalyzeStandardOutput(string outputFile) {
         Logger::LogInfo("Start AnalyzeStandardOutput " + outputFile);
 
@@ -642,19 +680,34 @@ namespace IOStormPlus{
 			pos = buf.find("IOPS=");
             if (pos != string::npos) {
                 pos += 5;
-				if (flag == 1)
-					res.readIOPS = GetNumber(buf, pos);
-				else
-					res.writeIOPS = GetNumber(buf, pos);
+				res.IOPS[flag - 1] = GetNumber(buf, pos);
             }
 
-            pos = buf.find("lat (usec):");
+			pos = buf.find("BW=");
 			if (pos != string::npos) {
-				pos = buf.find("avg=") + 4;
-				if (flag == 1)
-					res.readLat = GetNumber(buf, pos);
-				else
-					res.writeLat = GetNumber(buf, pos);
+				pos = buf.find("iB/s (") + 6;
+				res.bandWidth[flag - 1] = GetNumber(buf, pos) / (1000 * 1000);
+			}
+
+            pos = buf.find("clat percentiles (");
+			if (pos != string::npos) {
+				string timeType = buf.substr(pos + 18, 4);
+				while (!fin.eof()) {
+					getline(fin, buf);
+					pos = buf.find("50.00th=[");
+					if (pos != string::npos) {
+						res.cLat[flag - 1][0] = convertTimeToMs(timeType, GetNumber(buf, pos + 9));
+					}
+					pos = buf.find("90.00th=[");
+					if (pos != string::npos) {
+						res.cLat[flag - 1][1] = convertTimeToMs(timeType, GetNumber(buf, pos + 9));
+					}
+					pos = buf.find("99.00th=[");
+					if (pos != string::npos) {
+						res.cLat[flag - 1][2] = convertTimeToMs(timeType, GetNumber(buf, pos + 9));
+						break;
+					}
+				}
 			}
 
         }
@@ -680,9 +733,15 @@ namespace IOStormPlus{
             else if (buf[i] == 'k') {
                 num *= 1000;
             }
+			else if (buf[i] == 'M') {
+				num *= 1000 * 1000;
+			}
             else if (buf[i] == '.') {
                 pointFlag = 1;
             }
+			else if (buf[i] == ' ') {
+				continue;
+			}
             else {
                 break;
             }

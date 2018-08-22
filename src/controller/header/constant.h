@@ -28,7 +28,7 @@ namespace IOStormPlus{
 	const utility::string_t workloadBlobContainerName = U("workload");
 	const utility::string_t outputBlobContainerName = U("output");
 	const utility::string_t logBlobContainerName = U("log");
-	const int maxWaitTimeInSec = 60 * 60;
+	const int defaultMaxWaitTimeInSec = 60 * 60;
 	const int maxHeartbeatGapInSec = 2 * 60;
 }
 
