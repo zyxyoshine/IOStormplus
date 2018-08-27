@@ -1,10 +1,11 @@
-#include "header/testvm.h"
+﻿#include "header/testvm.h"
 #include "../common/header/logger.h"
 #include "header/constant.h"
 #include "header/helper.h"
 #include <sstream>
 #include <algorithm>
 #include <iostream>
+#include <iomanip>
 
 using namespace std;
 
@@ -55,16 +56,20 @@ namespace IOStormPlus {
 		for (int i = 0; i < 2; i++)
 			for (int j = 0;j < 3;j++)
 				outputData.push_back(m_testResults[jobName].cLat[i][j]);
+		tempStream.precision(4);
+		tempStream.unsetf(ios::showpoint);
+		tempStream.unsetf(ios::scientific);
 		for (auto data : outputData) {
 			if (data == 0)
 				tempStream << "\tN/A";
 			else {
-				if (data > 1000 * 1000)
+				if (data >= 1000 * 1000)
 					tempStream << "\t" << data / (1000 * 1000) << "M";
-				else if (data > 1000)
+				else if (data >= 10000)
 					tempStream << "\t" << data / 1000  << "k";
-				else
+				else {
 					tempStream << "\t" << data;
+				}
 			}
 		}
         return tempStream.str();

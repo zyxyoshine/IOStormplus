@@ -73,4 +73,4 @@ IOStormplus_Controller test
 ## Get result
 When all jobs have been done (the standard job will cost about 6 minutes)
 , all detail reports will be named as `{timestamp}_{testvm}_{job name}.out` and put into `output` folder and blob. <br>
-IOStormplus will create a summary report `{timestamp}_summary.out` by analyse IOPS data, it can be direct import into Excel.
+IOStormplus will create a summary report `{timestamp}_summary.xls` by analyse IOPS data, it can be direct import into Excel.

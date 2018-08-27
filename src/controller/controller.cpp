@@ -560,7 +560,7 @@ namespace IOStormPlus{
 					<< setw(2) << setfill('0') << now->tm_min;
 
         tempStream >> summaryOutputFile;
-        summaryOutputFile = summaryOutputFile + "_summary.out";
+        summaryOutputFile = summaryOutputFile + "_summary.xls";
         ofstream fout(OutputFolder + summaryOutputFile, ios_base::out | ios_base::app);
 
         // Title
@@ -580,9 +580,9 @@ namespace IOStormPlus{
 			for (auto job : jobs) {
 				Logger::LogInfo("Job: " + job);
 				fout << "Job: " + job << endl;
-				Logger::LogInfo("\t\t\t\t\tLagency percentiles(ms) ");
-				fout << "\t\t\t\t\tLagency percentiles(ms) " << endl;;
-				Logger::LogInfo("\t\tAVG IOPS\t\tAVG Bandwidth(MB/s)\t\tREAD\t\t\tWRITE");
+				Logger::LogInfo("\t\t\t\t\tLatency percentiles(ms) ");
+				fout << "\t\t\t\t\tLatency percentiles(ms) " << endl;;
+				Logger::LogInfo("\tAVG IOPS\tBandwidth(MB/s)\tREAD\t\t\tWRITE");
 				fout << "\tAVG IOPS\t\tAVG Bandwidth(MB/s)\t\tREAD\t\t\tWRITE" << endl;
 				Logger::LogInfo("Name\tREAD\tWRITE\tREAD\tWRITE\t50th\t90th\t99th\t50th\t90th\t99th");
 				fout << "Name\tREAD\tWRITE\tREAD\tWRITE\t50th\t90th\t99th\t50th\t90th\t99th" << endl;
@@ -655,10 +655,13 @@ namespace IOStormPlus{
 
     ReportSummary Controller::AnalyzeStandardOutput(string outputFile) {
         Logger::LogInfo("Start AnalyzeStandardOutput " + outputFile);
-
+		ReportSummary res;
         ifstream fin(outputFile, ios_base::in);
+		if (fin.fail()) {
+			Logger::LogError("AnalyzeStandardOutput failed! Can not open " + outputFile);
+			return res;
+		}
         string buf;
-        ReportSummary res;
 		int flag = 0; // 0: not found, 1: read, 2: write
         while (!fin.eof()) {
             getline(fin, buf);
