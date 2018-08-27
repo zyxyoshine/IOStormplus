@@ -1,3 +1,8 @@
+# Architecture
+## Overall
+![image](https://github.com/zyxyoshine/IOStormplus/raw/master/src/architecture_overall.jpg)
+## Agent
+![image](https://github.com/zyxyoshine/IOStormplus/raw/master/src/architecture_agent.jpg)
 # Development
 
 ## Deploy environment
