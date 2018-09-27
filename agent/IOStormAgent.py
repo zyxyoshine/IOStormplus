@@ -3,15 +3,18 @@ from azure.storage.table import Entity
 from azure.storage.blob  import BlockBlobService
 import datetime, time
 import subprocess
-import logging 
-import sys
-logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+import logging, sys
+import yaml
 
-class Config:
+logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+config = yaml.safe_load(open("config.yml"))
+
+Interval = 10
+
+class Tables:
     NodeTable  = 'IOStormNodes'
     ExecTable  = 'IOStormExec'
-    CommTable  = 'IOStormComm'
-    Interval   = 10
+    TaskTable  = 'IOStormTask'
 
 class NodeState:
     Ready     = 'READY'
@@ -28,9 +31,9 @@ class ExecState:
 
 #retrieve the locations and secret for connecting to storage account 
 class Account:
-    Name = 'saiostorm'
-    Key = 'Jnh74fG573TaZww1L8QYhnGKym1J+JxCrOKl8F5T28i81tuoVrANrN4DQQLUSxRpOIUNRuybHr1HYx1ORgc3xw=='
-    Endpoint  = 'redmond.azurestack.corp.microsoft.com'
+    Name = config['Account']['Name']
+    Key = config['Account']['Key']
+    Endpoint  = config['Account']['Endpoint']
 
 class Node:    
     def __init__( self, pool, name, ip, os, size ):
@@ -58,10 +61,10 @@ class Node:
     def GetCommand( self ):
         #get any pending command from queue
         entityPartitionKey = (self.Pool + "_" + self.Name)
-        commands = tablesvc.query_entities( Config.CommTable, filter = "PartitionKey eq '" + entityPartitionKey + "'", num_results = 10  )    
+        commands = tablesvc.query_entities( Tables.TaskTable, filter = "PartitionKey eq '" + entityPartitionKey + "'", num_results = 10  )    
         logging.info( "Commands retrieved. Processing..." )
         for command in commands:
-            tablesvc.delete_entity( Config.CommTable, entityPartitionKey, command.RowKey)
+            tablesvc.delete_entity( Tables.TaskTable, entityPartitionKey, command.RowKey)
         return commands
     def UpdateState( self, newstate ):
         #update the status of this node
@@ -75,7 +78,7 @@ class Node:
         status.IP = self.IP
         status.OS = self.OS
         status.Size = self.Size
-        tablesvc.insert_or_replace_entity( Config.NodeTable, status )
+        tablesvc.insert_or_replace_entity( Tables.NodeTable, status )
     def ExecuteCommand( self, command ):
         #execute the command 
         logging.info( "Executing command " + command.CommandLine )
@@ -117,7 +120,7 @@ class Execution:
         execrec.Executable = self.Command.CommandLine
         execrec.State = self.State    
         execrec.Output = self.Output
-        tablesvc.insert_or_replace_entity( Config.ExecTable, execrec )
+        tablesvc.insert_or_replace_entity( Tables.ExecTable, execrec )
     def Run( self ):
         logging.info( "Executing: " + self.Command.CommandLine )
         self.Process = subprocess.Popen( self.Command.CommandLine, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -160,12 +163,12 @@ tablesvc = TableService(
 def CheckTable():
     #check if table exists
     #if table does not exist create it 
-    if( not tablesvc.exists( Config.NodeTable )): 
-        tablesvc.create_table( Config.NodeTable )
-    if( not tablesvc.exists( Config.ExecTable )): 
-        tablesvc.create_table( Config.ExecTable )
-    if( not tablesvc.exists( Config.CommTable )): 
-        tablesvc.create_table( Config.CommTable )
+    if( not tablesvc.exists( Tables.NodeTable )): 
+        tablesvc.create_table( Tables.NodeTable )
+    if( not tablesvc.exists( Tables.ExecTable )): 
+        tablesvc.create_table( Tables.ExecTable )
+    if( not tablesvc.exists( Tables.TaskTable )): 
+        tablesvc.create_table( Tables.TaskTable )
 
 
 
@@ -173,11 +176,14 @@ def CheckTable():
 
 def Main():
     node = Node( 
-        pool = 'pl1',
-        name = 'pl1-vm0',
-        ip   = '10.0.0.7',
-        os   = 'linux',
-        size = 'Standard_F4s_v2' )
+        pool = config['Node']['Pool'],
+        name = config['Node']['Name'],
+        ip   = config['Node']['IP'],
+        os   = config['Node']['OS'],
+        size = config['Node']['Size'], 
+        disk = config['Node']['Disk'], 
+        disksize = config['Node']['DiskSize']
+    )
     while ( True ):
         #   TODO periodically CheckTable() && CheckQueue()
         commands = node.GetCommand()
@@ -198,7 +204,7 @@ def Main():
                 if( command.Command == "RESUME" ):            
                     node.Resume()
         node.Refresh()
-        time.sleep( Config.Interval )
+        time.sleep( Interval )
 
 
     

@@ -128,15 +128,10 @@ function StartJob( $Params )
 
     }
 
-    $entity = New-Object "Microsoft.WindowsAzure.Storage.Table.DynamicTableEntity" `
-                $job.Id, `
-                '', `
-                @{   `
-                    "Command"=$job.Command; `
-                    "Params"=$job.CommandLine; `
-                    "File"=$job.JobFile `
-                }                      
-    JobTable.CloudTable.Execute([Microsoft.WindowsAzure.Storage.Table.TableOperation]::Insert($entity))        
+    $entity = New-Object "Microsoft.WindowsAzure.Storage.Table.DynamicTableEntity" $jobId, ''
+    $entity.Properties.Add("Command", "EXECUTE")
+    $entity.Properties.Add("Params", $Params)
+    $JobTable.CloudTable.Execute([Microsoft.WindowsAzure.Storage.Table.TableOperation]::Insert($entity))        
 }
 
 function GetJob( $Params )
@@ -153,15 +148,11 @@ function StartTask( $node, $job )
 {
     Write-Host "  Starting task: " $job.Command "|" $job.CommandLine "| on node: " $Node.Name  
 
-    $entity = New-Object "Microsoft.WindowsAzure.Storage.Table.DynamicTableEntity" `
-                        $node.Pool + "_" + $node.Name, `
-                        $job.Id, `
-                        @{   `
-                            "Command"=$job.Command; `
-                            "Params"=$job.CommandLine; `
-                            "File"=$job.JobFile `
-                        }                      
-    TaskTable.CloudTable.Execute([Microsoft.WindowsAzure.Storage.Table.TableOperation]::Insert($entity))
+    $entity = New-Object "Microsoft.WindowsAzure.Storage.Table.DynamicTableEntity" ($node.Pool + "_" + $node.Name), $job.Id
+    $entity.Properties.Add("Command", $job.Command)
+    $entity.Properties.Add("CommandLine", $job.CommandLine)
+    $entity.Properties.Add("File", $job.JobFile)
+    $TaskTable.CloudTable.Execute([Microsoft.WindowsAzure.Storage.Table.TableOperation]::Insert($entity))
 
 }
 
