@@ -17,7 +17,7 @@ $dn=$rg+$vmPool
 $storageEndpointSuffix= ((Get-AzureRmContext).Environment | Get-AzureRmEnvironment).StorageEndpointSuffix
 
 New-AzureRmResourceGroupDeployment -Name $dn -ResourceGroupName $rg `
-                                   -TemplateFile .\umd\agent.template\agent.template.$vmOS.json `
+                                   -TemplateFile .\md\agent.template\agent.template.$vmOS.json `
                                    -StorageEndpointSuffix $storageEndpointSuffix -vmPool $vmPool `
                                    -vmCount $vmCount -vmSize $vmSize `
                                    -vmDataDiskCount $vmDataDisks -vmDataDiskSizeInGB $vmDataDiskGB `

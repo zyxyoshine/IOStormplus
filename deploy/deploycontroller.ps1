@@ -10,7 +10,7 @@ Param(
 $storageEndpointSuffix= ((Get-AzureRmContext).Environment | Get-AzureRmEnvironment).StorageEndpointSuffix
 
 New-AzureRmResourceGroupDeployment -Name "controllerdeployment" -ResourceGroupName $ResourceGroupName `
-                                   -TemplateFile .\umd\controller.template.json `
+                                   -TemplateFile .\md\controller.template.json `
                                    -StorageEndpointSuffix $storageEndpointSuffix `
                                    -vmAdminUserName $UserName -vmAdminPassword $Password `
                                    -verbose
