@@ -1,0 +1,14 @@
+Account:
+     Name: saiostorm
+     Key: Jnh74fG573TaZww1L8QYhnGKym1J+JxCrOKl8F5T28i81tuoVrANrN4DQQLUSxRpOIUNRuybHr1HYx1ORgc3xw==
+     Endpoint: redmond.azurestack.corp.microsoft.com
+
+Node:
+    Pool: poolname
+    Name: nodename
+    IP: node ip
+    OS: node os 
+    Size: node VM size 
+    Disk: number of data disks
+    DiskSize: data disk size
+

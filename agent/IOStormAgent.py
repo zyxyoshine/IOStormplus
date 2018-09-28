@@ -36,7 +36,7 @@ class Account:
     Endpoint  = config['Account']['Endpoint']
 
 class Node:    
-    def __init__( self, pool, name, ip, os, size ):
+    def __init__( self, pool, name, ip, os, size, disk, disksize ):
         self.Pool = pool
         self.Name = name
         self.IP = ip
