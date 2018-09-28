@@ -28,14 +28,16 @@ def WriteConfig( params ):
     with open('config.yml', 'w') as outfile:
         yaml.dump(config, outfile, default_flow_style=False)
 
-print( sys.argv.count() )
+print( len(sys.argv) )
 print( sys.argv[0])
-if( sys.argv.count() > 1 ):
+if( len(sys.argv) > 1 ):
     WriteConfig( sys.argv )
     exit(0)
 
 config = yaml.safe_load(open("config.yml"))
 Interval = 10
+WorkloadContainer = "workload"
+WorkloadPath = "./workload/"
 
 class Tables:
     NodeTable  = 'IOStormNodes'
@@ -90,7 +92,7 @@ class Node:
         commands = tablesvc.query_entities( Tables.TaskTable, filter = "PartitionKey eq '" + entityPartitionKey + "'", num_results = 10  )    
         logging.info( "Commands retrieved. Processing..." )
         for command in commands:
-            tablesvc.delete_entity( Tables.TaskTable, entityPartitionKey, command.RowKey)
+            temp = tablesvc.delete_entity( Tables.TaskTable, entityPartitionKey, command.RowKey)
         return commands
     def UpdateState( self, newstate ):
         #update the status of this node
@@ -104,7 +106,7 @@ class Node:
         status.IP = self.IP
         status.OS = self.OS
         status.Size = self.Size
-        tablesvc.insert_or_replace_entity( Tables.NodeTable, status )
+        temp = tablesvc.insert_or_replace_entity( Tables.NodeTable, status )
     def ExecuteCommand( self, command ):
         #execute the command 
         logging.info( "Executing command " + command.CommandLine )
@@ -146,10 +148,14 @@ class Execution:
         execrec.Executable = self.Command.CommandLine
         execrec.State = self.State    
         execrec.Output = self.Output
-        tablesvc.insert_or_replace_entity( Tables.ExecTable, execrec )
+        temp = tablesvc.insert_or_replace_entity( Tables.ExecTable, execrec )
     def Run( self ):
-        logging.info( "Executing: " + self.Command.CommandLine )
-        self.Process = subprocess.Popen( self.Command.CommandLine, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        filepath = WorkloadPath + self.Command.File
+        logging.info( "Copying blob " + self.Command.File + " to file " + filepath )
+        temp = blobsvc.get_blob_to_path( WorkloadContainer, self.Command.File, filepath )
+        commandline = self.Command.CommandLine + " " + filepath 
+        logging.info( "Executing: " + commandline )
+        self.Process = subprocess.Popen( commandline, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         self.UpdateState( ExecState.Executing )
     def Poll( self ):
         logging.info( "Checking command" )
@@ -180,6 +186,12 @@ node = None
 
 #get table service
 tablesvc = TableService(
+    account_name=Account.Name, 
+    account_key=Account.Key,
+    endpoint_suffix=Account.Endpoint
+)
+
+blobsvc = BlockBlobService(
     account_name=Account.Name, 
     account_key=Account.Key,
     endpoint_suffix=Account.Endpoint

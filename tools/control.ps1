@@ -13,6 +13,9 @@ $ExecTableName  = 'IOStormExec'
 $TaskTableName  = 'IOStormTask'
 $JobTableName   = 'IOStormJob'
 
+$workloadContainer = "workload"
+$workloadPath = ".\workload"
+
 $ctx = New-AzureStorageContext -StorageAccountName $AccountName -StorageAccountKey $AccountKey -Endpoint $AccountEndpoint
 
 $tables = Get-AzureStorageTable -Context $ctx
@@ -26,7 +29,8 @@ if( -not $TaskTable ) { New-AzureStorageTable -Name $TaskTableName -Context $ctx
 $JobTable = $tables | where Name -eq $JobTableName 
 if( -not $JobTable ) { New-AzureStorageTable -Name $JobTableName -Context $ctx}
 
-
+if( -not (Get-AzureStorageContainer -context $ctx -Name $workloadContainer -ErrorAction Ignore ) ){ New-AzureStorageContainer -Name $workloadContainer -Context $ctx }
+   
 function EntityToObject ($item)
 {
     $p = new-object PSObject
@@ -99,6 +103,15 @@ function StartJob( $Params )
     foreach( $param in $Params.split( ' ' ) )
     {
         $poolparam = $param.split( '=' )
+        $jobfilepath = ($workloadpath + "\" + $poolparam[1])
+
+        #check if file exists
+        if( -not (Test-path $jobfilepath)) 
+        { 
+            Write-Host "File " $jobfilepath " does not exist!"
+            exit
+        }
+
         $pool = $global:pools | where Name -eq $poolparam[0] | where State -eq "READY"
         if( -not $pool) 
         {
@@ -113,12 +126,21 @@ function StartJob( $Params )
             CommandLine = "fio"
             JobFile = $poolparam[1]            
         }
+
         $pooljobs += @($pooljob)
     }
 
     foreach( $pooljob in $pooljobs )
     {
         #copy file $pooljob.FileName to blob storage 
+        $jobfilepath = ($workloadpath + "\" + $pooljob.JobFile)
+        Write-Host "Copying file: " $pooljob.JobFile " to storage: " $workloadContainer "/" $poolJob.JobFile
+        Set-AzureStorageBlobContent -File $jobfilepath `
+                                    -Container $workloadContainer `
+                                    -Blob $poolJob.JobFile `
+                                    -Context $ctx 
+
+        #create task for each node 
         Write-Host "Executing job: " $pooljob.JobFile " on pool: " $pooljob.Pool.Name 
         foreach( $node in $pooljob.Pool.Nodes )
         {
@@ -128,6 +150,7 @@ function StartJob( $Params )
 
     }
 
+    # write the job record into the jobs table
     $entity = New-Object "Microsoft.WindowsAzure.Storage.Table.DynamicTableEntity" $jobId, ''
     $entity.Properties.Add("Command", "EXECUTE")
     $entity.Properties.Add("Params", $Params)
