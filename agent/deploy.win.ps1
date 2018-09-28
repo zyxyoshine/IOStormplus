@@ -6,8 +6,6 @@ $WorkspacePath = $Root + "IOStormplus\"
 
 #install python 
 
-#Download and unzip agent package
-
 #install IOStorm agent
 # !!! REPLACE WITH NEW AGENT !!!
 $PackageName = "Agent.win.zip"
@@ -25,6 +23,8 @@ function Unzip
 
 Unzip ($Root + $PackageName) $Root
 Remove-Item ($Root + $PackageName)
+
+#configure agent 
 
 #Install fio
 $FioBinaryName = "fio-3.5-x64.msi"
@@ -82,8 +82,6 @@ $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -RunOnlyIfNetworkAv
 Unregister-ScheduledTask -TaskName "VMIOSTORM" -Confirm:0 -ErrorAction Ignore
 Register-ScheduledTask -Action $action -Trigger $trigger -TaskName "VMIOSTORM" -Description "VM iostorm agent" -User "System" -RunLevel Highest -Settings $settings
 
-Stop-Transcript
-
 #Enable PSRemoting
 
 $DNSName = $env:COMPUTERNAME 
@@ -95,3 +93,5 @@ $thumbprint = (New-SelfSignedCertificate -DnsName $DNSName -CertStoreLocation Ce
 $cmd = "winrm create winrm/config/Listener?Address=*+Transport=HTTPS @{Hostname=""$DNSName""; CertificateThumbprint=""$thumbprint""}" 
 
 cmd.exe /C $cmd  
+
+Stop-Transcript

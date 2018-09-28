@@ -4,22 +4,6 @@ apt-get upgrade -y
 #install libraries 
 apt-get install make gcc g++ unzip zlib1g-dev libboost-all-dev libssl-dev libxml2-dev libxml++2.6-dev libxml++2.6-doc uuid-dev libaio-dev cmake -y
 
-
-#apt-get install python3-pip -y 
-#pip3 install azure
-#pip3 install azure-storage 
-
-
-#install IOStorm agent
-# !!! REPLACE WITH NEW AGENT !!!
-cd /home/ && wget https://github.com/zyxyoshine/IOStormplus/raw/master/deploy/binary/Agent.linux.zip
-cd /home/ && unzip Agent.linux.zip
-mkdir /home/IOStormplus/output
-mkdir /home/IOStormplus/workload
-ln -s /home/IOStormplus/libazurestorage.so.3.1 /usr/lib/libazurestorage.so.3
-ln -s /home/IOStormplus/libcpprest.so.2.9 /usr/lib/libcpprest.so.2.9
-chmod -R 0777 /home/IOStormplus
-
 #install fio
 cd /home && wget http://brick.kernel.dk/snaps/fio-3.5.tar.bz2
 cd /home && tar -xjvf fio-3.5.tar.bz2
@@ -27,9 +11,26 @@ cd /home && ./fio-3.5/configure
 cd /home/fio-3.5 && make
 cd /home/fio-3.5 && make install
 
+#configure python libs
+apt-get install python3-pip -y 
+pip3 install azure
+pip3 install azure-storage 
+
+#install IOStorm agent
+cd /home/ 
+mkdir IOStorm
+cd IOStorm
+wget https://raw.githubusercontent.com/zyxyoshine/IOStormplus/master/agent/IOStormAgent.py
+mkdir /home/IOStorm/output
+mkdir /home/IOStorm/workload
+
+#configure agent
+#create config.yml file 
+
+
 #start agent
-sed -i '$inohup /home/IOStormplus/agent '$(hostname --ip-address)' '$2' '$3' \"'$1'\" >/dev/null 2>agent.err &' /etc/rc.local
-cd /home/IOStormplus && nohup ./agent $(hostname --ip-address) $2 $3 $1 >/dev/null 2>agent.err &
+#sed -i '$inohup /home/IOStormplus/agent '$(hostname --ip-address)' '$2' '$3' \"'$1'\" >/dev/null 2>agent.err &' /etc/rc.local
+#cd /home/IOStormplus && nohup ./agent $(hostname --ip-address) $2 $3 $1 >/dev/null 2>agent.err &
 
 #create one volume striped over all data disks
 disks=($(lsblk -l -p -o NAME | grep "sd" | grep -v "sda" | grep -v "sdb"))

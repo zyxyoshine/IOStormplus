@@ -71,8 +71,8 @@ function LoadPools()
                 Size = $nodeentry.Properties["Size"].StringValue               
             }
             if( $node.State -ne "READY" ) { $pool.State = "NOT READY"} 
+            $pool.Nodes += @($node)            
         }
-        $pool.Nodes += @($node)
     }
 }
 

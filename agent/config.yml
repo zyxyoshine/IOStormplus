@@ -1,7 +1,7 @@
 Account:
-     Name: saiostorm
-     Key: Jnh74fG573TaZww1L8QYhnGKym1J+JxCrOKl8F5T28i81tuoVrANrN4DQQLUSxRpOIUNRuybHr1HYx1ORgc3xw==
-     Endpoint: redmond.azurestack.corp.microsoft.com
+     Name: storage account name
+     Key: storage account key
+     Endpoint: storage endpoint domain
 
 Node:
     Pool: poolname
