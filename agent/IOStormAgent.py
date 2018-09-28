@@ -143,8 +143,8 @@ class Execution:
         logging.info( "Execution status update: " + newstate )
         self.State = newstate
         execrec  = Entity()
-        execrec.PartitionKey = self.Command.PartitionKey
-        execrec.RowKey = self.Command.RowKey
+        execrec.PartitionKey = self.Command.RowKey
+        execrec.RowKey = self.Command.PartitionKey
         execrec.Executable = self.Command.CommandLine
         execrec.State = self.State    
         execrec.Output = self.Output

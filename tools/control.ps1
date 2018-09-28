@@ -135,10 +135,11 @@ function StartJob( $Params )
         #copy file $pooljob.FileName to blob storage 
         $jobfilepath = ($workloadpath + "\" + $pooljob.JobFile)
         Write-Host "Copying file: " $pooljob.JobFile " to storage: " $workloadContainer "/" $poolJob.JobFile
-        Set-AzureStorageBlobContent -File $jobfilepath `
-                                    -Container $workloadContainer `
-                                    -Blob $poolJob.JobFile `
-                                    -Context $ctx 
+        $temp = Set-AzureStorageBlobContent -File $jobfilepath `
+                                            -Container $workloadContainer `
+                                            -Blob $poolJob.JobFile `
+                                            -Context $ctx `
+                                            -Force 
 
         #create task for each node 
         Write-Host "Executing job: " $pooljob.JobFile " on pool: " $pooljob.Pool.Name 
@@ -154,17 +155,33 @@ function StartJob( $Params )
     $entity = New-Object "Microsoft.WindowsAzure.Storage.Table.DynamicTableEntity" $jobId, ''
     $entity.Properties.Add("Command", "EXECUTE")
     $entity.Properties.Add("Params", $Params)
-    $JobTable.CloudTable.Execute([Microsoft.WindowsAzure.Storage.Table.TableOperation]::Insert($entity))        
+    $temp = $JobTable.CloudTable.Execute([Microsoft.WindowsAzure.Storage.Table.TableOperation]::Insert($entity))        
 }
 
 function GetJob( $Params )
 {
-    Write-Host "Get a job"
+    $partitionKey = $Params
+    $query = New-Object "Microsoft.WindowsAzure.Storage.Table.TableQuery"
+    $filter = [Microsoft.WindowsAzure.Storage.Table.TableQuery]::GenerateFilterCondition( `
+                    "PartitionKey",`
+                    [Microsoft.WindowsAzure.Storage.Table.QueryComparisons]::Equal,`
+                    $partitionKey )
+    $query.FilterString = $filter    
+    $data = $ExecTable.CloudTable.ExecuteQuery($query)
+
+    $data | select @{Label="JobId"; Expression={$_.PartitionKey}}, `
+                   @{Label="Command"; Expression={$_.Properties['Command'].StringValue}}, `
+                   @{Label="Params";Expression={$_.Properties['Params'].StringValue}}
+}
 }
 
 function ListJobs()
 {
-    Write-Host "List jobs"
+    $query = New-Object "Microsoft.WindowsAzure.Storage.Table.TableQuery"
+    $data = $JobTable.CloudTable.ExecuteQuery($query)
+    $data | select @{Label="JobId"; Expression={$_.PartitionKey}}, `
+                   @{Label="Command"; Expression={$_.Properties['Command'].StringValue}}, `
+                   @{Label="Params";Expression={$_.Properties['Params'].StringValue}}
 }
 
 function StartTask( $node, $job )
@@ -175,7 +192,7 @@ function StartTask( $node, $job )
     $entity.Properties.Add("Command", $job.Command)
     $entity.Properties.Add("CommandLine", $job.CommandLine)
     $entity.Properties.Add("File", $job.JobFile)
-    $TaskTable.CloudTable.Execute([Microsoft.WindowsAzure.Storage.Table.TableOperation]::Insert($entity))
+    $temp = $TaskTable.CloudTable.Execute([Microsoft.WindowsAzure.Storage.Table.TableOperation]::Insert($entity))
 
 }
 
