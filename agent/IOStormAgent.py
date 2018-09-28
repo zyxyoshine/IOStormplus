@@ -8,11 +8,34 @@ import yaml
 
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
+def WriteConfig( params ):
+    config = dict(
+        Account = dict (
+            Name = params[2],
+            Key = params[3],
+            Endpoint = params[4],
+        ),
+        Node = dict (
+            Pool = params[5],
+            Name = params[6],
+            IP = params[7],
+            OS = params[8],
+            Size = params[9],
+            Disk = params[10],
+            DiskSize = params[11]
+        )
+    )
+    with open('config.yml', 'w') as outfile:
+        yaml.dump(config, outfile, default_flow_style=False)
+
+print( sys.argv.count() )
+print( sys.argv[0])
+if( sys.argv.count() > 1 ):
+    WriteConfig( sys.argv )
+    exit(0)
 
 config = yaml.safe_load(open("config.yml"))
-
 Interval = 10
-
 
 class Tables:
     NodeTable  = 'IOStormNodes'
@@ -210,28 +233,5 @@ def Main():
         time.sleep( Interval )
 
 
-def WriteConfig( params ):
-    config = dict(
-        Account = dict (
-            Name = params[2],
-            Key = params[3],
-            Endpoint = params[4],
-        ),
-        Node = dict (
-            Pool = params[5],
-            Name = params[6],
-            IP = params[7],
-            OS = params[8],
-            Size = params[9],
-            Disk = params[10],
-            DiskSize = params[11]
-        )
-    )
-    with open('config.yml', 'w') as outfile:
-        yaml.dump(config, outfile, default_flow_style=False)
         
-
-if( sys.argv.count > 1 ):
-    WriteConfig( sys.argv )
-else:
-    Main()
+Main()
