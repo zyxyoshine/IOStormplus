@@ -25,11 +25,10 @@ def WriteConfig( params ):
             DiskSize = params[11]
         )
     )
+
     with open('config.yml', 'w') as outfile:
         yaml.dump(config, outfile, default_flow_style=False)
 
-print( len(sys.argv) )
-print( sys.argv[0])
 if( len(sys.argv) > 1 ):
     WriteConfig( sys.argv )
     exit(0)
@@ -37,7 +36,9 @@ if( len(sys.argv) > 1 ):
 config = yaml.safe_load(open("config.yml"))
 Interval = 10
 WorkloadContainer = "workload"
+OutputContainer = "output"
 WorkloadPath = "./workload/"
+OutputPath   = "./output/"
 
 class Tables:
     NodeTable  = 'IOStormNodes'
@@ -72,6 +73,7 @@ class Node:
         self.Size = size
         self.State = NodeState.Ready
         self.Execution = None
+
     def Refresh( self ):
         logging.debug( "Node state refresh: " + self.State )
         if( self.State == NodeState.Ready ):
@@ -86,6 +88,7 @@ class Node:
             else:
                 logging.debug( "Execution completed" )
                 self.UpdateState( NodeState.Ready )
+
     def GetCommand( self ):
         #get any pending command from queue
         entityPartitionKey = (self.Pool + "_" + self.Name)
@@ -94,6 +97,7 @@ class Node:
         for command in commands:
             temp = tablesvc.delete_entity( Tables.TaskTable, entityPartitionKey, command.RowKey)
         return commands
+
     def UpdateState( self, newstate ):
         #update the status of this node
         self.State = newstate
@@ -107,25 +111,30 @@ class Node:
         status.OS = self.OS
         status.Size = self.Size
         temp = tablesvc.insert_or_replace_entity( Tables.NodeTable, status )
+
     def ExecuteCommand( self, command ):
         #execute the command 
         logging.info( "Executing command " + command.CommandLine )
         self.Execution = Execution( command )
         self.Execution.Run()
         self.UpdateState(  NodeState.Executing )
+
     def CancelCommand( self ):
         logging.info( "Canceling command..." )    
         self.Execution.Kill()
         self.Execution = None
         self.UpdateState( NodeState.Ready )
+
     def Pause( self ):
         #do not take any new commands, except !resume  
         logging.info( "Pausing..." )    
         self.UpdateState( NodeState.Paused )
+
     def Resume( self ):
         #resume operations
         logging.info( "Resuming..." )    
         self.UpdateState( NodeState.Ready )
+
     def Reset( self ):
         logging.info( "Resetting..." )    
         if( self.State == NodeState.Executing ):
@@ -137,8 +146,9 @@ class Execution:
     def __init__( self, command ):
         self.Command = command
         self.State  = ExecState.Executing
-        self.Output  = ""
+        self.Output  = self.Command.RowKey + self.Command.PartitionKey
         self.Process = None
+
     def UpdateState( self, newstate ):
         logging.info( "Execution status update: " + newstate )
         self.State = newstate
@@ -149,19 +159,19 @@ class Execution:
         execrec.State = self.State    
         execrec.Output = self.Output
         temp = tablesvc.insert_or_replace_entity( Tables.ExecTable, execrec )
+
     def Run( self ):
         filepath = WorkloadPath + self.Command.File
         logging.info( "Copying blob " + self.Command.File + " to file " + filepath )
         temp = blobsvc.get_blob_to_path( WorkloadContainer, self.Command.File, filepath )
-        commandline = self.Command.CommandLine + " " + filepath 
+        commandline = self.Command.CommandLine + ' --output "' + OutputPath + self.Output + '" --output-format=json --lat_percentiles=1 "' + filepath + '"'
         logging.info( "Executing: " + commandline )
         self.Process = subprocess.Popen( commandline, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         self.UpdateState( ExecState.Executing )
+
     def Poll( self ):
         logging.info( "Checking command" )
         p = self.Process.poll()
-        output = (self.Process.stdout.read()).decode( "utf-8")
-        logging.info( output )
         if( p == None):
             logging.info( "Command running")
             self.UpdateState( ExecState.Executing )
@@ -172,12 +182,18 @@ class Execution:
             else:
                 logging.info( "Command exited with error. Exit code " + str(p) )
                 self.UpdateState( ExecState.Error )        
+
+            blobsvc.create_blob_from_path( OutputContainer, self.Output, OutputPath + self.Output  )
+
         return self.State
+
+
     def Kill( self ):
         logging.info( "Killing process" )
         self.Process.Kill()
         self.Process = None
         self.UpdateState( ExecState.Canceled )
+
     def CollectLogs( self ):
         return
 
