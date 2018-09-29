@@ -78,6 +78,7 @@
         "uniqueStorageAccountName": "[tolower(concat('sa', resourceGroup().name))]",
 		"uniqueStorageAccountContainerName": "[tolower(concat('sc', resourceGroup().name))]",
         "vmName": "[concat(parameters('vmPool'),'-vm')]",
+        "vmOsType": "Windows",
         "vmOsDiskName": "[variables('vmName')]",
         "vmDataDiskName": "[variables('vmName')]",
         "vmNicName": "[tolower(concat(parameters('vmPool'), '-nic'))]",
@@ -150,7 +151,7 @@
                         "version": "latest"
                     },
                     "osDisk": {
-						"osType": "Windows",
+						"osType": "[variables('vmOsType')]",
                         "name": "[tolower(concat(variables('vmOsDiskName'),copyIndex(parameters('vmIndex'))))]",
                         "caching": "None",
                         "createOption": "FromImage",
@@ -207,9 +208,9 @@
 				"autoUpgradeMinorVersion": true,
 				"settings": {
 					"fileUris": [
-						"https://raw.githubusercontent.com/zyxyoshine/IOStormplus/master/deploy/deploy.win.ps1"
+						"https://raw.githubusercontent.com/zyxyoshine/IOStormplus/master/agent/deploy.win.ps1"
 					],
-					"commandToExecute": "[concat('powershell -ExecutionPolicy Unrestricted -File ','deploy.win.ps1 ',variables('uniqueStorageAccountName'),' ',listKeys(concat('Microsoft.Storage/storageAccounts/', variables('uniqueStorageAccountName')), '2015-06-15').key1,' ',parameters('StorageEndpointSuffix'),' ',parameters('vmSize'),' ',parameters('vmPool'))]"
+					"commandToExecute": "[concat('powershell -ExecutionPolicy Unrestricted -File ','deploy.win.ps1 ',variables('uniqueStorageAccountName'),' ',listKeys(concat('Microsoft.Storage/storageAccounts/', variables('uniqueStorageAccountName')), '2015-06-15').key1,' ',parameters('StorageEndpointSuffix'),' ',parameters('vmPool'),' ',parameters('vmOS'),' ',parameters('vmSize'))]"
 				}
             },
             "dependsOn": [

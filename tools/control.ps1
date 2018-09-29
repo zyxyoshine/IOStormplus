@@ -4,9 +4,13 @@ Param(
     [string] $Params=""
 )
 
-$AccountName = 'saiostorm'
-$AccountKey = 'Jnh74fG573TaZww1L8QYhnGKym1J+JxCrOKl8F5T28i81tuoVrANrN4DQQLUSxRpOIUNRuybHr1HYx1ORgc3xw=='
-$AccountEndpoint  = 'redmond.azurestack.corp.microsoft.com'
+$configfile = "config.json"
+$config = get-content $configfile | ConvertFrom-Json
+
+$rgname = $config.resourcegroup
+$AccountName = $config.account
+$AccountKey = (Get-AzureRmStorageAccountKey -ResourceGroupName $rgname -Name $AccountName)[0].Value
+$AccountEndpoint  = (Get-AzureRmEnvironment (Get-AzureRmContext).Environment).StorageEndpointSuffix
 
 $NodeTableName  = 'IOStormNodes'
 $ExecTableName  = 'IOStormExec'
@@ -113,6 +117,7 @@ function StartJob( $Params )
         $poolparam = $param.split( '=' )
         $jobfilepath = ($workloadpath  + $poolparam[1])
 
+        Write-Host "Param " $param
         #check if file exists
         if( -not (Test-path $jobfilepath)) 
         { 
@@ -183,11 +188,11 @@ function GetJob( $Params)
     }
     else
     {
-        $job.Executions | select Node, State, `
-                          RIOPSmean, RMbsmean, Rlatmean, Rlat50p, Rlat90p, Rlat99p, `
-                          WIOPSmean, WMbsmean, Wlatmean, Wlat50p, Wlat90p, Wlat99p, `
-                          LastUpdateTime, Output `
-                        | ft *
+        $job.Executions | ft -group JobParams -property Node, State, `
+                        RIOPSmean, RMbsmean, Rlatmean, Rlat50p, Rlat90p, Rlat99p, `
+                        WIOPSmean, WMbsmean, Wlatmean, Wlat50p, Wlat90p, Wlat99p, `
+                        UsrCPU, SysCPU, LastUpdateTime, Output
+
                         
     }
 
@@ -226,7 +231,7 @@ function GetJobData( $Params )
         if( $execution.State -eq "COMPLETED" ) 
         {
             $execution = ExecutionResultParse $execution
-     
+            
         }
         $job.Executions += @($execution)                                
     }
@@ -256,17 +261,24 @@ function ExecutionResultParse( $execution )
 
     $json = get-content ( $outputPath + $execution.Output ) | convertfrom-json
     
-    #$j = $json.jobs.'job options'.numjobs
+    $j = $json.jobs.'job options'.numjobs
+    $x = ($json.jobs.'job options')
 
-    $execution | Add-Member "RIOPSmean" ([math]::Round($json.jobs.read.iops))
-    $execution | Add-Member "WIOPSmean" ([math]::Round($json.jobs.write.iops))
-    $execution | Add-Member "RMbsmean" ([math]::Round($json.jobs.read.bw / 1000))
-    $execution | Add-Member "WMbsmean" ([math]::Round($json.jobs.write.bw / 1000))
+    $execution | Add-Member "JobParams" ("wl=" + $x.rw + " " + $x.rwmixread +":" + $x.rwmixwrite +"; bs=" + $x.bs + "; iodepth=" + $x.iodepth + `
+                                         "; jobs=" + $x.numjobs + "; filesize=" + $x.size + "; runtime=" + $x.runtime + "; engine=" + $x.ioengine  )
     
-    #$json.jobs.read.iops_mean * $j
-    #$json.jobs.read.iops_stddev  
-    #$json.jobs.read.bw_mean * $j 
-    #$json.jobs.read.bw_stddev  
+    $execution | Add-Member "RIOPSmean" ([math]::Round($json.jobs.read.iops ))
+    $execution | Add-Member "RIOPSstd" ([math]::Round($json.jobs.read.iops_stddev ))
+    $execution | Add-Member "WIOPSmean" ([math]::Round($json.jobs.write.iops ))
+    $execution | Add-Member "WIOPSstd" ([math]::Round($json.jobs.write.iops_stddev ))
+
+    $execution | Add-Member "RMbsmean" ([math]::Round($json.jobs.read.bw / 1000 ))
+    $execution | Add-Member "RMbsstd" ([math]::Round($json.jobs.read.bw_dev / 1000, 2 ))
+    $execution | Add-Member "WMbsmean" ([math]::Round($json.jobs.write.bw / 1000 ))
+    $execution | Add-Member "WMbsstd" ([math]::Round($json.jobs.read.bw_dev / 1000, 2 ))
+    
+    $execution | Add-Member "UsrCPU" ([math]::Round($json.jobs.usr_cpu ))
+    $execution | Add-Member "SysCPU" ([math]::Round($json.jobs.sys_cpu ))
 
     $execution | Add-Member  "RLatmean"  ([math]::Round($json.jobs.read.clat_ns.mean / 1000000, 3 ))
     $execution | Add-Member  "RLat50p"  ([math]::Round($json.jobs.read.clat_ns.percentile.'50.000000' / 1000000, 3))

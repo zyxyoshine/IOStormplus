@@ -1,7 +1,10 @@
 Param(
-    [string] $rg,
     [string] $vmPool
 )
+
+$configfile = "config.json"
+$config = get-content $configfile | ConvertFrom-Json
+$rg = $config.resourcegroup
 
 if( $vmPool )
 {

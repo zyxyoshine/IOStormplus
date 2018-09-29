@@ -2,44 +2,26 @@
 Start-Transcript $logFile -Append -Force
 
 $Root = "C:\"
-$WorkspacePath = $Root + "IOStormplus\"
+$WorkspacePath = $Root + "IOStorm\"
 
-#install python 
-
-#install IOStorm agent
-# !!! REPLACE WITH NEW AGENT !!!
-$PackageName = "Agent.win.zip"
-$PackageUrl = "https://github.com/zyxyoshine/IOStormplus/raw/master/deploy/binary/Agent.win.zip"
 [Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
-Invoke-WebRequest -Uri $PackageUrl -OutFile ($Root + $PackageName)
-
-Add-Type -AssemblyName System.IO.Compression.FileSystem
-function Unzip
-{
-    param([string]$zipfile, [string]$outpath)
-
-    [System.IO.Compression.ZipFile]::ExtractToDirectory($zipfile, $outpath)
-}
-
-Unzip ($Root + $PackageName) $Root
-Remove-Item ($Root + $PackageName)
-
-#configure agent 
 
 #Install fio
-$FioBinaryName = "fio-3.5-x64.msi"
+$PackageName = "fio-3.9-x64.msi"
+$PackageUrl  = "https://bluestop.org/files/fio/releases/fio-3.9-x64.msi"
+Invoke-WebRequest -Uri $PackageUrl -OutFile ($Root + $PackageName)
 $DataStamp = get-date -Format yyyyMMdd
-$logFile = '{0}-{1}.log' -f ($WorkspacePath + $FioBinaryName),$DataStamp
+$logFile = '{0}-{1}.log' -f ($WorkspacePath + $PackageName),$DataStamp
 $FioMSIArguments = @(
     "/i"
-    ('"{0}"' -f ($WorkspacePath + $FioBinaryName))
+    ('"{0}"' -f ($WorkspacePath + $PackageName))
     "/qn"
     "/norestart"
     "/L*v"
     $logFile
 )
 Start-Process "msiexec.exe" -ArgumentList $FioMSIArguments -Wait -NoNewWindow
-Remove-Item ($WorkspacePath + $FioBinaryName)
+Remove-Item ($WorkspacePath + $PackageName)
 
 #Create storage space over data disks
 $poolname = "datapool"
@@ -56,25 +38,37 @@ Initialize-Disk -FriendlyName $vdname -PartitionStyle GPT -PassThru
 $partition = New-Partition -UseMaximumSize -DiskNumber $vdiskNumber -DriveLetter X
 Format-Volume -DriveLetter X -FileSystem NTFS -NewFileSystemLabel "data" -AllocationUnitSize 65536
 
-#Create Azure Storage connection string
-$storageAccountName = 'AccountName=' + $args[0] + ';'
-$storageAccountKey = 'AccountKey=' + $args[1] + ';'
-$storageEndpointSuffix = 'EndpointSuffix=' + $args[2]
-$storageConnectionString = 'DefaultEndpointsProtocol=https;' + $storageAccountName + $storageAccountKey + $storageEndpointSuffix
+#install python 
+Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+choco install python -y
 
-#Start Agent
-netsh advfirewall set privateprofile state off
-netsh advfirewall set publicprofile state off
+#configure python libs
+pip install azure 
+pip install azure-storage 
+pip install pyyaml
+
+#install IOStorm agent
+$PackageName = "IOStormAgent.py"
+$PackageUrl = "https://raw.githubusercontent.com/zyxyoshine/IOStormplus/master/agent/IOStormAgent.py"
+Invoke-WebRequest -Uri $PackageUrl -OutFile ($WorkspacePath + $PackageName)
+md $WorkspacePath + "\\output"
+md $WorkspacePath + "\\workload"
+
+#Configure Agent
+$AccName = $args[0]
+$AccKey  = $args[1]
+$AccEP   = $args[2]
+$VMPool = $args[3]
+$VMOS   = $args[4]
+$VMSize = $args[5]
+$VMDisks = $disks.Count
+$VMDiskSize = ($disks[0].Size / 1GB)
+$VMIp = (Get-NetIPAddress -AddressFamily IPv4 | where { $_.InterfaceAlias -notmatch 'Loopback'} | where { $_.InterfaceAlias -notmatch 'vEthernet'}).IPAddress   
+$VMName = hostname
+python .\IOStormAgent.py config $AccName $AccKey $AccEP $VMPool $VMName $VMIP $VMOS $VMSize $VMDisks $VMDiskSize
 
 #Schedule the agent 
-$VMSize = $args[3]
-$VMPool = $args[4]
-$VMSize | Out-File ($WorkspacePath + 'vmsize.txt')
-$VMIp = (Get-NetIPAddress -AddressFamily IPv4 | where { $_.InterfaceAlias -notmatch 'Loopback'} | where { $_.InterfaceAlias -notmatch 'vEthernet'}).IPAddress   
-$agentName = "agent.exe"
-$agentPath = $WorkspacePath + $agentName
-$args = ' ' + $VMIp + ' ' + $VMSize + ' ' + $VMPool + ' ' + $storageConnectionString
-$action = New-ScheduledTaskAction -Execute $agentPath -Argument $args -WorkingDirectory $WorkspacePath
+$action = New-ScheduledTaskAction -Execute "python" -Argument $agentName -WorkingDirectory $WorkspacePath
 $trigger = @()
 $trigger += New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1)
 $trigger += New-ScheduledTaskTrigger -AtStartup

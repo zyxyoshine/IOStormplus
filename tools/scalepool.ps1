@@ -1,13 +1,16 @@
 Param(
-    [string] $rg,
     [string] $vmPool,
     [int] $vmAddCount=0,
     [string] $vmAdminUserName,
     [string] $vmAdminPassword
 )
 
+$configfile = "config.json"
+$config = get-content $configfile | ConvertFrom-Json
+$rg = $config.resourcegroup
+$acct = $config.storageaccount
+
 $dn=$rg+$vmPool+"scale"
-$acct = "sa"+$rg
 $storageEndpointSuffix= ((Get-AzureRmContext).Environment | Get-AzureRmEnvironment).StorageEndpointSuffix
 
 if( $vmAddCount -gt 0 )

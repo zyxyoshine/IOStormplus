@@ -1,0 +1,4 @@
+{
+    resourcegroup: "iostorm",
+    storageaccount: "saiostorm"
+}

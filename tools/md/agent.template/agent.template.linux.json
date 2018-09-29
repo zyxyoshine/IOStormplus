@@ -78,6 +78,7 @@
         "uniqueStorageAccountName": "[tolower(concat('sa', resourceGroup().name))]",
 		"uniqueStorageAccountContainerName": "[tolower(concat('sc', resourceGroup().name))]",
         "vmName": "[concat(parameters('vmPool'),'-vm')]",
+        "vmOsType": "Linux",
         "vmOsDiskName": "[variables('vmName')]",
         "vmDataDiskName": "[variables('vmName')]",
         "vmNicName": "[tolower(concat(parameters('vmPool'), '-nic'))]",
@@ -149,7 +150,7 @@
                         "version": "latest"
                     },
                     "osDisk": {
-						"osType": "Linux",
+						"osType": "[variables('vmOsType')]",
                         "name": "[tolower(concat(variables('vmOsDiskName'),copyIndex(parameters('vmIndex'))))]",
                         "caching": "None",
                         "createOption": "FromImage",     
@@ -205,9 +206,9 @@
 				"autoUpgradeMinorVersion": true,
 				"settings": {
 					"fileUris": [
-						"https://raw.githubusercontent.com/zyxyoshine/IOStormplus/master/deploy/deploy.linux.sh"
+						"https://raw.githubusercontent.com/zyxyoshine/IOStormplus/master/agent/deploy.linux.sh"
 					],
-					"commandToExecute": "[concat('sudo bash ','deploy.linux.sh \"DefaultEndpointsProtocol=https;AccountName=',variables('uniqueStorageAccountName'),';AccountKey=',listKeys(concat('Microsoft.Storage/storageAccounts/', variables('uniqueStorageAccountName')), '2015-06-15').key1,';EndpointSuffix=',parameters('StorageEndpointSuffix'),'\" ',parameters('vmSize'),' ',parameters('vmPool'))]"
+					"commandToExecute": "[concat('sudo bash ','deploy.linux.sh ',variables('uniqueStorageAccountName'),' ',listKeys(concat('Microsoft.Storage/storageAccounts/', variables('uniqueStorageAccountName')), '2015-06-15').key1,' ',parameters('StorageEndpointSuffix'),' ',parameters('vmPool'),' ',parameters('vmOsType'),' ',parameters('vmSize'))]"
 				}
             },
             "dependsOn": [
