@@ -56,9 +56,8 @@ VMIP=$(hostname --ip-address)
 
 python3 ./IOStormAgent.py config $AccName $AccKey $AccEP $VMPool $VMName $VMIP $VMOS $VMSize $VMDisks $VMDiskSize
 
-#start agent
-#sed -i '$inohup /home/IOStormplus/agent '$(hostname --ip-address)' '$2' '$3' \"'$1'\" >/dev/null 2>agent.err &' /etc/rc.local
-#cd /home/IOStormplus && nohup ./agent $(hostname --ip-address) $2 $3 $1 >/dev/null 2>agent.err &
-sed -i '$inohup python3 /home/IOStorm/IOStormAgent.py >/dev/null 2>agent.err &' /etc/rc.local
+#add agent 
+echo '@reboot cd /home/IOStorm && nohup python3 ./IOStormAgent.py >console.log 2>error.log &' > cron.txt
+crontab cron.txt
 cd /home/IOStorm && nohup python3 ./IOStormAgent.py >/dev/null 2>agent.err &
 
