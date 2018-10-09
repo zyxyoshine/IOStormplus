@@ -4,13 +4,15 @@ Start-Transcript $logFile -Append -Force
 $Root = "C:\"
 $Directory = "IOStorm\"
 $WorkspacePath = $Root + $Directory
+md $WorkspacePath
 
 [Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
+
 
 #Install fio
 $PackageName = $WorkspacePath + "fio-3.9-x64.msi"
 $PackageUrl  = "https://bluestop.org/files/fio/releases/fio-3.9-x64.msi"
-mkdir $Directory
+
 Invoke-WebRequest -Uri $PackageUrl -OutFile $PackageName
 $DataStamp = get-date -Format yyyyMMdd
 $logFile = '{0}-{1}.log' -f $PackageName, $DataStamp
@@ -67,7 +69,7 @@ $VMDisks = $disks.Count
 $VMDiskSize = ($disks[0].Size / 1GB)
 $VMIp = (Get-NetIPAddress -AddressFamily IPv4 | where { $_.InterfaceAlias -notmatch 'Loopback'} | where { $_.InterfaceAlias -notmatch 'vEthernet'}).IPAddress   
 $VMName = hostname
-python .\IOStormAgent.py config $AccName $AccKey $AccEP $VMPool $VMName $VMIP $VMOS $VMSize $VMDisks $VMDiskSize
+C:\Python37\python.exe .\IOStormAgent.py config $AccName $AccKey $AccEP $VMPool $VMName $VMIP $VMOS $VMSize $VMDisks $VMDiskSize
 
 #Schedule the agent 
 $agentParams=".\IOStormAgent.py" # >console.log 2>agent.err"

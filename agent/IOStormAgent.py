@@ -261,5 +261,6 @@ def Main():
         time.sleep( Interval )
 
 
-        
+
+CheckTable()        
 Main()
