@@ -14,7 +14,7 @@ cd /home/fio-3.5 && make install
 #create one volume striped over all data disks
 disks=($(lsblk -l -p -o NAME | grep "sd" | grep -v "sda" | grep -v "sdb"))
 diskscnt=${#disks[*]}
-disksizes=($(lsblk -l -p -o size ${disks[0]}}))
+disksizes=($(lsblk -l -p -o size ${disks[0]}))
 disksize=${disksizes[1]}
 
 for disk in ${disks[*]}
@@ -33,14 +33,18 @@ mount -a
 apt-get install python3-pip -y 
 pip3 install azure
 pip3 install azure-storage 
+pip3 install pyyaml
 
 #install IOStorm agent
 cd /home/ 
 mkdir IOStorm
+chmod -R 777 ./IOStorm
 cd IOStorm
 wget https://raw.githubusercontent.com/zyxyoshine/IOStormplus/master/agent/IOStormAgent.py
 mkdir /home/IOStorm/output
+chmod -R 777 ./output
 mkdir /home/IOStorm/workload
+chmod -R 777 ./workload
 
 #configure agent
 AccName=$1
@@ -49,7 +53,7 @@ AccEP=$3
 VMPool=$4
 VMOS=$5
 VMSize=$6
-VMDisks=$diskcnt
+VMDisks=$diskscnt
 VMDiskSize=$disksize
 VMName=$(hostname)
 VMIP=$(hostname --ip-address)

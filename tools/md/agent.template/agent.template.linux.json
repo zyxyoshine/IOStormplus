@@ -151,7 +151,7 @@
                     },
                     "osDisk": {
 						"osType": "[variables('vmOsType')]",
-                        "name": "[tolower(concat(variables('vmOsDiskName'),copyIndex(parameters('vmIndex'))))]",
+                        "name": "[tolower(concat(variables('vmOsDiskName'),copyIndex(parameters('vmIndex')),'-osd'))]",
                         "caching": "None",
                         "createOption": "FromImage",     
                     },

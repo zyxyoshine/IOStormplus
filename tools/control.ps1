@@ -8,7 +8,7 @@ $configfile = "config.json"
 $config = get-content $configfile | ConvertFrom-Json
 
 $rgname = $config.resourcegroup
-$AccountName = $config.account
+$AccountName = $config.storageaccount
 $AccountKey = (Get-AzureRmStorageAccountKey -ResourceGroupName $rgname -Name $AccountName)[0].Value
 $AccountEndpoint  = (Get-AzureRmEnvironment (Get-AzureRmContext).Environment).StorageEndpointSuffix
 

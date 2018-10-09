@@ -2,26 +2,28 @@
 Start-Transcript $logFile -Append -Force
 
 $Root = "C:\"
-$WorkspacePath = $Root + "IOStorm\"
+$Directory = "IOStorm\"
+$WorkspacePath = $Root + $Directory
 
 [Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
 
 #Install fio
-$PackageName = "fio-3.9-x64.msi"
+$PackageName = $WorkspacePath + "fio-3.9-x64.msi"
 $PackageUrl  = "https://bluestop.org/files/fio/releases/fio-3.9-x64.msi"
-Invoke-WebRequest -Uri $PackageUrl -OutFile ($Root + $PackageName)
+mkdir $Directory
+Invoke-WebRequest -Uri $PackageUrl -OutFile $PackageName
 $DataStamp = get-date -Format yyyyMMdd
-$logFile = '{0}-{1}.log' -f ($WorkspacePath + $PackageName),$DataStamp
+$logFile = '{0}-{1}.log' -f $PackageName, $DataStamp
 $FioMSIArguments = @(
     "/i"
-    ('"{0}"' -f ($WorkspacePath + $PackageName))
+    ('"{0}"' -f $PackageName)
     "/qn"
     "/norestart"
     "/L*v"
     $logFile
 )
 Start-Process "msiexec.exe" -ArgumentList $FioMSIArguments -Wait -NoNewWindow
-Remove-Item ($WorkspacePath + $PackageName)
+Remove-Item ($PackageName)
 
 #Create storage space over data disks
 $poolname = "datapool"
@@ -51,8 +53,8 @@ pip install pyyaml
 $PackageName = "IOStormAgent.py"
 $PackageUrl = "https://raw.githubusercontent.com/zyxyoshine/IOStormplus/master/agent/IOStormAgent.py"
 Invoke-WebRequest -Uri $PackageUrl -OutFile ($WorkspacePath + $PackageName)
-md $WorkspacePath + "\\output"
-md $WorkspacePath + "\\workload"
+md ($WorkspacePath + "\output")
+md ($WorkspacePath + "\workload")
 
 #Configure Agent
 $AccName = $args[0]
@@ -68,7 +70,8 @@ $VMName = hostname
 python .\IOStormAgent.py config $AccName $AccKey $AccEP $VMPool $VMName $VMIP $VMOS $VMSize $VMDisks $VMDiskSize
 
 #Schedule the agent 
-$action = New-ScheduledTaskAction -Execute "python" -Argument $agentName -WorkingDirectory $WorkspacePath
+$agentParams=".\IOStormAgent.py" # >console.log 2>agent.err"
+$action = New-ScheduledTaskAction -Execute "python" -Argument $agentParams -WorkingDirectory $WorkspacePath
 $trigger = @()
 $trigger += New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1)
 $trigger += New-ScheduledTaskTrigger -AtStartup

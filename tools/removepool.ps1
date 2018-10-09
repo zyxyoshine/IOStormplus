@@ -57,7 +57,7 @@ while($running -and $timeElapsed -le $Timeout)
     }
 }
 
-$cont = Get-AzureStorageContainer -Context $ctx -Prefix $vmName
-$cont | remove-azurestoragecontainer -Force
+#$cont = Get-AzureStorageContainer -Context $ctx -Prefix $vmName
+#$cont | remove-azurestoragecontainer -Force
 $cont = Get-AzureStorageContainer -Context $ctx -Prefix ('bootdiagnostics-'+ ($vmName -replace "-"))
 $cont | remove-azurestoragecontainer -Force
