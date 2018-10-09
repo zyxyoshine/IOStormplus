@@ -73,7 +73,7 @@ C:\Python37\python.exe .\IOStormAgent.py config $AccName $AccKey $AccEP $VMPool 
 
 #Schedule the agent 
 $agentParams=".\IOStormAgent.py" # >console.log 2>agent.err"
-$action = New-ScheduledTaskAction -Execute "python" -Argument $agentParams -WorkingDirectory $WorkspacePath
+$action = New-ScheduledTaskAction -Execute "C:\Python37\python" -Argument $agentParams -WorkingDirectory $WorkspacePath
 $trigger = @()
 $trigger += New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1)
 $trigger += New-ScheduledTaskTrigger -AtStartup
