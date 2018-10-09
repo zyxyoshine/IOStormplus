@@ -47,9 +47,9 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.We
 choco install python -y
 
 #configure python libs
-pip install azure 
-pip install azure-storage 
-pip install pyyaml
+C:\Python37\Scripts\pip install azure 
+C:\Python37\Scripts\pip install azure-storage 
+C:\Python37\Scripts\pip install pyyaml
 
 #install IOStorm agent
 $PackageName = "IOStormAgent.py"
