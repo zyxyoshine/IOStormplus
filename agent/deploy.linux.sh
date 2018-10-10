@@ -59,7 +59,7 @@ VMName=$(hostname)
 VMIP=$(hostname --ip-address)
 
 python3 ./IOStormAgent.py config $AccName $AccKey $AccEP $VMPool $VMName $VMIP $VMOS $VMSize $VMDisks $VMDiskSize
-
+                                 
 #add agent 
 echo '@reboot cd /home/IOStorm && nohup python3 ./IOStormAgent.py >console.log 2>error.log &' > cron.txt
 crontab cron.txt

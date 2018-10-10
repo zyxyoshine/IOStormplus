@@ -31,7 +31,7 @@ def WriteConfig( params ):
 
 if( len(sys.argv) > 1 ):
     WriteConfig( sys.argv )
-    exit(0)
+    exit(0)        
 
 config = yaml.safe_load(open("config.yml"))
 Interval = 10

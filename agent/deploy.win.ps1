@@ -69,11 +69,12 @@ $VMDisks = $disks.Count
 $VMDiskSize = ($disks[0].Size / 1GB)
 $VMIp = (Get-NetIPAddress -AddressFamily IPv4 | where { $_.InterfaceAlias -notmatch 'Loopback'} | where { $_.InterfaceAlias -notmatch 'vEthernet'}).IPAddress   
 $VMName = hostname
+cd $Workspace
 C:\Python37\python.exe .\IOStormAgent.py config $AccName $AccKey $AccEP $VMPool $VMName $VMIP $VMOS $VMSize $VMDisks $VMDiskSize
 
 #Schedule the agent 
-$agentParams=".\IOStormAgent.py" # >console.log 2>agent.err"
-$action = New-ScheduledTaskAction -Execute "C:\Python37\python" -Argument $agentParams -WorkingDirectory $WorkspacePath
+$agentParams="/C C:\Python37\python .\IOStormAgent.py >console.log 2>agent.err "
+$action = New-ScheduledTaskAction -Execute "cmd" -Argument $agentParams -WorkingDirectory $WorkspacePath
 $trigger = @()
 $trigger += New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1)
 $trigger += New-ScheduledTaskTrigger -AtStartup
