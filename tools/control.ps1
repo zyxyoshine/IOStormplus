@@ -184,7 +184,7 @@ function GetJob( $Params)
     Write-Host ""
     if( $job.State -eq 'EXECUTING' )
     {
-        $job.Executions | select Node, State, LastUpdateTime, Output | ft *
+        $job.Executions | ft -group JobParams -property Node, State, LastUpdateTime, Output 
     }
     else
     {
