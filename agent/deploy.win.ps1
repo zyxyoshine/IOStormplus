@@ -1,6 +1,18 @@
 ﻿$logFile = 'C:\deploylog.txt'
 Start-Transcript $logFile -Append -Force
 
+#Enable PSRemoting
+
+$DNSName = $env:COMPUTERNAME 
+Enable-PSRemoting -Force   
+
+New-NetFirewallRule -Name "WinRM HTTPS" -DisplayName "WinRM HTTPS" -Enabled True -Profile "Any" -Action "Allow" -Direction "Inbound" -LocalPort 5986 -Protocol "TCP"    
+
+$thumbprint = (New-SelfSignedCertificate -DnsName $DNSName -CertStoreLocation Cert:\LocalMachine\My).Thumbprint   
+$cmd = "winrm create winrm/config/Listener?Address=*+Transport=HTTPS @{Hostname=""$DNSName""; CertificateThumbprint=""$thumbprint""}" 
+
+cmd.exe /C $cmd  
+
 $Root = "C:\"
 $Directory = "IOStorm\"
 $WorkspacePath = $Root + $Directory
@@ -69,7 +81,7 @@ $VMDisks = $disks.Count
 $VMDiskSize = ($disks[0].Size / 1GB)
 $VMIp = (Get-NetIPAddress -AddressFamily IPv4 | where { $_.InterfaceAlias -notmatch 'Loopback'} | where { $_.InterfaceAlias -notmatch 'vEthernet'}).IPAddress   
 $VMName = hostname
-cd $Workspace
+cd $WorkspacePath
 C:\Python37\python.exe .\IOStormAgent.py config $AccName $AccKey $AccEP $VMPool $VMName $VMIP $VMOS $VMSize $VMDisks $VMDiskSize
 
 #Schedule the agent 
@@ -82,16 +94,7 @@ $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -RunOnlyIfNetworkAv
 Unregister-ScheduledTask -TaskName "VMIOSTORM" -Confirm:0 -ErrorAction Ignore
 Register-ScheduledTask -Action $action -Trigger $trigger -TaskName "VMIOSTORM" -Description "VM iostorm agent" -User "System" -RunLevel Highest -Settings $settings
 
-#Enable PSRemoting
-
-$DNSName = $env:COMPUTERNAME 
-Enable-PSRemoting -Force   
-
-New-NetFirewallRule -Name "WinRM HTTPS" -DisplayName "WinRM HTTPS" -Enabled True -Profile "Any" -Action "Allow" -Direction "Inbound" -LocalPort 5986 -Protocol "TCP"    
-
-$thumbprint = (New-SelfSignedCertificate -DnsName $DNSName -CertStoreLocation Cert:\LocalMachine\My).Thumbprint   
-$cmd = "winrm create winrm/config/Listener?Address=*+Transport=HTTPS @{Hostname=""$DNSName""; CertificateThumbprint=""$thumbprint""}" 
-
-cmd.exe /C $cmd  
+Start-ScheduledTask -TaskName "VMIOSTORM"
 
 Stop-Transcript
+
