@@ -25,9 +25,9 @@ pdisks=($(lsblk -l -p -o NAME | grep "sd" | grep -v "sda" | grep -v "sdb" | grep
 mdadm --create /dev/md0 --level 0 --raid-devices ${#pdisks[*]} ${pdisks[*]} --force
 mkfs -t ext4 /dev/md0
 mkdir /data
-chmod -R 777 /data
 echo -e "/dev/md0\t/data\text4\tdefaults\t0\t2" >> /etc/fstab
 mount -a
+chmod -R 777 /data
 
 #configure python libs
 apt-get install python3-pip -y 
