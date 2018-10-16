@@ -61,7 +61,12 @@ VMIP=$(hostname --ip-address)
 python3 ./IOStormAgent.py config $AccName $AccKey $AccEP $VMPool $VMName $VMIP $VMOS $VMSize $VMDisks $VMDiskSize
                                  
 #add agent 
-echo '@reboot cd /home/IOStorm && nohup python3 ./IOStormAgent.py >console.log 2>error.log &' > cron.txt
+echo 'SHELL=/bin/sh' > cron.txt
+echo 'PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin' >> cron.txt 
+echo '' >> cron.txt
+echo '@reboot cd /home/IOStorm && nohup python3 ./IOStormAgent.py >console.log 2>error.log &' >> cron.txt
 crontab cron.txt
 cd /home/IOStorm && nohup python3 ./IOStormAgent.py >/dev/null 2>agent.err &
+
+
 
