@@ -1,8 +1,9 @@
 ﻿echo "test" >> /home/st
-sudo -s
 sudo apt-get update
-sudo apt-get upgrade -y
-sudo apt-get install make gcc g++ unzip zlib1g-dev libboost-all-dev libssl-dev libxml2-dev libxml++2.6-dev libxml++2.6-doc uuid-dev libaio-dev cmake -y
+sudo apt-get install make gcc g++ unzip -y
+sudo apt-get install zlib1g-dev libboost-all-dev -y
+sudo apt-get install libssl-dev libxml2-dev libxml++2.6-dev libxml++2.6-doc -y
+sudo apt-get install uuid-dev libaio-dev cmake -y
 cd /home/ && wget https://github.com/zyxyoshine/IOStormplus/raw/master/deploy/binary/Agent.linux.zip
 cd /home/ && unzip Agent.linux.zip
 mkdir /home/IOStormplus/output
